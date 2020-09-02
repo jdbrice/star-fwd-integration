@@ -1,2 +1,6 @@
 temp_gccflags.c
 .sl73_gcc485/
+*.consign
+StRoot/StFwdTrackMaker/test.sh
+StRoot/StFwdTrackMaker/macros/
+StRoot/StFwdTrackMaker/README.md
