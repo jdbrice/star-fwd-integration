@@ -598,6 +598,10 @@ void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, shared_ptr<McTrack>
 
         // Add the hit to the hit map
         hitMap[fhit->getSector()].push_back(fhit);
+
+        // Add hit pointer to the track
+        if (mcTrackMap[track_id])
+            mcTrackMap[track_id]->addHit(hit);
     }
 } //loadStgcHitsFromStEvent
 
