@@ -109,13 +109,6 @@ class ForwardTrackMaker {
         string datatype = cfg.get<string>("Input:type", "sim_mc");
         LOG_F(INFO, "Data type: %s", datatype.c_str());
 
-        if ("sim_mc" == datatype) {
-            // initInputFromMC();
-            hitLoader = new McHitLoader(cfg);
-        } else if ("fastsim_mc" == datatype || "fastsim_real" == datatype || "fastsim_ghost" == datatype) {
-            hitLoader = new FastSimHitLoader(cfg);
-        }
-
         if (nullptr != hitLoader)
             nEvents = hitLoader->nEvents();
 
