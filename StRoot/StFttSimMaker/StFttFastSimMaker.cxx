@@ -286,7 +286,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         int volume_id = hit->volume_id;
         int disk = (volume_id - 1) / 4 + 7; // add 7 to differentiat from FST - dedicated collection will not need 
 
-        LOG_INFO << "sTGC hit: disk = " << disk << endm;
+        LOG_INFO << "sTGC hit: volume_id = " << volume_id << " disk = " << disk << endm;
         if (disk <= 6)
             continue;
 
