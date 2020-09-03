@@ -253,9 +253,6 @@ int StFwdTrackMaker::Finish() {
         nh.second->Write();
     }
 
-    // gDirectory->cd();
-    // gDirectory->Write();
-
     if (mGenTree) {
         mlTree->Print();
         mlFile->cd();

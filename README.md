@@ -73,8 +73,12 @@ generate an `fzd` file with:
 starsim -w 0 -b tests/testg.kumac nevents=1000 ntrack=1 etamn=2.5 etamx=4.0 ptmn=0.2 ptmx=1.0
 ```
 
-
 ### Running the tracking
+```
+source rcf-env.sh
+root4star -b -q -l tests/fast_track.C
+```
+
 
 
 

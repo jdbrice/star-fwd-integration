@@ -46,15 +46,14 @@ const bool verbose = true;
 
 StFstFastSimMaker::StFstFastSimMaker(const Char_t *name)
 	: StMaker(name),
+    mEnable({true, true, true, true, true, true, true, true, true, true, true, true}),
 	mNumR(64),
 	mNumPHI(128),
 	mNumSEC(12),
 	mRaster(0),
 	mInEff(0),
+    mHist(false),
 	mQAFileName(0),
-	mEnable({true, true, true, true, true, true, true, true, true, true, true, true}),
-	mHist(false),
-	fOut(0),
 	hTrutHitYXDisk(0),
 	hTrutHitRDisk(0),
 	hTrutHitRShower({0}),
@@ -70,7 +69,8 @@ StFstFastSimMaker::StFstFastSimMaker(const Char_t *name)
 	h2GlobalXY(0),
 	h2GlobalSmearedXY(0),
 	h2GlobalDeltaXY(0),
-	h3GlobalDeltaXYDisk(0){}
+	h3GlobalDeltaXYDisk(0),
+    mHist(false){}
 
 	int StFstFastSimMaker::Init() {
 
