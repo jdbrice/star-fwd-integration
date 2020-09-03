@@ -327,7 +327,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
 
         if (false == STGC_MAKE_GHOST_HITS) {
             // Make this "REAL" hit.
-            if (verbose)
+            if (FttGlobal::verbose)
                 ahit->Print();
             ftscollection->addHit(ahit);
             sTGCNRealPoints++;
