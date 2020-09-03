@@ -18,17 +18,9 @@ class FwdSystem : public KiTrack::ISectorSystem {
     FwdSystem(const int ndisks) : KiTrack::ISectorSystem(), _ndisks(ndisks){};
     ~FwdSystem(){/* */};
     virtual unsigned int getLayer(int diskid) const throw(KiTrack::OutOfRange) {
-        // return diskid;
-        // Have to remap disk number to layers 1-7
-        //          1,2,3,4,5,6, 7,8, 9,10, 11, 12
-        // int _map[]={0,0,0,1,2,3, 0,0, 4, 5,  6, 7}; // ftsref6a
-        // return _map[diskid-1];
         return diskid;
     }
 
-    // Decoder ring
-    // int decode(int volid) const { return volid; } // TODO: make dependence on
-    // geometry
     int _ndisks;
     std::string getInfoOnSector(int sec) const { return "TODO"; }
 };
@@ -89,18 +81,11 @@ class FwdHit : public KiTrack::IHit {
             _vid = abs(vid) + 9; // we only use this for sTGC only.  Needs to be
                                  // cleaner in future.
         }
-
-        // gFwdSystem->getLayer(diskid);
-
-        // Need also to set _3DAngle, _phiMV and _thetaMV (and understand their
-        // definitions...)
-        // ... looks like it is detector specific...
     };
 
     const KiTrack::ISectorSystem *getSectorSystem() const {
         return gFwdSystem;
     } // need to implement
-    // StHit* _hit;
 
     int _tid; // aka ID truth
     int _vid;
@@ -122,8 +107,6 @@ class FwdConnector : public KiTrack::ISectorConnector {
     // Return the possible sectors (layers) given current
     virtual std::set<int> getTargetSectors(int disk) {
 
-        //                  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12
-        int _targets[] = {0, 0, 0, 0, 4, 5, 0, 0, 6, 9, 10, 11};
         std::set<int> r;
 
         if (disk > 0 && _distance >= 1)
@@ -139,13 +122,6 @@ class FwdConnector : public KiTrack::ISectorConnector {
             r.insert(disk - 4);
 
         return r;
-
-        // if ( disk >= 1 )
-        // 	r.insert( _targets[disk-1] );
-        // else {
-        // 	LOG_F( ERROR, "disk should be >= 1" );
-        // }
-        // return r;
     };
 
   private:
