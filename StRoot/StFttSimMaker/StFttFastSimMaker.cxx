@@ -284,10 +284,10 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         float yhit = hit->x[1];
         float zhit = hit->x[2];
         int volume_id = hit->volume_id;
-        int disk = (volume_id - 1) / 4 + 9; // add 7 to differentiat from FST - dedicated collection will not need 
+        int disk = (volume_id - 1) / 4 + 9 ; // add 7 to differentiat from FST - dedicated collection will not need 
 
         LOG_INFO << "sTGC hit: volume_id = " << volume_id << " disk = " << disk << endm;
-        if (disk <= 9)
+        if (disk < 9)
             continue;
 
         float theta = diskRotation(disk);
@@ -317,7 +317,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         ahit->setDouble2(x_rot);
         ahit->setDouble3(y_rot);
 
-        ahit->setLayer(disk); // disk mapped to layer
+        ahit->setLayer(disk); // disk mapped to layer 
         ahit->setLadder(2);   // indicates a point
         ahit->setWafer(quad); // quadrant number
 
