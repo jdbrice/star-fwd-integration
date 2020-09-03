@@ -550,7 +550,7 @@ class ForwardTrackMaker {
             for (auto h : mc_track->hits) {
                 track.push_back(h);
                 uvid.insert(static_cast<FwdHit *>(h)->_vid);
-                LOG_F( INFO, "Track has hit on layer %lu", static_cast<FwdHit *>(h)->_vid )
+                LOG_F( INFO, "Track has hit on layer %lu", static_cast<FwdHit *>(h)->_vid );
             }
 
             if (uvid.size() == track.size()) { // only add tracks that have one hit per volume
