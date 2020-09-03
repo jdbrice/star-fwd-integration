@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "StFwdTrackMaker/include/Tracker/ConfigUtil.h"
-#include "StFwdTrackMaker/include/Tracker/FastSim.h"
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
 #include "StFwdTrackMaker/include/Tracker/HitLoader.h"
 #include "StFwdTrackMaker/include/Tracker/QualityPlotter.h"
@@ -1038,7 +1037,6 @@ class ForwardTrackMaker {
     TrackFitter *getTrackFitter() { return trackFitter; }
 
   protected:
-    FastSim *fastSim;
     TTree *tree;
     TFile *fInput;
     unsigned long long int nEvents;
