@@ -601,7 +601,7 @@ void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, shared_ptr<McTrack>
 
         // Add hit pointer to the track
         if (mcTrackMap[hit->idTruth()])
-            mcTrackMap[hit->idTruth()]->addHit(hit);
+            mcTrackMap[hit->idTruth()]->addHit(fhit);
     }
 } //loadStgcHitsFromStEvent
 
