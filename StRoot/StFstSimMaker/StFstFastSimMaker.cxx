@@ -22,27 +22,28 @@
 
 #include <array>
 
-TCanvas *canvas = 0;
-StMatrixF Hack1to6(const StHit *stHit);
 
-constexpr float PI = atan2(0.0, -1.0);
-constexpr float SQRT12 = sqrt(12.0);
+// lets not polute the global scope
+namespace FstGlobal{
+    // TCanvas *canvas = 0;
+    StMatrixF Hack1to6(const StHit *stHit);
 
-//
-// Disk segmentation
-//
-float RMIN[] = {0.95 * 4.3, 0.95 * 4.3, 0.95 * 4.3, 0.95 * 5.0, 0.95 * 5.0, 0.95 * 5.0};
-float RMAX[] = {1.05 * 15.0, 1.05 * 25.0, 1.05 * 25.0, 1.05 * 28.0, 1.05 * 28.0, 1.05 * 28.0};
+    constexpr float PI = atan2(0.0, -1.0);
+    constexpr float SQRT12 = sqrt(12.0);
 
-//NEXT IS only for disk ARRAY 456 with the radius from 5 to 28.
-float RSegment[] = {5., 7.875, 10.75, 13.625, 16.5, 19.375, 22.25, 25.125, 28.};
+    //
+    // Disk segmentation
+    //
+    float RMIN[] = {0.95 * 4.3, 0.95 * 4.3, 0.95 * 4.3, 0.95 * 5.0, 0.95 * 5.0, 0.95 * 5.0};
+    float RMAX[] = {1.05 * 15.0, 1.05 * 25.0, 1.05 * 25.0, 1.05 * 28.0, 1.05 * 28.0, 1.05 * 28.0};
 
-void StFstFastSimMaker::setDisk(const int i, const float rmn, const float rmx) {
-	RMIN[i] = rmn;
-	RMAX[i] = rmx;
+    //NEXT IS only for disk ARRAY 456 with the radius from 5 to 28.
+    float RSegment[] = {5., 7.875, 10.75, 13.625, 16.5, 19.375, 22.25, 25.125, 28.};
+
+
+
+    const bool verbose = true;
 }
-
-const bool verbose = true;
 
 StFstFastSimMaker::StFstFastSimMaker(const Char_t *name)
 	: StMaker{name},
@@ -71,31 +72,36 @@ StFstFastSimMaker::StFstFastSimMaker(const Char_t *name)
     h3GlobalDeltaXYDisk(0),
     h3GlobalDeltaXYR(0) { }
 
-	int StFstFastSimMaker::Init() {
+int StFstFastSimMaker::Init() {
 
-		if(mHist){
-			fOut = new TFile(mQAFileName.Data(), "RECREATE");
-			AddHist(hTrutHitYXDisk = new TH3F("hTrutHitYXDisk", "Global hits before segmentation", 151, -75.5, 75.5, 151, -75.5, 75.5, 10, 0, 10));
-			AddHist(hTrutHitRDisk = new TH2F("hTrutHitRDisk", "Global hits before segmentation", 400, 0, 40, 10, 0, 10));
-			AddHist(hTrutHitRShower[0] = new TH2F("hTrutHitRShower_4", "Global hits before segmentation", 400, 0, 40, 20, -10, 10));
-			AddHist(hTrutHitRShower[1] = new TH2F("hTrutHitRShower_5", "Global hits before segmentation", 400, 0, 40, 20, -10, 10));
-			AddHist(hTrutHitRShower[2] = new TH2F("hTrutHitRShower_6", "Global hits before segmentation", 400, 0, 40, 20, -10, 10));
-			AddHist(hTrutHitPhiDisk = new TH2F("hTrutHitPhiDisk", "Global hits before segmentation", 360, 0, 360, 10, 0, 10));
-			AddHist(hTrutHitPhiZ = new TH2F("hTrutHitPhiZ", "Global hits before segmentation", 360, 0, 360, 6000, 0, 600));
-			AddHist(hRecoHitYXDisk = new TH3F("hRecoHitYXDisk", "Global hits after segmentation", 151, -75.5, 75.5, 151, -75.5, 75.5, 10, 0, 10));
-			AddHist(hRecoHitRDisk = new TH2F("hRecoHitRDisk", "Global hits after segmentation", 400, 0, 40, 10, 0, 10));
-			AddHist(hRecoHitPhiDisk = new TH2F("hRecoHitPhiDisk", "Global hits after segmentation", 360, 0, 360, 10, 0, 10));
-			AddHist(hRecoHitPhiZ = new TH2F("hRecoHitPhiZ", "Global hits after segmentation", 360, 0, 360, 6000, 0, 600));
-			AddHist(hGlobalDRDisk = new TH2F("hGlobalDRDisk", "; Reco. r - MC r [cm]; Events;", 1000, -50, 50, 10, 0, 10));
-			AddHist(hGlobalZ = new TH1F("hGlobalZ", "; Z [cm]; Events;", 6000, 0, 600));
-			AddHist(h3GlobalDeltaXYR = new TH3F("h3GlobalDeltaXYR", ";globalDeltaX; globalDeltaY; R", 300, -0.3, 0.3, 300, -3, 3, 100, 0, 30));
-			AddHist(h2GlobalXY = new TH2F("h2GlobalXY", ";globalX; globalY", 1510, -75.5, 75.5, 1510, -75.5, 75.5));
-			AddHist(h2GlobalSmearedXY = new TH2F("h2GlobalSmearedXY", ";globalSmearedX; globalSmearedY", 1510, -75.5, 75.5, 1510, -75.5, 75.5));
-			AddHist(h2GlobalDeltaXY = new TH2F("h2GlobalDeltaXY", ";globalDeltaX; globalDeltaY", 151, -75.5, 75.5, 151, -75.5, 75.5));
-			AddHist(h3GlobalDeltaXYDisk = new TH3F("h3GlobalDeltaXYDisk", ";globalDeltaX; globalDeltaY; Disk", 151, -75.5, 75.5, 151, -75.5, 75.5, 10, 0, 10));
-		}
-		return StMaker::Init();
+	if(mHist){
+		fOut = new TFile(mQAFileName.Data(), "RECREATE");
+		AddHist(hTrutHitYXDisk = new TH3F("hTrutHitYXDisk", "Global hits before segmentation", 151, -75.5, 75.5, 151, -75.5, 75.5, 10, 0, 10));
+		AddHist(hTrutHitRDisk = new TH2F("hTrutHitRDisk", "Global hits before segmentation", 400, 0, 40, 10, 0, 10));
+		AddHist(hTrutHitRShower[0] = new TH2F("hTrutHitRShower_4", "Global hits before segmentation", 400, 0, 40, 20, -10, 10));
+		AddHist(hTrutHitRShower[1] = new TH2F("hTrutHitRShower_5", "Global hits before segmentation", 400, 0, 40, 20, -10, 10));
+		AddHist(hTrutHitRShower[2] = new TH2F("hTrutHitRShower_6", "Global hits before segmentation", 400, 0, 40, 20, -10, 10));
+		AddHist(hTrutHitPhiDisk = new TH2F("hTrutHitPhiDisk", "Global hits before segmentation", 360, 0, 360, 10, 0, 10));
+		AddHist(hTrutHitPhiZ = new TH2F("hTrutHitPhiZ", "Global hits before segmentation", 360, 0, 360, 6000, 0, 600));
+		AddHist(hRecoHitYXDisk = new TH3F("hRecoHitYXDisk", "Global hits after segmentation", 151, -75.5, 75.5, 151, -75.5, 75.5, 10, 0, 10));
+		AddHist(hRecoHitRDisk = new TH2F("hRecoHitRDisk", "Global hits after segmentation", 400, 0, 40, 10, 0, 10));
+		AddHist(hRecoHitPhiDisk = new TH2F("hRecoHitPhiDisk", "Global hits after segmentation", 360, 0, 360, 10, 0, 10));
+		AddHist(hRecoHitPhiZ = new TH2F("hRecoHitPhiZ", "Global hits after segmentation", 360, 0, 360, 6000, 0, 600));
+		AddHist(hGlobalDRDisk = new TH2F("hGlobalDRDisk", "; Reco. r - MC r [cm]; Events;", 1000, -50, 50, 10, 0, 10));
+		AddHist(hGlobalZ = new TH1F("hGlobalZ", "; Z [cm]; Events;", 6000, 0, 600));
+		AddHist(h3GlobalDeltaXYR = new TH3F("h3GlobalDeltaXYR", ";globalDeltaX; globalDeltaY; R", 300, -0.3, 0.3, 300, -3, 3, 100, 0, 30));
+		AddHist(h2GlobalXY = new TH2F("h2GlobalXY", ";globalX; globalY", 1510, -75.5, 75.5, 1510, -75.5, 75.5));
+		AddHist(h2GlobalSmearedXY = new TH2F("h2GlobalSmearedXY", ";globalSmearedX; globalSmearedY", 1510, -75.5, 75.5, 1510, -75.5, 75.5));
+		AddHist(h2GlobalDeltaXY = new TH2F("h2GlobalDeltaXY", ";globalDeltaX; globalDeltaY", 151, -75.5, 75.5, 151, -75.5, 75.5));
+		AddHist(h3GlobalDeltaXYDisk = new TH3F("h3GlobalDeltaXYDisk", ";globalDeltaX; globalDeltaY; Disk", 151, -75.5, 75.5, 151, -75.5, 75.5, 10, 0, 10));
 	}
+	return StMaker::Init();
+}
+
+void StFstFastSimMaker::setDisk(const int i, const float rmn, const float rmx) {
+    FstGlobal::RMIN[i] = rmn;
+    FstGlobal::RMAX[i] = rmx;
+}
 
 Int_t StFstFastSimMaker::Make() {
 	LOG_DEBUG << "StFstFastSimMaker::Make" << endm;
@@ -255,31 +261,31 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 			float pp = atan2(yy, xx);
 
 			while (p < 0.0)
-				p += 2.0 * PI;
-			while (p >= 2.0 * PI)
-				p -= 2.0 * PI;
+				p += 2.0 * FstGlobal::PI;
+			while (p >= 2.0 * FstGlobal::PI)
+				p -= 2.0 * FstGlobal::PI;
 			while (pp < 0.0)
-				pp += 2.0 * PI;
-			while (pp >= 2.0 * PI)
-				pp -= 2.0 * PI;
+				pp += 2.0 * FstGlobal::PI;
+			while (pp >= 2.0 * FstGlobal::PI)
+				pp -= 2.0 * FstGlobal::PI;
 
 			LOG_INFO << "rr = " << rr << " pp=" << pp << endm;
-			LOG_INFO << "RMIN = " << RMIN[d - 1] << " RMAX= " << RMAX[d - 1] << endm;
+			LOG_INFO << "RMIN = " << FstGlobal::RMIN[d - 1] << " RMAX= " << FstGlobal::RMAX[d - 1] << endm;
 
 			// Cuts made on rastered value
-			if (rr < RMIN[d - 1] || rr > RMAX[d - 1])
+			if (rr < FstGlobal::RMIN[d - 1] || rr > FstGlobal::RMAX[d - 1])
 				continue;
 			LOG_INFO << "rr = " << rr << endm;
 
 			// Strip numbers on rastered value
-			int ir = int(MAXR * (rr - RMIN[d - 1]) / (RMAX[d - 1] - RMIN[d - 1]));
+			int ir = int(MAXR * (rr - FstGlobal::RMIN[d - 1]) / (FstGlobal::RMAX[d - 1] - FstGlobal::RMIN[d - 1]));
 			// LOG_INFO << "ir1 = " << ir << endm;
 			for (int ii = 0; ii < MAXR; ii++)
-				if (rr > RSegment[ii] && rr <= RSegment[ii + 1])
+				if (rr > FstGlobal::RSegment[ii] && rr <= FstGlobal::RSegment[ii + 1])
 					ir = ii;
 			// LOG_INFO << "ir2 = " << ir << endm;
 			// Phi number
-			int ip = int(MAXPHI * pp / 2.0 / PI);
+			int ip = int(MAXPHI * pp / 2.0 / FstGlobal::PI);
 
 			if (ir >= 8)
 				continue;
@@ -293,7 +299,7 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 			if (_map[d - 1][ir][ip] == 0) // New hit
 			{
 
-				if (verbose)
+				if (FstGlobal::verbose)
 					LOG_INFO << Form("NEW d=%1d xyz=%8.4f %8.4f %8.4f r=%8.4f phi=%8.4f iR=%2d iPhi=%4d dE=%8.4f[MeV] truth=%d",
 							d, x, y, z, r, p, ir, ip, e * 1000.0, t)
 						<< endm;
@@ -306,19 +312,19 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 				//
 				// Set position and position error based on radius-constant bins
 				//
-				float p0 = (ip + 0.5) * 2.0 * PI / float(MAXPHI);
-				float dp = 2.0 * PI / float(MAXPHI) / SQRT12;
+				float p0 = (ip + 0.5) * 2.0 * FstGlobal::PI / float(MAXPHI);
+				float dp = 2.0 * FstGlobal::PI / float(MAXPHI) / FstGlobal::SQRT12;
 				// float r0 = RMIN[d - 1] + (ir + 0.5) * (RMAX[d - 1] - RMIN[d - 1]) / float(MAXR);
 				// float dr = (RMAX[d - 1] - RMIN[d - 1]) / float(MAXR);
 				// ONLY valide for the disk array 456, no difference for each disk
-				float r0 = (RSegment[ir] + RSegment[ir + 1]) * 0.5;
-				float dr = RSegment[ir + 1] - RSegment[ir];
+				float r0 = (FstGlobal::RSegment[ir] + FstGlobal::RSegment[ir + 1]) * 0.5;
+				float dr = FstGlobal::RSegment[ir + 1] - FstGlobal::RSegment[ir];
 				// LOG_INFO << "r0 = " << r00 << endm;
 				float x0 = r0 * cos(p0) + xc;
 				float y0 = r0 * sin(p0) + yc;
 				assert(TMath::Abs(x0) + TMath::Abs(y0) > 0);
-				float dz = 0.03 / SQRT12;
-				float er = dr / SQRT12;
+				float dz = 0.03 / FstGlobal::SQRT12;
+				float er = dr / FstGlobal::SQRT12;
 				fsihit->setPosition(StThreeVectorF(x0, y0, z));
 				// fsihit->setPositionError(StThreeVectorF(er, dp, dz));
 				fsihit->setPositionError(StThreeVectorF(er, dp, dz));
@@ -326,7 +332,7 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 				// StThreeVectorF posErr = fsihit->positionError();
 				// cout << " input : " << er*2 <<" , "<<  dp<< " , " << dz <<endl;
 				// cout << " output : " << posErr.x() <<" , "<< posErr.y() << " , " << posErr.z()  <<endl;
-				fsihit->setErrorMatrix(&Hack1to6(fsihit)[0][0]);
+				fsihit->setErrorMatrix(&FstGlobal::Hack1to6(fsihit)[0][0]);
 
 				fsihit->setCharge(e);
 				fsihit->setIdTruth(t, 100);
@@ -402,7 +408,7 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 		if (rnd_save > mInEff)
 			fsicollection->addHit(hits[i]);
 	}
-	if (verbose)
+	if (FstGlobal::verbose)
 		LOG_INFO << Form("Found %d/%d g2t hits in %d cells, created %d hits with ADC>0", count, nHits, nfsihit, fsicollection->numberOfHits()) << endm;
 		//    fsicollection->print(1);
 		for (int id = 0; id < NDISC; id++) {
@@ -451,7 +457,7 @@ int StFstFastSimMaker::Finish() {
 }
 
 //_____________________________________________________________________________
-StMatrixF Hack1to6(const StHit *stHit) {
+StMatrixF FstGlobal::Hack1to6(const StHit *stHit) {
 	//   X = R*cos(Fi), Y=R*sin(Fi), Z = z
 	//   dX/dR  = (    cos(Fi)  ,sin(Fi),0)
 	//   dX/dFi = (-R*sin(Fi), R*cos(Fi),0)
