@@ -1,0 +1,9 @@
+MACRO testg tag=dev2021 nevents=100 ntrack=10 g3id=5 ptmn=0.2 ptmx=5.0 etamn=2.5 etamx=4.0 
+DETP GEOM [tag]
+GEXE $STAR_LIB/libStarAgmlUtil.so
+GEXE $STAR_LIB/xgeometry.so
+AGUSER/GKINE [ntrack] [g3id] [ptmn] [ptmx] [etamn] [etamx] 
+GFILE o tests/sim.fzd
+TRIG [nevents]
+EXIT
+RETURN
