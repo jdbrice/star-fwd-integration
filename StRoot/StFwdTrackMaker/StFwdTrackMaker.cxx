@@ -590,7 +590,7 @@ void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, shared_ptr<McTrack>
         hitCov3(2,0) = covmat[2][0]; hitCov3(2,1) = covmat[2][1]; hitCov3(2,2) = covmat[2][2];
 
         shared_ptr<McTrack> mct = nullptr;
-        if ( mcTrackMap.count( hit->idTruth() ) ){
+        if ( hit->idTruth() > 0 && mcTrackMap.count( hit->idTruth() ) ){
             LOG_F( INFO, "mcTrackMap[hit->idTruth()]->_pt=%0.2f", mcTrackMap[hit->idTruth()]->_pt );
             mct = mcTrackMap[hit->idTruth()];
         }
@@ -600,7 +600,7 @@ void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, shared_ptr<McTrack>
         hitMap[fhit->getSector()].push_back(fhit);
 
         // Add hit pointer to the track
-        if (mcTrackMap[hit->idTruth()])
+        if ( hit->idTruth() > 0 && mcTrackMap[hit->idTruth()])
             mcTrackMap[hit->idTruth()]->addHit(fhit);
     }
 } //loadStgcHitsFromStEvent
