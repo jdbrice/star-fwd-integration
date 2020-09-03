@@ -21,13 +21,12 @@
 
 #include "TRandom3.h"
 
-constexpr float PI = atan2(0.0, -1.0);
-constexpr float SQRT12 = sqrt(12.0);
-const bool verbose = true;
-const bool merge_hits = true;
+namespace FttGlobal {
+    const bool verbose = true;
+}
 
 StFttFastSimMaker::StFttFastSimMaker(const Char_t *name)
-    : StMaker(name),
+    : StMaker{name},
       hGlobalYX(0),
       hOctantYX(0),
       hOctantWireYX(0),
@@ -152,7 +151,7 @@ float StFttFastSimMaker::diskRotation(int disk) {
 
 void StFttFastSimMaker::sTGCQuadBottomLeft(int disk, int quad, float &bottom, float &left) {
     float hbp = diskOffset(disk);
-    // if ( verbose )   {LOG_INFO << "disk: " << disk << ", offset = " << hbp << endm;}
+    if ( FttGlobal::verbose )   {LOG_INFO << "disk: " << disk << ", offset = " << hbp << endm;}
 
     // quad 0 RECT
     float q0l = hbp - STGC_QUAD_WIDTH;
@@ -261,11 +260,6 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
     // StarRandom &rand = StarRandom::Instance();
     TRandom3 *rand = new TRandom3();
     rand->SetSeed(0);
-
-    // vector<float> pos_x, pos_y, pos_z, rot_x, rot_y;
-    // vector<int> hit_disk
-    float dxstrip = STGC_WIRE_WIDTH;
-    float dystrip = STGC_WIRE_WIDTH;
 
     float dx = STGC_SIGMA_X;
     float dy = STGC_SIGMA_Y;
@@ -412,16 +406,16 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         }
     } // make Ghost Hits
 
-    if (verbose) {
+    if (FttGlobal::verbose) {
         LOG_INFO << "nHits (all FTS) = " << nhits << endm;
     }
-    if (verbose) {
+    if (FttGlobal::verbose) {
         LOG_INFO << "nSTGC = " << nSTGCHits << endm;
     }
-    if (verbose) {
+    if (FttGlobal::verbose) {
         LOG_INFO << "nReal = " << sTGCNRealPoints << endm;
     }
-    if (verbose) {
+    if (FttGlobal::verbose) {
         LOG_INFO << "nGhost = " << sTGCNGhostPoints << endm;
     }
 
