@@ -4,8 +4,8 @@
 TFile *output = 0;
 
 void fast_track(   int n = 100,
-                  const char *inFile = "test/sim.fzd",
-                  std::string configFile = "test/fast_track.xml",
+                  const char *inFile = "tests/sim.fzd",
+                  std::string configFile = "tests/fast_track.xml",
                   const char *geom = "dev2021") {
     TString _geom = geom;
 
@@ -40,7 +40,7 @@ void fast_track(   int n = 100,
     // Create fast simulator and add after event maker
     StFstFastSimMaker *fstFastSim = new StFstFastSimMaker();
 
-    fstFastSim->setPointHits(); // X&Y combined to points 
+    //fstFastSim->setPointHits(); // X&Y combined to points 
     fstFastSim->setPixels(8, 12, 128); // set the digitization options, note these cannot actually be changed without code change.
     fstFastSim->setRaster(0.0); // raster between layers
 
