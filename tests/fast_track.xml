@@ -3,7 +3,6 @@
     <Output url="test.root" />
 	<Geometry>tests/fGeom.root</Geometry>
     
-	<Source ftt="GEANT" />
 	<TrackFitter refitSi="true" mcSeed="true" >
         <Vertex sigmaXY="0.02" sigmaZ="5.0" includeInFit="true" />
         
