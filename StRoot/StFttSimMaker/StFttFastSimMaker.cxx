@@ -322,7 +322,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         ahit->setWafer(quad); // quadrant number
 
         ahit->setIdTruth(hit->track_p, 0);
-        ahit->setDetectorId(kFtsId);
+        ahit->setDetectorId(kFtsId); // TODO: use dedicated ID for Ftt when StEvent is updated
 
         float Ematrix[] = {
             dx * dx, 0.f, 0.f,
@@ -340,7 +340,6 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         }
     }
 
-    // tree_gn = 0;
     if (true == STGC_MAKE_GHOST_HITS) {
         for (auto &hit0 : hits) {
             float hit0_x = hit0->double2();
@@ -400,7 +399,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
                 ahit->setWafer(quad0); // quadrant number
 
                 ahit->setIdTruth(idTruth, qaTruth);
-                ahit->setDetectorId(kFtsId);
+                ahit->setDetectorId(kFtsId); // TODO: use dedicated ID for Ftt when StEvent is updated
 
                 float Ematrix[] = {
                     dx * dx, 0.f, 0.f,

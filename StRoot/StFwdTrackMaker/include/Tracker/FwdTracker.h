@@ -530,15 +530,19 @@ class ForwardTrackMaker {
     }
 
     void doMcTrackFinding(std::map<int, shared_ptr<McTrack>> mcTrackMap) {
-
+        LOG_SCOPE_FUNCTION( INFO );
         qPlotter->startIteration();
 
         // we will build reco tracks from each McTrack
         for (auto kv : mcTrackMap) {
             auto mc_track = kv.second;
 
-            if (mc_track->hits.size() < 4)
+
+
+            if (mc_track->hits.size() < 4){
+                LOG_F( INFO, "Skipping track with %lu < 4", hits.size() );
                 continue;
+            }
 
             std::set<size_t> uvid;
             Seed_t track;
@@ -546,6 +550,7 @@ class ForwardTrackMaker {
             for (auto h : mc_track->hits) {
                 track.push_back(h);
                 uvid.insert(static_cast<FwdHit *>(h)->_vid);
+                LOG_F( INFO, "Track has hit on layer %lu", static_cast<FwdHit *>(h)->_vid )
             }
 
             if (uvid.size() == track.size()) { // only add tracks that have one hit per volume
@@ -555,6 +560,8 @@ class ForwardTrackMaker {
                 MCTruthUtils::domCon(track, qual);
                 recoTrackQuality.push_back(qual);
                 recoTrackIdTruth.push_back(idt);
+            } else {
+                LOG_F( INFO, "Skipping track that doesnt have hits on all layers " );
             }
         }
 
