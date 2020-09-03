@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-    <Output url="test/test.root" />
+    <Output url="test.root" />
 	<Geometry>tests/fGeom.root</Geometry>
-    <TrackFitter refitSi="true" mcSeed="true" >
+    
+	<Source ftt="GEANT" />
+	<TrackFitter refitSi="true" mcSeed="true" >
         <Vertex sigmaXY="0.02" sigmaZ="5.0" includeInFit="true" />
         
         <!-- for MC only -->
