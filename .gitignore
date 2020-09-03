@@ -4,3 +4,7 @@ temp_gccflags.c
 StRoot/StFwdTrackMaker/test.sh
 StRoot/StFwdTrackMaker/macros/
 StRoot/StFwdTrackMaker/README.md
+*.root
+*.fzd
+everything.log
+paw.metafile
