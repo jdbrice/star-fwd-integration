@@ -45,7 +45,7 @@ This package provides simulators for the forward silicon tracker. Currently only
 This package provides simulators for the forward silicon tracker. Currently only the "fast" simulator is included. The fast simulator processes GEANT hits stored in the `g2t_stg_hit` table. The primary function of this package is to digitize the GEANT hits onto the strip layout of the sTGC module geometry. The hits are stored into `StRndHit` objects and the covariance matrix is computed according to the nominal XY resolution of 100 microns. Since the sTGC is essentially a sandwich of two 1D detectors, ghost hits are present at the intersection of lit strips. These ghost hits are computed according to XY strips and added to the hit collection. 
 
 
-### Not about Fast Simulators
+### Note about Fast Simulators
 Since the fast simulator is meant to be the simplest response simulator, they are essentially complete.
 However a few things will change in the future:
 - `StRndHit` will be replaced a dedicated hit object for `fst` type hits. 
@@ -64,6 +64,21 @@ This modified `cons` call just adds include paths via the `EXTRA_CPPPATH` variab
 ```
 /star/data03/pwg/jdb/FWD/cmake/star-install-SL20c-64-Release/sl74_x8664_gcc485/include/
 ```
+
+## Running tests
+### Generate simulation file as input 
+
+### Running the tracking
+
+
+
+## Prebuilt dependencies
+The `GenFit2` and `KiTrack` libraries are built with CMAKE. The prebuilt shared libraries are here:
+```
+/star/data03/pwg/jdb/FWD/cmake-test/star-install-SL20c-32-Release/sl74_gcc485/lib/
+```
+built in 32-bit release mode.
+
 
 
 ## NOTES:
