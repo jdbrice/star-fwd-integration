@@ -577,7 +577,7 @@ void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, shared_ptr<McTrack>
             continue;
         }
 
-        int layer = hit->layer() - 7;
+        int layer = hit->layer() - 9;
 
         const StThreeVectorF pos = hit->position();
         LOG_F(INFO, "sTGC Hit = (%f, %f, %f), idTruth=%d, layer=%d", hit->position().x(), hit->position().y(), hit->position().z(), hit->idTruth(), layer );
