@@ -257,7 +257,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
     const int nhits = hitTable->GetNRows();
     const g2t_fts_hit_st *hit = hitTable->GetTable();
 
-    // TODO resolve StarRandom
+    // TODO resolve StarRandom, not built in DOCKER env
     // StarRandom &rand = StarRandom::Instance();
     TRandom3 *rand = new TRandom3();
     rand->SetSeed(0);
@@ -275,47 +275,6 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
     sTGCNRealPoints = 0;
     sTGCNGhostPoints = 0;
 
-    // St_DataSet* dsGeant = 0;
-    // dsGeant = GetDataSet( "geant" );
-    // St_DataSetIter geantDstI(dsGeant);
-
-    //  St_g2t_track   *g2t_trackTablePointer   =  (St_g2t_track   *) geantDstI("g2t_track");
-    // // cout << "dsGeant : " << (int)(dsGeant) << endm << endl;
-    // // dsGeant = GetDataSet( "event/geant/Event" );
-    // // cout << "dsGeant : " << (int)(dsGeant) << endm << endl;
-
-    // // St_g2t_track* trackTable = static_cast<St_g2t_track*>(GetDataSet("g2t_track"));
-    // //    if (!trackTable) {
-    // //        LOG_INFO << "g2t_track table is empty" << endm;
-    // //        return;
-    // //    }  // if !hitTable
-
-    // //    //loop over tracks
-    //    const int nTracks = g2t_trackTablePointer->GetNRows();
-    //    // g2t_track_st* track = g2t_trackTablePointer->GetTable();
-
-    //    // cout << "g2t_trackTablePointer : " << g2t_trackTablePointer << endm;
-    //    // cout << "nTracks : " << nTracks << endm;
-
-    // tree_n = nhits;
-    // if (tree_n > 9999 ) tree_n = 9999;
-    // for ( int i=0; i<tree_n;  i++ ){
-    // 	hit = (g2t_fts_hit_st *)hitTable->At(i);    if ( 0==hit ) continue;
-    // 	tree_x[i]   = hit->x[0];
-    // 	tree_y[i]   = hit->x[1];
-    // 	tree_z[i]   = hit->x[2];
-    // 	tree_tid[i] = hit->track_p;
-    // 	tree_vid[i] = hit->volume_id;
-
-    // 	// cout << "trackp = " << hit->track_p << endm;
-    // 	g2t_track_st* track = (g2t_track_st *)g2t_trackTablePointer->At( hit->track_p - 1 );
-    // 	tree_pt[i] = track->pt;
-    // }
-
-    // ttree->Fill();
-    // return;
-
-    // tree_rn = 0;
     for (int i = 0; i < nhits; i++) {
         hit = (g2t_fts_hit_st *)hitTable->At(i);
         if (0 == hit)
@@ -327,6 +286,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         int volume_id = hit->volume_id;
         int disk = (volume_id - 1) / 4 + 7; // add 7 to differentiat from FST - dedicated collection will not need 
 
+        LOG_INFO << "sTGC hit: disk = " << disk << endm;
         if (disk <= 6)
             continue;
 
@@ -370,14 +330,6 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
             0.f, 0, 0.f, dz * dz};
         ahit->setErrorMatrix(Ematrix);
         hits.push_back(ahit);
-
-        // Fill the RECO real hits
-        // tree_rx[tree_rn]   = ahit->position().x();
-        // tree_ry[tree_rn]   = ahit->position().y();
-        // tree_rz[tree_rn]   = ahit->position().z();
-        // tree_rtid[tree_rn] = hit->track_p;
-        // tree_rvid[tree_rn] = disk;
-        // tree_rn++;
 
         if (false == STGC_MAKE_GHOST_HITS) {
             // Make this "REAL" hit.

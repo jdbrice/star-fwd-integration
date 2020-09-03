@@ -53,6 +53,7 @@ void fast_track(   int n = 100,
     chain->AddMaker(fstFastSim);
 
     StFwdTrackMaker *gmk = new StFwdTrackMaker();
+    // config file set here overides chain opt
     gmk->SetConfigFile( configFile );
     gmk->GenerateTree( false );
     // chain->AddAfter( "fsiSim", gmk );
