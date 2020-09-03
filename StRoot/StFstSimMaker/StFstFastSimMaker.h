@@ -31,9 +31,7 @@ class StFstFastSimMaker : public StMaker {
 		void setInEfficiency(float ineff = 0.1) { mInEff = ineff; }
 		void setQAFileName(TString filename = 0.1) { mQAFileName = filename; }
 		void setFillHist(const bool hist = false) { mHist = hist; }
-
-		/// Enable / disable specified disk (disks counted from 1)
-		void setActive(const int disk, const bool flag = true) { mEnable[disk - 1] = flag; }
+		
 
 	private:
 		void fillSilicon(StEvent *event);
