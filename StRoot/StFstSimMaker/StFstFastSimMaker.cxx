@@ -133,25 +133,6 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 	const int MAXR = mNumR;
 	const int MAXPHI = mNumPHI * mNumSEC;
 
-	//I guess this should be RSEG[NDISC][MAXR+1] array to give better R segements
-	//For now this is just unform R segments regardless of disc
-	//static const float RMIN[NDISC]={ 2.5, 2.5, 2.5, 2.5}; //hack this need to get right numbers
-	//static const float RMAX[NDISC]={23.2,23.2,23.2,23.2}; //hack this need to get right numbers
-	//    static const float PI=atan2(0.0,-1.0);
-	//    static const float SQRT12=sqrt(12.0);
-	/*
-	   Rmin =     2.56505
-	   Rmax =    11.56986
-	   Rmin =     3.41994
-	   Rmax =    15.42592
-	   Rmin =     4.27484
-	   Rmax =    19.28199
-	   Rmin =     5.13010
-	   Rmax =    23.13971
-	   */
-	// static const float RMIN[] = {   2.56505,   3.41994,   4.27484,  5.13010, 5.985, 6.83988 };
-	// static const float RMAX[] = {  11.56986,  15.42592,  19.28199, 23.13971, 26.99577, 30.84183 };
-	// Raster each disk by 1mm, 60 degree offset for every disk
 	static float X0[] = {0, 0, 0, 0, 0, 0};
 	static float Y0[] = {0, 0, 0, 0, 0, 0};
 	if (mRaster > 0)
@@ -164,8 +145,7 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 	StRnDHit *_map[NDISC][MAXR][MAXPHI];
 	double ***enrsum = (double ***)malloc(NDISC * sizeof(double **));
 	double ***enrmax = (double ***)malloc(NDISC * sizeof(double **));
-	//memset( _map, 0, NDISC*MAXR*MAXPHI*sizeof(StRnDHit*) );
-	//StRnDHit* ***_map = (StRnDHit* ***)malloc(NDISC*sizeof(StRnDHit* **));[NDISC][MAXR][MAXPHI];
+	
 	for (int id = 0; id < NDISC; id++) {
 		enrsum[id] = (double **)malloc(MAXR * sizeof(double *));
 		enrmax[id] = (double **)malloc(MAXR * sizeof(double *));
@@ -195,7 +175,7 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 	const Int_t nHits = hitTable->GetNRows();
 	LOG_DEBUG << "g2t_fsi_hit table has " << nHits << " hits" << endm;
 	const g2t_fts_hit_st *hit = hitTable->GetTable();
-	//    StPtrVecFtsHit hits; //temp storage for hits
+	
 	StPtrVecRnDHit hits;
 
 	// track table
@@ -269,11 +249,11 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 
 			// Strip numbers on rastered value
 			int ir = int(MAXR * (rr - FstGlobal::RMIN[d - 1]) / (FstGlobal::RMAX[d - 1] - FstGlobal::RMIN[d - 1]));
-			// LOG_INFO << "ir1 = " << ir << endm;
+			
 			for (int ii = 0; ii < MAXR; ii++)
 				if (rr > FstGlobal::RSegment[ii] && rr <= FstGlobal::RSegment[ii + 1])
 					ir = ii;
-			// LOG_INFO << "ir2 = " << ir << endm;
+			
 			// Phi number
 			int ip = int(MAXPHI * pp / 2.0 / FstGlobal::PI);
 
@@ -304,24 +284,20 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 				//
 				float p0 = (ip + 0.5) * 2.0 * FstGlobal::PI / float(MAXPHI);
 				float dp = 2.0 * FstGlobal::PI / float(MAXPHI) / FstGlobal::SQRT12;
-				// float r0 = RMIN[d - 1] + (ir + 0.5) * (RMAX[d - 1] - RMIN[d - 1]) / float(MAXR);
-				// float dr = (RMAX[d - 1] - RMIN[d - 1]) / float(MAXR);
-				// ONLY valide for the disk array 456, no difference for each disk
+				
+				// ONLY valid for the disk array 456, no difference for each disk
 				float r0 = (FstGlobal::RSegment[ir] + FstGlobal::RSegment[ir + 1]) * 0.5;
 				float dr = FstGlobal::RSegment[ir + 1] - FstGlobal::RSegment[ir];
-				// LOG_INFO << "r0 = " << r00 << endm;
+				
 				float x0 = r0 * cos(p0) + xc;
 				float y0 = r0 * sin(p0) + yc;
 				assert(TMath::Abs(x0) + TMath::Abs(y0) > 0);
 				float dz = 0.03 / FstGlobal::SQRT12;
 				float er = dr / FstGlobal::SQRT12;
 				fsihit->setPosition(StThreeVectorF(x0, y0, z));
-				// fsihit->setPositionError(StThreeVectorF(er, dp, dz));
+				
 				fsihit->setPositionError(StThreeVectorF(er, dp, dz));
-
-				// StThreeVectorF posErr = fsihit->positionError();
-				// cout << " input : " << er*2 <<" , "<<  dp<< " , " << dz <<endl;
-				// cout << " output : " << posErr.x() <<" , "<< posErr.y() << " , " << posErr.z()  <<endl;
+                // set covariance matrix
 				fsihit->setErrorMatrix(&FstGlobal::Hack1to6(fsihit)[0][0]);
 
 				fsihit->setCharge(e);
@@ -366,9 +342,6 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 			}
 			else // Adding energy to old hit
 			{
-				//     LOG_INFO << Form("ADD d=%1d xyz=%8.4f %8.4f %8.4f r=%8.4f phi=%8.4f iR=%2d iPhi=%4d dE=%8.4f[MeV] truth=%d",
-				//            d,x,y,z,r,p,ir,ip,e*1000.0,t) <<endm;
-
 				fsihit = _map[d - 1][ir][ip];
 				fsihit->setCharge(fsihit->charge() + e);
 
@@ -387,11 +360,7 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 	}
 	int nfsihit = hits.size();
 
-	// TODO: put back to StarRandom global
-	// Loop over hits and digitize
 	for (int i = 0; i < nfsihit; i++) {
-		//hack! do digitization here, or more realistic smearing
-		// TODO : PUT BACK TO SiRand with above
 		double rnd_save = gRandom->Rndm();
 
 		 cout <<"to be saved : " << rnd_save << " , discard prob : "<< mInEff << endl;
@@ -400,7 +369,7 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 	}
 	if (FstGlobal::verbose)
 		LOG_INFO << Form("Found %d/%d g2t hits in %d cells, created %d hits with ADC>0", count, nHits, nfsihit, fsicollection->numberOfHits()) << endm;
-		//    fsicollection->print(1);
+		
 		for (int id = 0; id < NDISC; id++) {
 			for (int ir = 0; ir < MAXR; ir++) {
 				free(enrsum[id][ir]);
@@ -413,10 +382,7 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 	}
 	free(enrsum);
 	free(enrmax);
-	//
-	// delete *_map;
-	// delete enrmax;
-	// delete enrsum;
+
 }
 //
 
