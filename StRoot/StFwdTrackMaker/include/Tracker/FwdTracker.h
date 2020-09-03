@@ -540,7 +540,7 @@ class ForwardTrackMaker {
 
 
             if (mc_track->hits.size() < 4){
-                LOG_F( INFO, "Skipping track with %lu < 4", hits.size() );
+                LOG_F( INFO, "Skipping track with %lu < 4", mc_track->hits.size() );
                 continue;
             }
 
