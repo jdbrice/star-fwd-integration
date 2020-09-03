@@ -29,14 +29,14 @@ class StFttFastSimMaker : public StMaker {
 
     void setDiskRotation(int disk, float degrees) {
 
-        const float deg_to_radians = 3.1415926 / 180.0;
+        const float deg_to_radians = 0.017453292f; // = 3.1415926 / 180.0;
         if (9 == disk)
             sTGC_disk9_theta = degrees * deg_to_radians;
-        if (10 == disk)
+        else if (10 == disk)
             sTGC_disk10_theta = degrees * deg_to_radians;
-        if (11 == disk)
+        else if (11 == disk)
             sTGC_disk11_theta = degrees * deg_to_radians;
-        if (12 == disk)
+        else if (12 == disk)
             sTGC_disk12_theta = degrees * deg_to_radians;
         return;
     }
@@ -73,7 +73,6 @@ class StFttFastSimMaker : public StMaker {
     // 3 2
     void sTGCGlobalToLocal(float x, float y, int disk, int &quad, float &localX, float &localY);
     void sTGCLocalToGlobal(float localX, float localY, int disk, int quad, float &globalX, float &globalY);
-    // long long sTGCMapLocal( float x, float y, int face, float &wireX, float &wireY );
     bool sTGCOverlaps(StRnDHit *hitA, StRnDHit *hitB);
     void sTGCQuadBottomLeft(int disk, int quad, float &bottom, float &left);
     float diskOffset(int disk);

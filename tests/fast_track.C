@@ -57,11 +57,6 @@ void fast_track(   int n = 100,
 
     chain->Init();
 
-    // Output filename setup
-    // TString outname(gSystem->BaseName(inFile));
-    // outname.ReplaceAll(".fzd", "");
-    // output = TFile::Open(Form("%s_output.root", outname.Data()), "recreate");
-
     //_____________________________________________________________________________
     //
     // MAIN EVENT LOOP
@@ -73,6 +68,4 @@ void fast_track(   int n = 100,
             break;
     }
 
-    // output->cd();
-    // output->Close();
 }
