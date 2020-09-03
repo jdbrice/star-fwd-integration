@@ -409,18 +409,6 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
                 ahit->setErrorMatrix(Ematrix);
                 ftscollection->addHit(ahit);
 
-                // we already wrote the real ones before
-                // exclude them from here"
-
-                // if (hit0->idTruth() == hit1->idTruth()) {
-                // tree_gx[tree_gn]   = ahit->position().x();
-                // tree_gy[tree_gn]   = ahit->position().y();
-                // tree_gz[tree_gn]   = ahit->position().z();
-                // tree_gtid1[tree_gn] = hit0->idTruth();
-                // tree_gtid2[tree_gn] = hit1->idTruth();
-                // tree_gvid[tree_gn] = hit0->layer();
-                // tree_gn++;
-                // }
             }
         }
     } // make Ghost Hits
@@ -437,7 +425,5 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
     if (verbose) {
         LOG_INFO << "nGhost = " << sTGCNGhostPoints << endm;
     }
-
-    ttree->Fill();
 
 } // fillThinGap
