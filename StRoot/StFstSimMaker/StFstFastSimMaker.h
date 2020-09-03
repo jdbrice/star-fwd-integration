@@ -22,19 +22,16 @@ class StFstFastSimMaker : public StMaker {
 		int Init();
 		int Finish();
 		virtual const char *GetCVS() const;
-		/// Define segmentation
-		void setPixels(int numR = 8, int numSec = 12, int numPhi = 128) {
-			mNumR = numR;
-			mNumSEC = numSec;
-			mNumPHI = numPhi;
-		}
+		
 		/// Set offset for each disk ( x=R*cos(idisk*60 degrees), y=R*sin(...) )
 		void setRaster(float R = 1.0) { mRaster = R; }
+
 		/// Set min/max active radii for each disk
 		void setDisk(const int i, const float rmn, const float rmx);
 		void setInEfficiency(float ineff = 0.1) { mInEff = ineff; }
 		void setQAFileName(TString filename = 0.1) { mQAFileName = filename; }
 		void setFillHist(const bool hist = false) { mHist = hist; }
+
 		/// Enable / disable specified disk (disks counted from 1)
 		void setActive(const int disk, const bool flag = true) { mEnable[disk - 1] = flag; }
 
@@ -42,7 +39,6 @@ class StFstFastSimMaker : public StMaker {
 		void fillSilicon(StEvent *event);
 		StRnDHitCollection *hitCollection = nullptr;
 
-		bool mEnable[12];
 		int mNumR;
 		int mNumPHI;
 		int mNumSEC;

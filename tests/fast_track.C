@@ -40,10 +40,6 @@ void fast_track(   int n = 100,
     // Create fast simulator and add after event maker
     StFstFastSimMaker *fstFastSim = new StFstFastSimMaker();
 
-    //fstFastSim->setPointHits(); // X&Y combined to points 
-    fstFastSim->setPixels(8, 12, 128); // set the digitization options, note these cannot actually be changed without code change.
-    fstFastSim->setRaster(0.0); // raster between layers
-
     if (SiIneff)
         fstFastSim->setInEfficiency(0.1); // inefficiency of Si 
 

@@ -25,7 +25,6 @@
 
 // lets not polute the global scope
 namespace FstGlobal{
-    // TCanvas *canvas = 0;
     StMatrixF Hack1to6(const StHit *stHit);
 
     constexpr float PI = atan2(0.0, -1.0);
@@ -40,15 +39,13 @@ namespace FstGlobal{
     //NEXT IS only for disk ARRAY 456 with the radius from 5 to 28.
     float RSegment[] = {5., 7.875, 10.75, 13.625, 16.5, 19.375, 22.25, 25.125, 28.};
 
-
-
+    // controls some extra output
     const bool verbose = true;
 }
 
 StFstFastSimMaker::StFstFastSimMaker(const Char_t *name)
 	: StMaker{name},
-    mEnable{true, true, true, true, true, true, true, true, true, true, true, true},
-    mNumR{64},
+    mNumR{8},
     mNumPHI{128},
     mNumSEC{12},
     mRaster{0},
@@ -120,7 +117,6 @@ Int_t StFstFastSimMaker::Make() {
 
 	// Digitize GEANT FTS hits
 	fillSilicon(event);
-	//    event->rndHitCollection()->Print();
 
 	return kStOk;
 }
@@ -133,11 +129,9 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 
 	StRnDHitCollection *fsicollection = event->rndHitCollection();
 
-	/*static const*/ const int NDISC = 6;
-	//static const int MAXR  =128; // JCW: let's give Stv best shot at this possible...
-	//static const int MAXPHI=128*12;
-	/*static const */ const int MAXR = mNumR;
-	/*static const */ const int MAXPHI = mNumPHI * mNumSEC;
+	const int NDISC = 6;
+	const int MAXR = mNumR;
+	const int MAXPHI = mNumPHI * mNumSEC;
 
 	//I guess this should be RSEG[NDISC][MAXR+1] array to give better R segements
 	//For now this is just unform R segments regardless of disc
@@ -226,10 +220,6 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 			int w = (volume_id % 1000) / 10; // wedge id
 			int s = volume_id % 10;          // sensor id
 			LOG_INFO << "d = " << d << ", w = " << w << ", s = " << s << endm;
-
-			//     LOG_INFO << " volume id = " << d << endm;
-			//if (d > 6) continue;   // skip large disks
-			//if (false == mEnable[d - 1]) continue; // disk switched off
 
 			float e = hit->de;
 			int t = hit->track_p;
