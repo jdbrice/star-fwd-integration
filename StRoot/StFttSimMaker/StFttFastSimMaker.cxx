@@ -41,37 +41,9 @@ StFttFastSimMaker::StFttFastSimMaker(const Char_t *name)
       hStripPullsX(0),
       hStripPullsY(0),
       hPointsPullsX(0),
-      hPointsPullsY(0),
-      mPointHits(false) {}
+      hPointsPullsY(0) {}
 
 int StFttFastSimMaker::Init() {
-
-    fTuple = new TFile("SimHitsTuple.root", "RECREATE");
-    ttree = new TTree("hits", "FWD Hits");
-    ttree->Branch("n", &tree_n, "n/I");
-    ttree->Branch("x", &tree_x, "x[n]/F");
-    ttree->Branch("y", &tree_y, "y[n]/F");
-    ttree->Branch("z", &tree_z, "z[n]/F");
-    ttree->Branch("pt", &tree_pt, "pt[n]/F");
-    ttree->Branch("eta", &tree_eta, "eta[n]/F");
-    ttree->Branch("phi", &tree_phi, "phi[n]/F");
-    ttree->Branch("tid", &tree_tid, "tid[n]/I");
-    ttree->Branch("vid", &tree_vid, "vid[n]/I");
-
-    ttree->Branch("rn", &tree_rn, "rn/I");
-    ttree->Branch("rx", &tree_rx, "rx[rn]/F");
-    ttree->Branch("ry", &tree_ry, "ry[rn]/F");
-    ttree->Branch("rz", &tree_rz, "rz[rn]/F");
-    ttree->Branch("rtid", &tree_rtid, "rtid[rn]/I");
-    ttree->Branch("rvid", &tree_rvid, "rvid[rn]/I");
-
-    ttree->Branch("gn", &tree_gn, "gn/I");
-    ttree->Branch("gx", &tree_gx, "gx[gn]/F");
-    ttree->Branch("gy", &tree_gy, "gy[gn]/F");
-    ttree->Branch("gz", &tree_gz, "gz[gn]/F");
-    ttree->Branch("gtid1", &tree_gtid1, "gtid1[gn]/I");
-    ttree->Branch("gtid2", &tree_gtid2, "gtid2[gn]/I");
-    ttree->Branch("gvid", &tree_gvid, "gvid[gn]/I");
     iEvent = 0;
 
     return StMaker::Init();

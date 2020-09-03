@@ -23,11 +23,6 @@ class StFttFastSimMaker : public StMaker {
     Int_t Make();
     int Init();
     int Finish() {
-        if (ttree && fTuple) {
-            fTuple->cd();
-            ttree->Write();
-            fTuple->Close();
-        }
         return kStOk;
     }
     virtual const char *GetCVS() const;
@@ -50,35 +45,6 @@ class StFttFastSimMaker : public StMaker {
     void fillThinGapChambers(StEvent *event);
 
     int iEvent;
-    TFile *fTuple;
-    TTree *ttree;
-    // MC Level hit info on all detectors
-    float tree_x[10000];
-    float tree_y[10000];
-    float tree_z[10000];
-    float tree_pt[10000];
-    float tree_eta[10000];
-    float tree_phi[10000];
-    int tree_vid[10000];
-    int tree_tid[10000];
-    int tree_n;
-
-    // RECO Level without ghosts
-    float tree_rx[10000];
-    float tree_ry[10000];
-    float tree_rz[10000];
-    int tree_rvid[10000];
-    int tree_rtid[10000];
-    int tree_rn;
-
-    // Ghost hits (includes real hits!)
-    float tree_gx[10000];
-    float tree_gy[10000];
-    float tree_gz[10000];
-    int tree_gvid[10000];
-    int tree_gtid1[10000];
-    int tree_gtid2[10000];
-    int tree_gn;
 
     TH2F *hGlobalYX;
     TH2F *hOctantYX;
@@ -99,11 +65,7 @@ class StFttFastSimMaker : public StMaker {
     TH2F *hPointsPullsX;
     TH2F *hPointsPullsY;
 
-    bool mPointHits;
     //table to keep pointer to hit for each disc, r & phi strips
-    // StRnDHit* _map[6][64][1536];
-    //  double enrsum[6][64][1536];
-    // double enrmax[6][64][1536];
 
     // convert x, y to quandrant and local X, Y
     // quadrants are
