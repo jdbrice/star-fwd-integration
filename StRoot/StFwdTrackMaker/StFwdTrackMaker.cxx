@@ -1195,28 +1195,6 @@ void StFwdTrackMaker::FillTrackFitTraits( StTrack *otrack, genfit::Track *itrack
   //
   // TODO: verify first point on primary tracks is the vertex.
 
-
-  // ... fit traits will be evaluated at first point on track for now ...
-
-  // if ( global == otrack->type() ) {
-
-  //   // Obtain the cardinal representation
-  //   genfit::AbsTrackRep* cardinal =  itrack->getCardinalRep();
-
-  //   // We really don't want the overhead in the TVector3 ctor/dtor here
-  //   static TVector3 xhat(1,0,0), yhat(0,1,0), Z(0,0,0);
-
-  //   // Assign the z position
-  //   Z[2] = z_fst[0];
-
-  //   // This is the plane for which we are evaluating the fit
-  //   const auto detectorPlane = genfit::SharedPlanePtr( new genfit::DetPlane(Z, xhat, yhat) );
-
-  //   // Update the state to the given plane
-  //   cardinal->extrapolateToPlane( state, detectorPlane, false, true );
-
-  // }
-
   // Grab the covariance matrix
   const auto &M = state.getCov();
 
@@ -1290,7 +1268,6 @@ void StFwdTrackMaker::FillTrackGeometry( StTrack *otrack, genfit::Track *itrack,
     return;
   }
 
-  //  measuredState.Print();
 
   static StThreeVector<double> momentum;
   static StThreeVector<double> origin;
@@ -1336,10 +1313,6 @@ void StFwdTrackMaker::FillTrackGeometry( StTrack *otrack, genfit::Track *itrack,
 
   // Create the track geometry
   StTrackGeometry *geometry = new StHelixModel (q, psi, curv, dip, origin, momentum, h);
-
-  // TODO: check helix parameters... geometry->helix() should return an StPhysicalHelix...
-  //       double check that we converted everthing correctly.
-
 
   if ( kInnerGeometry == io ) otrack->setGeometry( geometry );
   else                        otrack->setOuterGeometry( geometry );
@@ -1406,7 +1379,7 @@ void StFwdTrackMaker::FillTrackDcaGeometry( StGlobalTrack *otrack, genfit::Track
   static TMatrixDSym cov(5);
 
   //
-  // Should be the 5D state and covariance matrix
+  //  this is the 5D state and covariance matrix
   //  https://arxiv.org/pdf/1902.04405.pdf
   //  state = { q/p, u', v', u, v }, where
   //  q/p is charge over momentum
@@ -1453,29 +1426,10 @@ void StFwdTrackMaker::FillTrackDcaGeometry( StGlobalTrack *otrack, genfit::Track
   //
   double psi  = helix.phase() + h * TMath::Pi() / 2;
   double dip  = helix.dipAngle();
-  double tanl = TMath::Tan(dip); // TODO: check this
+  double tanl = TMath::Tan(dip); 
   short  q    = charge; assert( q == 1 || q == -1 || q == 0 );
 
-  /* These are the seven parameters defined in DCA geometry...
-
-    /// signed impact parameter; Signed in such a way that (in Sti local coords????)
-    ///     x =  -impact*sin(Psi)
-    ///     y =   impact*cos(Psi)
-    Float_t  mImp;
-    ///  Z-coordinate of this track (reference plane)
-    Float_t  mZ;
-    ///  Psi angle of the track
-    Float_t  mPsi;
-    /// signed invert pt [sign = sign(-qB)]
-    Float_t  mPti;
-    /// tangent of the track momentum dip angle
-    Float_t  mTan;
-    /// signed curvature
-    Float_t  mCurv;
-
-  */
-
-  // TODO: is this right?
+  // TODO:verify this and investigate numerical method for errors
   double mImp  = origin.perp();
   double mZ    = origin[2];
   double mPsi  = psi;
@@ -1504,9 +1458,6 @@ void StFwdTrackMaker::FillDetectorInfo( StTrackDetectorInfo *info, genfit::Track
   //   // 5) The position of the first and last hits on the track
 
   int ntotal   = track->getNumPoints(); // vs getNumPointsWithMeasurement() ?
-
-  float zmin =  9E9;
-  float zmax = -9E9;
 
   StThreeVectorF firstPoint(0, 0, 9E9);
   StThreeVectorF lastPoint(0, 0, -9E9);
