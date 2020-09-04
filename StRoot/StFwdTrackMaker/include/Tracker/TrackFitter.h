@@ -653,7 +653,6 @@ class TrackFitter {
         auto cardinalRep = fitTrack.getCardinalRep();
 
         TVector3 p = cardinalRep->getMom(fitTrack.getFittedState(1, cardinalRep));
-        int _q = cardinalRep->getCharge(fitTrack.getFittedState(1, cardinalRep));
 
         return p;
         } catch (genfit::Exception &e) {

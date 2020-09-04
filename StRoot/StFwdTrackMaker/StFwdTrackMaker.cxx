@@ -303,7 +303,6 @@ int StFwdTrackMaker::Init() {
 
         for (string p : paths) {
             string name = xfg.get<string>(p + ":name");
-            bool active = xfg.get<bool>(p + ":active", true);
             mlt_crits[name]; // create the entry
             mlTree->Branch(name.c_str(), &mlt_crits[name]);
             mlTree->Branch((name + "_trackIds").c_str(), &mlt_crit_track_ids[name]);
@@ -315,7 +314,6 @@ int StFwdTrackMaker::Init() {
 
         for (string p : paths) {
             string name = xfg.get<string>(p + ":name");
-            bool active = xfg.get<bool>(p + ":active", true);
             mlt_crits[name]; // create the entry
             mlTree->Branch(name.c_str(), &mlt_crits[name]);
             mlTree->Branch((name + "_trackIds").c_str(), &mlt_crit_track_ids[name]);
@@ -360,17 +358,17 @@ int StFwdTrackMaker::Init() {
 
     // there are 4 stgc stations
     for (int i = 0; i < 4; i++) {
-        histograms[TString::Format("stgc%dHitMap", i).Data()] = new TH2F(TString::Format("stgc%dHitMap", i), TString::Format("STGC Layer %d; x (cm); y(cm)"), 200, -100, 100, 200, -100, 100);
+        histograms[TString::Format("stgc%dHitMap", i).Data()] = new TH2F(TString::Format("stgc%dHitMap", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
 
-        histograms[TString::Format("stgc%dHitMapPrim", i).Data()] = new TH2F(TString::Format("stgc%dHitMapPrim", i), TString::Format("STGC Layer %d; x (cm); y(cm)"), 200, -100, 100, 200, -100, 100);
-        histograms[TString::Format("stgc%dHitMapSec", i).Data()] = new TH2F(TString::Format("stgc%dHitMapSec", i), TString::Format("STGC Layer %d; x (cm); y(cm)"), 200, -100, 100, 200, -100, 100);
+        histograms[TString::Format("stgc%dHitMapPrim", i).Data()] = new TH2F(TString::Format("stgc%dHitMapPrim", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+        histograms[TString::Format("stgc%dHitMapSec", i).Data()] = new TH2F(TString::Format("stgc%dHitMapSec", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
     }
 
     // There are 3 silicon stations
     for (int i = 0; i < 3; i++) {
-        histograms[TString::Format("fsi%dHitMap", i).Data()] = new TH2F(TString::Format("fsi%dHitMap", i), TString::Format("FSI Layer %d; x (cm); y(cm)"), 200, -100, 100, 200, -100, 100);
-        histograms[TString::Format("fsi%dHitMapR", i).Data()] = new TH1F(TString::Format("fsi%dHitMapR", i), TString::Format("FSI Layer %d; r (cm); "), 500, 0, 50);
-        histograms[TString::Format("fsi%dHitMapPhi", i).Data()] = new TH1F(TString::Format("fsi%dHitMapPhi", i), TString::Format("FSI Layer %d; phi; "), 320, 0, TMath::Pi() * 2 + 0.1);
+        histograms[TString::Format("fsi%dHitMap", i).Data()] = new TH2F(TString::Format("fsi%dHitMap", i), TString::Format("FSI Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+        histograms[TString::Format("fsi%dHitMapR", i).Data()] = new TH1F(TString::Format("fsi%dHitMapR", i), TString::Format("FSI Layer %d; r (cm); ", i), 500, 0, 50);
+        histograms[TString::Format("fsi%dHitMapPhi", i).Data()] = new TH1F(TString::Format("fsi%dHitMapPhi", i), TString::Format("FSI Layer %d; phi; ", i), 320, 0, TMath::Pi() * 2 + 0.1);
     }
 
     return kStOK;
@@ -395,7 +393,6 @@ TMatrixDSym makeSiCovMat(TVector3 hit, jdb::XmlConfig &xfg) {
     const float sqrt12 = sqrt(12.);
 
     const float dr = r_size / sqrt12;
-    const float nPhiDivs = 128 * 12; // may change with geom?
     const float dphi = (phi_size) / sqrt12;
 
     // Setup the Transposed and normal Jacobian transform matrix;
@@ -417,17 +414,13 @@ TMatrixDSym makeSiCovMat(TVector3 hit, jdb::XmlConfig &xfg) {
 
     TMatrixD r = T * cmcyl * J;
 
-    const float sigmaX = sqrt(r(0, 0));
-    const float sigmaY = sqrt(r(1, 1));
+    // note: float sigmaX = sqrt(r(0, 0));
+    // note: float sigmaY = sqrt(r(1, 1));
 
     cm(0, 0) = r(0, 0);
     cm(1, 1) = r(1, 1);
     cm(0, 1) = r(0, 1);
     cm(1, 0) = r(1, 0);
-
-    // LOG_F( INFO, "MY COVMAT = ( %f, %f, %f )", cm(0, 0), cm(0, 1), 0 );
-    // LOG_F( INFO, "MY COVMAT = ( %f, %f, %f )", cm(1, 0), cm(1, 1), 0 );
-    // LOG_F( INFO, "MY COVMAT = ( %f, %f, %f )", 0.0, 0.0, 0.0 );
 
     TMatrixDSym tamvoc(3);
     tamvoc( 0, 0 ) = cm(0, 0); tamvoc( 0, 1 ) = cm(0, 1); tamvoc( 0, 2 ) = 0.0;
@@ -1021,8 +1014,6 @@ void StFwdTrackMaker::FillEvent()
 
 void StFwdTrackMaker::FillTrack( StTrack *otrack, genfit::Track *itrack, const Seed_t &iseed, StTrackDetectorInfo *info )
 {
-  const double z_fst[]  = { 93.3, 140.0, 186.6 };
-  const double z_stgc[] = { 280.9, 303.7, 326.6, 349.4 };
 
   // otrack == output track
   // itrack == input track (genfit)

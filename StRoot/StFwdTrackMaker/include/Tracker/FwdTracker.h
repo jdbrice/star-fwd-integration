@@ -886,8 +886,6 @@ class ForwardTrackMaker {
             this->hist[ "nSiHitsFound" ]->Fill( 2, ( si_hits_for_this_track[1] != nullptr ? 1 : 0 ) );
             this->hist[ "nSiHitsFound" ]->Fill( 3, ( si_hits_for_this_track[2] != nullptr ? 1 : 0 ) );
 
-            bool have_all_three = (si_hits_for_this_track[0] != nullptr) && (si_hits_for_this_track[1] != nullptr) && (si_hits_for_this_track[2] != nullptr);
-
             if (nSiHitsFound >= 1) {
                 hist["FitStatus"]->Fill("AttemptReFit", 1);
                 TVector3 p = trackFitter->refitTrackWithSiHits(_globalTracks[i], si_hits_for_this_track);
@@ -904,7 +902,7 @@ class ForwardTrackMaker {
                 fitMoms[i] = p;
             } // we have 3 Si hits to refit with
 
-            hist["FitStatus"]->Fill( TString::Format( "w%luSi", nSiHitsFound ).Data(), 1 );
+            hist["FitStatus"]->Fill( TString::Format( "w%uSi", nSiHitsFound ).Data(), 1 );
 
         }     // loop on the global tracks
     }         // ad Si hits via MC associations
@@ -993,7 +991,7 @@ class ForwardTrackMaker {
                 // fitMoms[ i ] = TVector3( 1000, 1000, 1000 );
             }
 
-            hist["FitStatus"]->Fill( TString::Format( "w%luSi", nSiHitsFound ).Data(), 1 );
+            hist["FitStatus"]->Fill( TString::Format( "w%uSi", nSiHitsFound ).Data(), 1 );
 
         } // loop on globals
     }     // addSiHits
