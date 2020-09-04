@@ -1014,6 +1014,7 @@ void StFwdTrackMaker::FillEvent()
 
 void StFwdTrackMaker::FillTrack( StTrack *otrack, genfit::Track *itrack, const Seed_t &iseed, StTrackDetectorInfo *info )
 {
+  const double z_stgc[] = { 280.9, 303.7, 326.6, 349.4 };
 
   // otrack == output track
   // itrack == input track (genfit)
@@ -1156,9 +1157,6 @@ void StFwdTrackMaker::FillTrackMatches( StTrack *otrack, genfit::Track *itrack )
 
 void StFwdTrackMaker::FillTrackFitTraits( StTrack *otrack, genfit::Track *itrack )
 {
-
-  const double z_fst[]  = { 93.3, 140.0, 186.6 };
-  const double z_stgc[] = { 280.9, 303.7, 326.6, 349.4 };
 
   unsigned short g3id_pid_hypothesis = 6; // TODO: do not hard code this
 
@@ -1425,7 +1423,6 @@ void StFwdTrackMaker::FillTrackDcaGeometry( StGlobalTrack *otrack, genfit::Track
   // Below is one way to convert the parameters to a helix, using the
   // StPhysicalHelix class
 
-  double eta    = momentum.pseudoRapidity();
   double pt     = momentum.perp();
   double ptinv  = (pt != 0) ? 1.0 / pt : std::numeric_limits<double>::max();
 
@@ -1548,21 +1545,18 @@ void StFwdTrackMaker::FillDetectorInfo( StTrackDetectorInfo *info, genfit::Track
       firstPoint.setX(x);     firstPoint.setY(y);     firstPoint.setZ(z);
     }
 
-    int detId = measurement->getDetId();
-    int hitId = measurement->getHitId();
-
     ++count;
 
-    //TODO: Convert (or access) StHit and add to the track detector info
+    //We should also convert (or access) StHit and add to the track detector info
 
   }
 
-  info->setNumberOfPoints( (unsigned char)count, kUnknownId ); // TODO assign sTGC ID
+  info->setNumberOfPoints( (unsigned char)count, kUnknownId ); // TODO: Assign after StEvent is updated
 
 
   assert(count);
 
   info->setFirstPoint( firstPoint );
   info->setLastPoint( lastPoint );
-  info->setNumberOfPoints( ntotal, kUnknownId ); // TODO: Assign
+  info->setNumberOfPoints( ntotal, kUnknownId ); // TODO: Assign after StEvent is updated
 }
