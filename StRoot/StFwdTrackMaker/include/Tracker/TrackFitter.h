@@ -447,10 +447,8 @@ class TrackFitter {
         hitCoords[0] = 0;
         hitCoords[1] = 0;
 
-        int planeId(0);
+        size_t planeId(0);
         int hitId(5);
-
-        bool usingRasteredHits = cfg.get<bool>("SiRasterizer:active", false);
 
         // add the hits to the track
         for (auto h : si_hits) {
@@ -473,7 +471,7 @@ class TrackFitter {
         }
         LOG_F(INFO, "Vertex plus Si, Track now has %lu points", fitTrack.getNumPoints());
 
-        for (int i = first_tp; i < trackPoints.size(); i++) {
+        for (size_t i = first_tp; i < trackPoints.size(); i++) {
             // clone the track points into this track
             fitTrack.insertPoint(new genfit::TrackPoint(trackPoints[i]->getRawMeasurement(), &fitTrack));
         }
@@ -530,7 +528,6 @@ class TrackFitter {
         // LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(5,0), TCM(5,1), TCM(5,2), TCM(5,3), TCM(5,4), TCM(5,5) );
 
         double len = cardinalRep->extrapolateToPlane(tst, detSi, false, true);
-        double len2 = wrongRep->extrapolateToPlane(tst2, detSi, false, true);
 
         LOG_F(INFO, "len to Si %f", len);
         LOG_F(INFO, "Position at Si (%0.2f, %0.2f, %0.2f) +/- ()", tst.getPos().X(), tst.getPos().Y(), tst.getPos().Z());
@@ -583,12 +580,6 @@ class TrackFitter {
 
             this->hist["VertexProjPosZ"]->Fill(tst.getPos().Z());
             this->hist["VertexProjSigmaZ"]->Fill(sqrt(TCM(2, 2)));
-
-            // this->hist[ "SiWrongProjPosXY" ]->Fill( tst2.getPos().X(), tst2.getPos().Y() );
-            // this->hist[ "SiWrongProjSigmaXY" ]->Fill( sqrt(TCM2(0, 0)), sqrt(TCM2(1, 1)) );
-
-            // LOG_F( INFO, "DeltaX Si Proj = %f", fabs( tst.getPos().X() - tst2.getPos().X()) );
-            // this->hist[ "SiDeltaProjPosXY" ]->Fill( fabs( tst.getPos().X() - tst2.getPos().X()), fabs( tst.getPos().Y() - tst2.getPos().Y()) );
         }
     }
 
@@ -599,13 +590,13 @@ class TrackFitter {
         genfit::MeasuredStateOnPlane tst = fitTrack.getFittedState(1);
 
         auto TCM = cardinalRep->get6DCov(tst);
-        // LOG_F( INFO, "Position pre ex (%0.2f, %0.2f, %0.2f) +/- ()", cardinalRep->getPos(tst).X(), cardinalRep->getPos(tst).Y(), cardinalRep->getPos(tst).Z() );
-        // LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(0,0), TCM(0,1), TCM(0,2), TCM(0,3), TCM(0,4), TCM(0,5) );
-        // LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(1,0), TCM(1,1), TCM(1,2), TCM(1,3), TCM(1,4), TCM(1,5) );
-        // LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(2,0), TCM(2,1), TCM(2,2), TCM(2,3), TCM(2,4), TCM(2,5) );
-        // LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(3,0), TCM(3,1), TCM(3,2), TCM(3,3), TCM(3,4), TCM(3,5) );
-        // LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(4,0), TCM(4,1), TCM(4,2), TCM(4,3), TCM(4,4), TCM(4,5) );
-        // LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(5,0), TCM(5,1), TCM(5,2), TCM(5,3), TCM(5,4), TCM(5,5) );
+        LOG_F( INFO, "Position pre ex (%0.2f, %0.2f, %0.2f) +/- ()", cardinalRep->getPos(tst).X(), cardinalRep->getPos(tst).Y(), cardinalRep->getPos(tst).Z() );
+        LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(0,0), TCM(0,1), TCM(0,2), TCM(0,3), TCM(0,4), TCM(0,5) );
+        LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(1,0), TCM(1,1), TCM(1,2), TCM(1,3), TCM(1,4), TCM(1,5) );
+        LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(2,0), TCM(2,1), TCM(2,2), TCM(2,3), TCM(2,4), TCM(2,5) );
+        LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(3,0), TCM(3,1), TCM(3,2), TCM(3,3), TCM(3,4), TCM(3,5) );
+        LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(4,0), TCM(4,1), TCM(4,2), TCM(4,3), TCM(4,4), TCM(4,5) );
+        LOG_F( INFO, "Cov pre ex (%0.4f, %0.4f, %0.4f, %0.4f, %0.4f, %0.4f)", TCM(5,0), TCM(5,1), TCM(5,2), TCM(5,3), TCM(5,4), TCM(5,5) );
 
         double len = cardinalRep->extrapolateToPlane(tst, detSi, false, true);
 
@@ -660,7 +651,6 @@ class TrackFitter {
 
         fitTrack.determineCardinalRep();
         auto cardinalRep = fitTrack.getCardinalRep();
-        auto cardinalStatus = fitTrack.getFitStatus(cardinalRep);
 
         TVector3 p = cardinalRep->getMom(fitTrack.getFittedState(1, cardinalRep));
         int _q = cardinalRep->getCharge(fitTrack.getFittedState(1, cardinalRep));
@@ -840,9 +830,8 @@ class TrackFitter {
                 return p;
             }
 
-            // fStatus = *cardinalStatus; // save the status of last fit
             p = cardinalRep->getMom(fitTrack.getFittedState(1, cardinalRep));
-            _q = cardinalRep->getCharge(fitTrack.getFittedState(1, cardinalRep));
+            // charge can be gotten with : _q = cardinalRep->getCharge(fitTrack.getFittedState(1, cardinalRep));
             _p = p;
 
         } catch (genfit::Exception &e) {
