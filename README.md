@@ -58,7 +58,7 @@ These updates to `StEvent` are being worked on in parallel (the addition of dedi
 The file `build.sh` invokes cons with additional flags to provide header files for the external dependencies of Genfit and KiTrack.
 Build with:
 ```sh
-./build.sh
+./rcf-build.sh
 ```
 This modified `cons` call just adds include paths via the `EXTRA_CPPPATH` variable. Currently the header files for the dependencies are found here:
 ```
