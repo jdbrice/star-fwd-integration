@@ -73,13 +73,18 @@ generate an `fzd` file with:
 starsim -w 0 -b tests/testg.kumac nevents=1000 ntrack=1 etamn=2.5 etamx=4.0 ptmn=0.2 ptmx=1.0
 ```
 
-### Running the tracking
+### Running the forward tracking
+
+The fast_track.C script is a basic example of how to run the two fast simulators and the forward tracking package.
+It can be run with:
 ```
 source rcf-env.sh
 root4star -b -q -l tests/fast_track.C
 ```
-
-
+This will produce a number of output files for evaluating the fast simulators and the tracking.
+Specifically one may look at "test.root" which contains the forward tracking output. 
+The histogram "FitStatus" shows a summary of the fitting steps.
+The histogram "PtRes" shows the pT resolution.
 
 
 ## Prebuilt dependencies
