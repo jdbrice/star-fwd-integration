@@ -195,7 +195,7 @@ class TrackFitter {
     }
 
     void setBinLabels(TH1 *h, vector<string> labels) {
-        for (int i = 1; i < labels.size(); i++) {
+        for (size_t i = 1; i < labels.size(); i++) {
             h->GetXaxis()->SetBinLabel(i, labels[i - 1].c_str());
             h->SetBinContent(i, 0);
         }
@@ -262,63 +262,6 @@ class TrackFitter {
         cm(1, 1) = static_cast<FwdHit*>(h)->_covmat(1, 1);
         cm(0, 1) = static_cast<FwdHit*>(h)->_covmat(0, 1);
         return cm;
-    }
-
-    /* Get the Covariance Matrix for the detector hit point
-	 *
-	 */
-    TMatrixDSym getCovMat(KiTrack::IHit *hit) {
-        // we can calculate the CovMat since we know the det info, but in future we should probably keep this info in the hit itself
-
-        // for sTGC it is simple to compute the cartesian cov mat, do that first.
-
-        // if (hit->getSector() > 2) { // 0-2 are Si, 3-6 are sTGC
-        if ( true ) {
-            // only need the 2x2 since these are "measurements on a plane"
-            TMatrixDSym cm(2);
-            const float sigmaXY = 100 * 1e-4; // 100 microns convert to cm
-            cm(0, 0) = sigmaXY * sigmaXY;
-            cm(1, 1) = sigmaXY * sigmaXY;
-            return cm;
-        } else {
-            // measurements on a plane only need 2x2
-            // for Si geom we need to convert from cyl to car coords
-            TMatrixDSym cm(2);
-            TMatrixD T(2, 2);
-            const float x = hit->getX();
-            const float y = hit->getY();
-            const float R = sqrt(x * x + y * y);
-            const float cosphi = x / R;
-            const float sinphi = y / R;
-            const float sqrt12 = sqrt(12.);
-            const float r_size = 3.0; // cm
-            const float dr = r_size / sqrt12;
-            const float nPhiDivs = 128 * 12; // may change with geom?
-            const float dphi = (TMath::TwoPi() / (nPhiDivs)) / sqrt12;
-
-            T(0, 0) = cosphi;
-            T(0, 1) = -R * sinphi;
-            T(1, 0) = sinphi;
-            T(1, 1) = R * cosphi;
-
-            TMatrixD cmcyl(2, 2);
-            cmcyl(0, 0) = dr * dr;
-            cmcyl(1, 1) = dphi * dphi;
-
-            TMatrixD r = T * cmcyl * T.T();
-            const float sigmaX = sqrt(r(0, 0));
-            const float sigmaY = sqrt(r(1, 1));
-            cm(0, 0) = r(0, 0);
-            cm(1, 1) = r(1, 1);
-            cm(0, 1) = r(0, 1);
-            cm(1, 0) = r(1, 0);
-
-            return cm;
-        }
-
-        // ERROR
-        LOG_F(ERROR, "cannot compute cov matrix for hit");
-        return TMatrixDSym(2);
     }
 
     /* Get the Covariance Matrix for the detector hit point
