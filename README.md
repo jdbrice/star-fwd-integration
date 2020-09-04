@@ -1,6 +1,13 @@
 # star fwd software integration on RCF
 This code provides a snapshot of the star-sw development of the STAR forward tracking and detector simulator software.
 
+## TL;DR.
+1) checkout the github repo : `git clone https://github.com/jdbrice/star-fwd-integration.git`
+2) run `starver dev`, then run `./rcf-build.sh` to build the code
+3) make a simulation dataset : `starsim -w 0 -b tests/testg.kumac nevents=1000 ntrack=1 etamn=2.5 etamx=4.0 ptmn=0.2 ptmx=1.0`
+4) run the forward tracking test with : `source rcf-env.sh` then `root4star -b -q -l tests/fast_track.C`
+5) Optional: check test.root for the debug output of the forward tracking, e.g. "PtRes" histogram shows average pT resolution.
+
 ## What is included?
 ```
 StRoot
