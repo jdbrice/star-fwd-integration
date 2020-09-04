@@ -21,7 +21,6 @@
 #include "StFwdTrackMaker/include/Tracker/HitLoader.h"
 #include "StFwdTrackMaker/include/Tracker/QualityPlotter.h"
 #include "StFwdTrackMaker/include/Tracker/TrackFitter.h"
-#include "StFwdTrackMaker/include/Tracker/VertexFinder.h"
 #include "StFwdTrackMaker/include/Tracker/loguru.h"
 
 #include "Criteria/Criteria.h"
