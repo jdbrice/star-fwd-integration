@@ -40,7 +40,6 @@
 struct MCTruthUtils {
 
     static int domCon(std::vector<KiTrack::IHit *> hits, float &qual) {
-        int numberOfHits = hits.size();
         std::map<int, int> count;
         int total = 0;
 

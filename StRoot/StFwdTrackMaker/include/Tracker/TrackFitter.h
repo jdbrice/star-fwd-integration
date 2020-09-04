@@ -722,8 +722,7 @@ class TrackFitter {
 
         genfit::Track &fitTrack = *fTrack;
 
-        const int detId(0); // detector ID
-        int planeId(0);     // detector plane ID
+        size_t planeId(0);     // detector plane ID
         int hitId(0);       // hit ID
 
         // initialize the hit coords on plane
@@ -853,9 +852,8 @@ class TrackFitter {
 
         if (makeDisplay) {
             displayTracks.push_back(fitTrack);
-            // event.push_back(&fitTrack);
             display->addEvent(&(displayTracks[displayTracks.size() - 1]));
-            // display->setOptions("ABDEFHMPT"); // G show geometry
+            display->setOptions("ABDEFHMPT"); // add G to show geometry
         }
 
         LOG_F(INFO, "*********************FIT SUMMARY*********************");
