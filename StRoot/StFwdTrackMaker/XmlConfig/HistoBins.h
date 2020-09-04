@@ -49,7 +49,7 @@ public:
    {
       if ( nullptr == _x ) return;
 
-      for ( int i = 0; i <= _x->GetNbins(); i++ ) {
+      for ( unsigned i = 0; i <= _x->GetNbins(); i++ ) {
          if ( i < _labels.size() )
             _x->SetBinLabel( i + 1, _labels[i].c_str() );
       }
@@ -611,7 +611,7 @@ public:
    {
       vector< pair<double, double>> subranges;
 
-      for ( int i = 0; i < bins.size(); i++ ) {
+      for ( size_t i = 0; i < bins.size(); i++ ) {
          if ( i + nWide < bins.size() ) {
             subranges.push_back( make_pair( bins[i], bins[i + nWide] ) );
          }
@@ -626,8 +626,8 @@ public:
    {
       vector< pair<double, double>> subranges;
 
-      for ( int nWide = 1; nWide < bins.size() - 1; nWide++ ) {
-         for ( int i = 0; i < bins.size(); i++ ) {
+      for ( size_t nWide = 1; nWide < bins.size() - 1; nWide++ ) {
+         for ( size_t i = 0; i < bins.size(); i++ ) {
             if ( i + nWide < bins.size() ) {
                subranges.push_back( make_pair( bins[i], bins[i + nWide] ) );
             }
