@@ -97,10 +97,11 @@ public:
 
 
     std::vector<std::string> childrenOf( std::string path ){
-        std::vector<std::string> result;
+        using namespace std;
+        vector<string> result;
 
-        auto is_attribute = [&](std::string str){
-            return ( str.find( ":" ) != std::string::npos );
+        auto is_attribute = [&](string str){
+            return ( str.find( ":" ) != string::npos );
         };
 
         for ( auto kv : nodes ){

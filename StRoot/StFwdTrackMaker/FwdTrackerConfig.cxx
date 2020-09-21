@@ -3,7 +3,7 @@
 
 // template specializations
 template <>
-string FwdTrackerConfig::get( string path, string dv) {
+std::string FwdTrackerConfig::get( std::string path, std::string dv) {
    if ( false == exists( path ) )
        return dv;
    return nodes[ path ];
@@ -11,7 +11,7 @@ string FwdTrackerConfig::get( string path, string dv) {
 
 // specialization for bool adds recognition of strings "true" and "false" (lower case)
 template <>
-bool FwdTrackerConfig::get( string path, bool dv ){
+bool FwdTrackerConfig::get( std::string path, bool dv ){
     if ( false == exists( path ) )
         return dv;
 
@@ -26,7 +26,7 @@ bool FwdTrackerConfig::get( string path, bool dv ){
 
 // get as ROOT TString
 template <>
-TString FwdTrackerConfig::get<TString>(string path, TString dv) {
+TString FwdTrackerConfig::get<TString>(std::string path, TString dv) {
     if (false == exists(path))
         return dv;
     TString r(get<std::string>(path));
