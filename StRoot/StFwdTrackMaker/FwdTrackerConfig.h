@@ -9,7 +9,7 @@
 class FwdTrackerConfig {
 protected:
 
-    const std::string valDNE( "<DNE/>" );
+    const std::string valDNE = std::string( "<DNE/>" );
     std::map<std::string, std::string> nodes;
 
     void mapFile(TXMLEngine &xml, XMLNodePointer_t node, Int_t level, string path = "") {
@@ -46,7 +46,7 @@ public:
         TXMLEngine xml;
 
         // Now try to parse xml file
-        XMLDocPointer_t xmldoc = xml.ParseFile(filename);
+        XMLDocPointer_t xmldoc = xml.ParseFile(filename.c_str());
         if (!xmldoc) { // parse failed, TODO inform of error
             return;
         }
