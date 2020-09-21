@@ -233,7 +233,7 @@ class ForwardHitLoader : public IHitLoader {
 };
 
 //________________________________________________________________________
-StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(0), mForwardHitLoader(0), mFieldAdaptor(new StarFieldAdaptor()){
+StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(0), mForwardHitLoader(0), mGenHistograms(false), mGenTree(false), mFieldAdaptor(new StarFieldAdaptor()){
     SetAttr("useFtt",1);                 // Default Ftt on 
     SetAttr("useFst",1);                 // Default Fst on
     SetAttr("config", "config.xml");     // Default configuration file (user may override before Init())
@@ -248,9 +248,12 @@ int StFwdTrackMaker::Finish() {
 
     gDirectory->mkdir("StFwdTrackMaker");
     gDirectory->cd("StFwdTrackMaker");
-    for (auto nh : histograms) {
-        nh.second->SetDirectory(gDirectory);
-        nh.second->Write();
+
+    if ( mGenHistograms ) {
+        for (auto nh : histograms) {
+            nh.second->SetDirectory(gDirectory);
+            nh.second->Write();
+        }
     }
 
     if (mGenTree) {
@@ -274,6 +277,7 @@ int StFwdTrackMaker::Init() {
     std::map<string, string> cmdLineConfig;
     xfg.loadFile(configFile, cmdLineConfig);
 
+    // The main configuration read from XML file
     fwdcfg.load( configFile );
 
     // setup the loguru log file
@@ -322,7 +326,7 @@ int StFwdTrackMaker::Init() {
         }
 
         mlTree->SetAutoFlush(0);
-    }
+    } // gen tree
 
     mSiRasterizer = new SiRasterizer(fwdcfg);
 
@@ -335,43 +339,46 @@ int StFwdTrackMaker::Init() {
     mForwardTracker->setLoader(mForwardHitLoader);
     mForwardTracker->initialize();
 
-    histograms["McEventEta"] = new TH1D("McEventEta", ";MC Track Eta", 1000, -5, 5);
-    histograms["McEventPt"] = new TH1D("McEventPt", ";MC Track Pt (GeV/c)", 1000, 0, 10);
-    histograms["McEventPhi"] = new TH1D("McEventPhi", ";MC Track Phi", 1000, 0, 6.2831852);
+    if ( mGenHistograms ){
+        histograms["McEventEta"] = new TH1D("McEventEta", ";MC Track Eta", 1000, -5, 5);
+        histograms["McEventPt"] = new TH1D("McEventPt", ";MC Track Pt (GeV/c)", 1000, 0, 10);
+        histograms["McEventPhi"] = new TH1D("McEventPhi", ";MC Track Phi", 1000, 0, 6.2831852);
 
-    // these are tracks within 2.5 < eta < 4.0
-    histograms["McEventFwdEta"] = new TH1D("McEventFwdEta", ";MC Track Eta", 1000, -5, 5);
-    histograms["McEventFwdPt"] = new TH1D("McEventFwdPt", ";MC Track Pt (GeV/c)", 1000, 0, 10);
-    histograms["McEventFwdPhi"] = new TH1D("McEventFwdPhi", ";MC Track Phi", 1000, 0, 6.2831852);
+        // these are tracks within 2.5 < eta < 4.0
+        histograms["McEventFwdEta"] = new TH1D("McEventFwdEta", ";MC Track Eta", 1000, -5, 5);
+        histograms["McEventFwdPt"] = new TH1D("McEventFwdPt", ";MC Track Pt (GeV/c)", 1000, 0, 10);
+        histograms["McEventFwdPhi"] = new TH1D("McEventFwdPhi", ";MC Track Phi", 1000, 0, 6.2831852);
 
-    // create histograms
-    histograms["nMcTracks"] = new TH1I("nMcTracks", ";# MC Tracks/Event", 1000, 0, 1000);
-    histograms["nMcTracksFwd"] = new TH1I("nMcTracksFwd", ";# MC Tracks/Event", 1000, 0, 1000);
-    histograms["nMcTracksFwdNoThreshold"] = new TH1I("nMcTracksFwdNoThreshold", ";# MC Tracks/Event", 1000, 0, 1000);
+        // create histograms
+        histograms["nMcTracks"] = new TH1I("nMcTracks", ";# MC Tracks/Event", 1000, 0, 1000);
+        histograms["nMcTracksFwd"] = new TH1I("nMcTracksFwd", ";# MC Tracks/Event", 1000, 0, 1000);
+        histograms["nMcTracksFwdNoThreshold"] = new TH1I("nMcTracksFwdNoThreshold", ";# MC Tracks/Event", 1000, 0, 1000);
 
-    histograms["nHitsSTGC"] = new TH1I("nHitsSTGC", ";# STGC Hits/Event", 1000, 0, 1000);
-    histograms["nHitsFSI"] = new TH1I("nHitsFSI", ";# FSIT Hits/Event", 1000, 0, 1000);
+        histograms["nHitsSTGC"] = new TH1I("nHitsSTGC", ";# STGC Hits/Event", 1000, 0, 1000);
+        histograms["nHitsFSI"] = new TH1I("nHitsFSI", ";# FSIT Hits/Event", 1000, 0, 1000);
 
-    histograms["stgc_volume_id"] = new TH1I("stgc_volume_id", ";stgc_volume_id", 50, 0, 50);
-    histograms["fsi_volume_id"] = new TH1I("fsi_volume_id", ";fsi_volume_id", 50, 0, 50);
+        histograms["stgc_volume_id"] = new TH1I("stgc_volume_id", ";stgc_volume_id", 50, 0, 50);
+        histograms["fsi_volume_id"] = new TH1I("fsi_volume_id", ";fsi_volume_id", 50, 0, 50);
 
-    histograms["fsiHitDeltaR"] = new TH1F("fsiHitDeltaR", "FSI; delta r (cm); ", 500, -5, 5);
-    histograms["fsiHitDeltaPhi"] = new TH1F("fsiHitDeltaPhi", "FSI; delta phi; ", 500, -5, 5);
+        histograms["fsiHitDeltaR"] = new TH1F("fsiHitDeltaR", "FSI; delta r (cm); ", 500, -5, 5);
+        histograms["fsiHitDeltaPhi"] = new TH1F("fsiHitDeltaPhi", "FSI; delta phi; ", 500, -5, 5);
 
-    // there are 4 stgc stations
-    for (int i = 0; i < 4; i++) {
-        histograms[TString::Format("stgc%dHitMap", i).Data()] = new TH2F(TString::Format("stgc%dHitMap", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+        // there are 4 stgc stations
+        for (int i = 0; i < 4; i++) {
+            histograms[TString::Format("stgc%dHitMap", i).Data()] = new TH2F(TString::Format("stgc%dHitMap", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
 
-        histograms[TString::Format("stgc%dHitMapPrim", i).Data()] = new TH2F(TString::Format("stgc%dHitMapPrim", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
-        histograms[TString::Format("stgc%dHitMapSec", i).Data()] = new TH2F(TString::Format("stgc%dHitMapSec", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
-    }
+            histograms[TString::Format("stgc%dHitMapPrim", i).Data()] = new TH2F(TString::Format("stgc%dHitMapPrim", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+            histograms[TString::Format("stgc%dHitMapSec", i).Data()] = new TH2F(TString::Format("stgc%dHitMapSec", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+        }
 
-    // There are 3 silicon stations
-    for (int i = 0; i < 3; i++) {
-        histograms[TString::Format("fsi%dHitMap", i).Data()] = new TH2F(TString::Format("fsi%dHitMap", i), TString::Format("FSI Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
-        histograms[TString::Format("fsi%dHitMapR", i).Data()] = new TH1F(TString::Format("fsi%dHitMapR", i), TString::Format("FSI Layer %d; r (cm); ", i), 500, 0, 50);
-        histograms[TString::Format("fsi%dHitMapPhi", i).Data()] = new TH1F(TString::Format("fsi%dHitMapPhi", i), TString::Format("FSI Layer %d; phi; ", i), 320, 0, TMath::Pi() * 2 + 0.1);
-    }
+        // There are 3 silicon stations
+        for (int i = 0; i < 3; i++) {
+            histograms[TString::Format("fsi%dHitMap", i).Data()] = new TH2F(TString::Format("fsi%dHitMap", i), TString::Format("FSI Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+            histograms[TString::Format("fsi%dHitMapR", i).Data()] = new TH1F(TString::Format("fsi%dHitMapR", i), TString::Format("FSI Layer %d; r (cm); ", i), 500, 0, 50);
+            histograms[TString::Format("fsi%dHitMapPhi", i).Data()] = new TH1F(TString::Format("fsi%dHitMapPhi", i), TString::Format("FSI Layer %d; phi; ", i), 320, 0, TMath::Pi() * 2 + 0.1);
+        }
+
+    } // mGenHistograms
 
     return kStOK;
 };
@@ -476,7 +483,7 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
         LOG_SCOPE_F(INFO, "Loading sTGC hits");
 
         LOG_INFO << "# stg hits= " << nstg << endm;
-        this->histograms["nHitsSTGC"]->Fill(nstg);
+        if ( mGenHistograms ) this->histograms["nHitsSTGC"]->Fill(nstg);
         this->mlt_n = 0;
 
         bool filterGEANT = fwdcfg.get<bool>( "Source:fttFilter", false );
@@ -505,10 +512,13 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
             }
 
             LOG_F(INFO, "STGC Hit: volume_id=%d, plane_id=%d, (%f, %f, %f), track_id=%d", volume_id, plane_id, x, y, z, track_id);
-            this->histograms["stgc_volume_id"]->Fill(volume_id);
+            if ( mGenHistograms )
+                this->histograms["stgc_volume_id"]->Fill(volume_id);
 
             if (plane_id < 4 && plane_id >= 0) {
-                this->histograms[TString::Format("stgc%dHitMap", plane_id).Data()]->Fill(x, y);
+                if ( mGenHistograms ){
+                    this->histograms[TString::Format("stgc%dHitMap", plane_id).Data()]->Fill(x, y);
+                }
             } else {
                 LOG_F(ERROR, "Out of bounds STGC plane_id!");
                 continue;
@@ -518,10 +528,11 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
 
             if ( filterGEANT ) {
                 if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->_eta) > 5.0 ){
-                    this->histograms[TString::Format("stgc%dHitMapSec", plane_id).Data()]->Fill(x, y);
+                    
+                    if ( mGenHistograms ) this->histograms[TString::Format("stgc%dHitMapSec", plane_id).Data()]->Fill(x, y);
                     continue;
                 } else if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->_eta) < 5.0 ){
-                    this->histograms[TString::Format("stgc%dHitMapPrim", plane_id).Data()]->Fill(x, y);
+                    if ( mGenHistograms ) this->histograms[TString::Format("stgc%dHitMapPrim", plane_id).Data()]->Fill(x, y);
                 }
             }
 
@@ -684,7 +695,7 @@ void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &
     // reuse this to store cov mat
     TMatrixDSym hitCov3(3);
     
-    this->histograms["nHitsFSI"]->Fill(nfsi);
+    if ( mGenHistograms ) this->histograms["nHitsFSI"]->Fill(nfsi);
     LOG_INFO << "# fsi hits = " << nfsi << endm;
 
     for (int i = 0; i < nfsi; i++) {
@@ -707,19 +718,25 @@ void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &
 
         if (mSiRasterizer->active()) {
             TVector3 rastered = mSiRasterizer->raster(TVector3(git->x[0], git->x[1], git->x[2]));
-            this->histograms["fsiHitDeltaR"]->Fill(sqrt(x * x + y * y) - rastered.Perp());
-            this->histograms["fsiHitDeltaPhi"]->Fill(atan2(y, x) - rastered.Phi());
+            
+            if ( mGenHistograms ) {
+                this->histograms["fsiHitDeltaR"]->Fill(sqrt(x * x + y * y) - rastered.Perp());
+                this->histograms["fsiHitDeltaPhi"]->Fill(atan2(y, x) - rastered.Phi());
+            }
             x = rastered.X();
             y = rastered.Y();
         }
 
         LOG_F(INFO, "FSI Hit: volume_id=%d, plane_id=%d, (%f, %f, %f), track_id=%d", volume_id, plane_id, x, y, z, track_id);
-        this->histograms["fsi_volume_id"]->Fill(d);
+        if ( mGenHistograms ) this->histograms["fsi_volume_id"]->Fill(d);
 
         if (plane_id < 3 && plane_id >= 0) {
-            this->histograms[TString::Format("fsi%dHitMap", plane_id).Data()]->Fill(x, y);
-            this->histograms[TString::Format("fsi%dHitMapR", plane_id).Data()]->Fill(sqrt(x * x + y * y));
-            this->histograms[TString::Format("fsi%dHitMapPhi", plane_id).Data()]->Fill(atan2(y, x) + TMath::Pi());
+
+            if ( mGenHistograms ) {
+                this->histograms[TString::Format("fsi%dHitMap", plane_id).Data()]->Fill(x, y);
+                this->histograms[TString::Format("fsi%dHitMapR", plane_id).Data()]->Fill(sqrt(x * x + y * y));
+                this->histograms[TString::Format("fsi%dHitMapPhi", plane_id).Data()]->Fill(atan2(y, x) + TMath::Pi());
+            }
         } else {
             LOG_F(ERROR, "Out of bounds FSI plane_id!");
             continue;
@@ -743,7 +760,7 @@ void StFwdTrackMaker::loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcT
 
     mlt_nt = 1;
     LOG_INFO << "# mc tracks = " << g2t_track->GetNRows() << endm;
-    this->histograms["nMcTracks"]->Fill(g2t_track->GetNRows());
+    if ( mGenHistograms ) this->histograms["nMcTracks"]->Fill(g2t_track->GetNRows());
 
     if (g2t_track) {
         LOG_SCOPE_F(INFO, "MC Tracks");
@@ -822,8 +839,10 @@ int StFwdTrackMaker::Make() {
             }
         }
 
-        histograms[ "nMcTracksFwd" ]->Fill( nForwardTracks );
-        histograms[ "nMcTracksFwdNoThreshold" ]->Fill( nForwardTracksNoThreshold );
+        if ( mGenHistograms ) {
+            histograms[ "nMcTracksFwd" ]->Fill( nForwardTracks );
+            histograms[ "nMcTracksFwdNoThreshold" ]->Fill( nForwardTracksNoThreshold );
+        }
 
         LOG_F( INFO, "There are %lu tracks in forward region", nForwardTracks );
         size_t maxForwardTracks = fwdcfg.get<size_t>( "McEvent.Mult:max", 10000 );

@@ -57,7 +57,8 @@ class StFwdTrackMaker : public StMaker {
     void SetConfigFile(std::string n) {
         mConfigFile = n;
     }
-    void GenerateTree(bool _genTree) { mGenTree = _genTree; }
+    void SetGenerateHistograms( bool _genHisto ){ mGenHistograms = _genHisto; }
+    void SetGenerateTree(bool _genTree) { mGenTree = _genTree; }
 
   private:
   protected:
@@ -70,6 +71,7 @@ class StFwdTrackMaker : public StMaker {
 
     typedef std::vector<KiTrack::IHit *> Seed_t;
 
+    bool mGenHistograms;
     std::map<std::string, TH1 *> histograms;
     TFile *mlFile;
     TTree *mlTree;
