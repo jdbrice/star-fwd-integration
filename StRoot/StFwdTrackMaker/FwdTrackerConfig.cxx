@@ -1,4 +1,5 @@
 #include "FwdTrackerConfig.h"
+#include "TString.h"
 
 // template specializations
 template <>
@@ -12,7 +13,7 @@ string FwdTrackerConfig::get( string path, string dv) {
 template <>
 bool FwdTrackerConfig::get( string path, bool dv ){
     if ( false == exists( path ) )
-        return false;
+        return dv;
 
     if ( nodes[path] == "false" )
        return false;
@@ -25,7 +26,7 @@ bool FwdTrackerConfig::get( string path, bool dv ){
 
 // get as ROOT TString
 template <>
-TString FwdTrackerConfig::get<TString>(string path, TString dv) const {
+TString FwdTrackerConfig::get<TString>(string path, TString dv) {
     if (false == exists(path))
         return dv;
     TString r(get<std::string>(path));
