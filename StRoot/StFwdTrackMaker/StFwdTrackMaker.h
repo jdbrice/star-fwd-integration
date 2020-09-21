@@ -8,6 +8,8 @@
 #include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
 #endif
 
+#include "FwdTrackerConfig.h"
+
 namespace KiTrack {
 class IHit;
 };
@@ -59,6 +61,7 @@ class StFwdTrackMaker : public StMaker {
 
   private:
   protected:
+    FwdTrackerConfig fwdcfg;
     ForwardTracker *mForwardTracker;
     ForwardHitLoader *mForwardHitLoader;
     StarFieldAdaptor *mFieldAdaptor;
