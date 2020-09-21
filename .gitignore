@@ -8,3 +8,11 @@ StRoot/StFwdTrackMaker/README.md
 *.fzd
 everything.log
 paw.metafile
+StRoot/StFwdTrackMaker/FwdTrackerConfig_cxx_ACLiC_dict_rdict.pcm
+StRoot/StFwdTrackMaker/FwdTrackerConfig_cxx.d
+StRoot/StFwdTrackMaker/FwdTrackerConfig_cxx.so
+tests/xmlreadfile_C_ACLiC_dict_rdict.pcm
+tests/xmlreadfile_C.d
+tests/xmlreadfile_C.so
+tests/xmlreadfile.C
+.vscode/settings.json

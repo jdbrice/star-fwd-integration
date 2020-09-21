@@ -15,9 +15,9 @@ protected:
 
     const std::string valDNE = std::string( "<DNE/>" );
     std::map<std::string, std::string> nodes;
-    stringstream sstr; // reused for string to numeric conversion
+    std::stringstream sstr; // reused for string to numeric conversion
 
-    void mapFile(TXMLEngine &xml, XMLNodePointer_t node, Int_t level, string path = "") {
+    void mapFile(TXMLEngine &xml, XMLNodePointer_t node, Int_t level, std::string path = "") {
         using namespace std;
         // add the path delimeter above top level
         if ( "" != path) path += ".";
