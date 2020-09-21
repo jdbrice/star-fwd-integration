@@ -786,6 +786,8 @@ int StFwdTrackMaker::Make() {
     jdb::XmlConfig _xmlconfig;
     _xmlconfig.loadFile(mConfigFile);
 
+    fwdcfg.load( mConfigFile );
+
     long long itStart = loguru::now_ns();
     
     std::map<int, shared_ptr<McTrack>> &mcTrackMap = mForwardHitLoader->_mctracks;
