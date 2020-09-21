@@ -142,9 +142,9 @@ int TheTruth ( const Seed_t& seed, int &qa ) {
 class SiRasterizer {
   public:
     SiRasterizer() {}
-    SiRasterizer(jdb::XmlConfig &_cfg) { setup(_cfg); }
+    SiRasterizer(FwdTrackerConfig &_cfg) { setup(_cfg); }
     ~SiRasterizer() {}
-    void setup(jdb::XmlConfig &_cfg) {
+    void setup(FwdTrackerConfig &_cfg) {
         cfg = _cfg;
 
         raster_r = cfg.get<double>("SiRasterizer:r", 3.0);
@@ -170,7 +170,7 @@ class SiRasterizer {
         return p;
     }
 
-    jdb::XmlConfig cfg;
+    FwdTrackerConfig cfg;
     double raster_r, raster_phi;
 };
 
@@ -274,6 +274,8 @@ int StFwdTrackMaker::Init() {
     std::map<string, string> cmdLineConfig;
     xfg.loadFile(configFile, cmdLineConfig);
 
+    fwdcfg.load( configFile );
+
     // setup the loguru log file
     std::string loggerFile = SAttr("logfile"); // user can changed before Init
     loguru::add_file( loggerFile.c_str(), loguru::Truncate, loguru::Verbosity_2);
@@ -299,10 +301,10 @@ int StFwdTrackMaker::Init() {
         mlTree->Branch("tid", &mlt_tid, "tid/I");
 
         std::string path = "TrackFinder.Iteration[0].SegmentBuilder";
-        std::vector<string> paths = xfg.childrenOf(path);
+        std::vector<string> paths = fwdcfg.childrenOf(path);
 
         for (string p : paths) {
-            string name = xfg.get<string>(p + ":name");
+            string name = fwdcfg.get<string>(p + ":name");
             mlt_crits[name]; // create the entry
             mlTree->Branch(name.c_str(), &mlt_crits[name]);
             mlTree->Branch((name + "_trackIds").c_str(), &mlt_crit_track_ids[name]);
@@ -310,10 +312,10 @@ int StFwdTrackMaker::Init() {
 
         // Three hit criteria
         path = "TrackFinder.Iteration[0].ThreeHitSegments";
-        paths = xfg.childrenOf(path);
+        paths = fwdcfg.childrenOf(path);
 
         for (string p : paths) {
-            string name = xfg.get<string>(p + ":name");
+            string name = fwdcfg.get<string>(p + ":name");
             mlt_crits[name]; // create the entry
             mlTree->Branch(name.c_str(), &mlt_crits[name]);
             mlTree->Branch((name + "_trackIds").c_str(), &mlt_crit_track_ids[name]);
@@ -322,7 +324,7 @@ int StFwdTrackMaker::Init() {
         mlTree->SetAutoFlush(0);
     }
 
-    mSiRasterizer = new SiRasterizer(xfg);
+    mSiRasterizer = new SiRasterizer(fwdcfg);
 
     mForwardTracker = new ForwardTracker();
     mForwardTracker->setConfig(xfg);
@@ -374,7 +376,7 @@ int StFwdTrackMaker::Init() {
     return kStOK;
 };
 
-TMatrixDSym makeSiCovMat(TVector3 hit, jdb::XmlConfig &xfg) {
+TMatrixDSym makeSiCovMat(TVector3 hit, FwdTrackerConfig &xfg) {
     // we can calculate the CovMat since we know the det info, but in future we should probably keep this info in the hit itself
 
     float r_size = xfg.get<float>("SiRasterizer:r", 3.0);
@@ -441,7 +443,7 @@ void StFwdTrackMaker::loadStgcHits( std::map<int, shared_ptr<McTrack>> &mcTrackM
         rndCollection = event->rndHitCollection();
     }
 
-    string fttFromGEANT = xfg.get<string>( "Source:ftt", "" );
+    string fttFromGEANT = fwdcfg.get<string>( "Source:ftt", "" );
     LOG_F( INFO, "load sTGC from StEvent: %d", (int)( rndCollection != nullptr ) );
     if ( rndCollection == nullptr || "GEANT" == fttFromGEANT ){
         LOG_F( INFO, "Loading sTGC hits directly from GEANT hits" );
@@ -477,7 +479,7 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
         this->histograms["nHitsSTGC"]->Fill(nstg);
         this->mlt_n = 0;
 
-        bool filterGEANT = xfg.get<bool>( "Source:fttFilter", false );
+        bool filterGEANT = fwdcfg.get<bool>( "Source:fttFilter", false );
         LOG_F( INFO, "Filter FTT GEANT hits? = %d", (int)filterGEANT );
         for (int i = 0; i < nstg; i++) {
 
@@ -604,8 +606,8 @@ void StFwdTrackMaker::loadFstHits( std::map<int, shared_ptr<McTrack>> &mcTrackMa
     if (nullptr != event) {
         rndCollection = event->rndHitCollection();
     }
-    bool siRasterizer = xfg.get<bool>( "SiRasterizer:active", false );
-    LOG_F( INFO, "siRasterizer active=%d, r=%f", (int)(siRasterizer), xfg.get<float>( "SiRasterizer:r") );
+    bool siRasterizer = fwdcfg.get<bool>( "SiRasterizer:active", false );
+    LOG_F( INFO, "siRasterizer active=%d, r=%f", (int)(siRasterizer), fwdcfg.get<float>( "SiRasterizer:r") );
     if ( siRasterizer || rndCollection == nullptr ){
         LOG_F( INFO, "Loading hits from GEANT with SiRasterizer" );
         loadFstHitsFromGEANT( mcTrackMap, hitMap, count );
@@ -723,7 +725,7 @@ void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &
             continue;
         }
 
-        hitCov3 = makeSiCovMat( TVector3( x, y, z ), xfg );
+        hitCov3 = makeSiCovMat( TVector3( x, y, z ), fwdcfg );
         FwdHit *hit = new FwdHit(count++, x, y, z, d, track_id, hitCov3, mcTrackMap[track_id]);
 
         // Add the hit to the hit map
@@ -824,7 +826,7 @@ int StFwdTrackMaker::Make() {
         histograms[ "nMcTracksFwdNoThreshold" ]->Fill( nForwardTracksNoThreshold );
 
         LOG_F( INFO, "There are %lu tracks in forward region", nForwardTracks );
-        size_t maxForwardTracks = xfg.get<size_t>( "McEvent.Mult:max", 10000 );
+        size_t maxForwardTracks = fwdcfg.get<size_t>( "McEvent.Mult:max", 10000 );
         if ( nForwardTracks > maxForwardTracks ){
             LOG_F( INFO, "Skipping event with more than %lu forward tracks", maxForwardTracks );
             return kStOk;
