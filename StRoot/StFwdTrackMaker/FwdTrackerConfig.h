@@ -30,11 +30,11 @@ protected:
         const string node_name = xml.GetNodeName(node);
         const string node_content = xml.GetNodeContent(node) != nullptr ? xml.GetNodeContent(node) : valDNE;
 
-        cerr << "[ " << path << " ] count = " << nodes.count( path ) << endl;
         if ( nodes.count( path ) == 0 ) {
             nodes[ path ] = node_content;
         } else {
-            cerr << "ERROR: path clash at : " << path << endl;
+            path += TString::Format( "[%d]", nodes.count( path ) ).Data();
+            nodes[ path ] = node_content;
         }
 
         // loop through attributes of this node
@@ -92,14 +92,11 @@ public:
         return rv;
     }
 
-    // template <>
-    // bool get( string path, bool dv = false );
-
-
     std::vector<std::string> childrenOf( std::string path ){
         using namespace std;
         vector<string> result;
 
+        // test a path to see if it is an attribute
         auto is_attribute = [&](string str){
             return ( str.find( ":" ) != string::npos );
         };
@@ -116,7 +113,8 @@ public:
             if ( parent == path && false == is_attribute( kv.first )){
                 result.push_back( kv.first );
             }
-        }
+        } // loop over all nodes
+
         return result;
     }
 
