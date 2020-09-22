@@ -131,7 +131,7 @@ public:
     }
 
     template <typename T>
-    vector<T> getVector( std::string path, vector<T> dv ){
+    std::vector<T> getVector( std::string path, std::vector<T> dv ){
         if ( false == exists( path ) )
             return dv;
         
@@ -139,7 +139,7 @@ public:
         std::string val = this->nodes[ path ];
         // remove whitespace
         val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
-        vector<string> elems;
+        std::vector<string> elems;
 
         // split the string by commas
         auto split_string = [&]() {
@@ -151,7 +151,7 @@ public:
         }();
 
         // for each element, convert to type T and push into vector
-        vector<T> result;
+        std::vector<T> result;
         for ( auto sv : elems ){
             result.push_back( convert<T>( sv ) );
         }
