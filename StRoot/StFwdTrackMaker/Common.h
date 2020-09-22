@@ -2,6 +2,7 @@
 #define FWD_TRACK_MAKER_COMMON_H
 
 class FwdTrackerUtils {
+    public:
     static void labelAxis( TAxis *_x, vector<string> _labels )
     {
        if ( nullptr == _x ) return;
