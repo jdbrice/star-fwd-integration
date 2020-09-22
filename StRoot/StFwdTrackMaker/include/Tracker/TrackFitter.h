@@ -111,7 +111,7 @@ class TrackFitter {
         FwdGeomUtils fwdGeoUtils( gMan );
 
         LOG_F( INFO, "Setting up Si planes" );
-        vector<float> SI_DET_Z = cfg.getFloatVector("TrackFitter.Geometry:si");
+        vector<float> SI_DET_Z = cfg.getVector<float>("TrackFitter.Geometry:si", {140.286011, 154.286011, 168.286011 });
         if (SI_DET_Z.size() < 3) {
         
             // try to read from GEOMETRY
@@ -121,7 +121,8 @@ class TrackFitter {
                 SI_DET_Z.push_back( fwdGeoUtils.siZ( 1 ) );
                 SI_DET_Z.push_back( fwdGeoUtils.siZ( 2 ) );
                 LOG_F( INFO, "From GEOMETRY : Si Z = %0.2f, %0.2f, %0.2f", SI_DET_Z[0], SI_DET_Z[1], SI_DET_Z[2] );
-            } else {
+            } 
+            else { // TODO remove block now unused
                 LOG_F(WARNING, "Using Default Si z locations - that means FTSM NOT in Geometry");
                 SI_DET_Z.push_back(140.286011);
                 SI_DET_Z.push_back(154.286011);
@@ -138,7 +139,7 @@ class TrackFitter {
         useSi = false;
 
         // Now load STGC
-        vector<float> DET_Z = cfg.getFloatVector("TrackFitter.Geometry:stgc");
+        vector<float> DET_Z = cfg.getVector<float>("TrackFitter.Geometry:stgc", {280.904449,303.695099,326.597626,349.400482});
         if (DET_Z.size() < 4) {
             // try to read from GEOMETRY
             if ( fwdGeoUtils.stgcZ( 0 ) > 1.0 ) { // returns 0.0 on failure
@@ -151,7 +152,7 @@ class TrackFitter {
                 DET_Z.push_back( fwdGeoUtils.stgcZ( 2 ) + z_delta );
                 DET_Z.push_back( fwdGeoUtils.stgcZ( 3 ) + z_delta );
                 LOG_F( INFO, "From GEOMETRY : sTGC Z = %0.2f, %0.2f, %0.2f, %0.2f", DET_Z[0], DET_Z[1], DET_Z[2], DET_Z[3] );
-            } else {
+            } else { // TODO remove unused block
                 DET_Z.push_back(280.904449);
                 DET_Z.push_back(303.695099);
                 DET_Z.push_back(326.597626);
@@ -170,7 +171,7 @@ class TrackFitter {
         // get cfg values
         vertexSigmaXY = cfg.get<float>("TrackFitter.Vertex:sigmaXY", 1);
         vertexSigmaZ = cfg.get<float>("TrackFitter.Vertex:sigmaZ", 30);
-        vertexPos = cfg.getFloatVector("TrackFitter.Vertex:pos", 0, 3);
+        vertexPos = cfg.getVector<float>("TrackFitter.Vertex:pos", {0.0f,0.0f,0.0f});
         includeVertexInFit = cfg.get<bool>("TrackFitter.Vertex:includeInFit", false);
 
         LOG_F(INFO, "vertex pos = (%f, %f, %f)", vertexPos[0], vertexPos[1], vertexPos[2]);
