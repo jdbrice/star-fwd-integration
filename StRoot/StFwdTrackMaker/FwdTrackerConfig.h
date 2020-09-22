@@ -18,7 +18,7 @@ protected:
     static const std::string valDNE;// = std::string( "<DNE/>" );
     static const std::string pathDelim;
     static const std::string attrDelim;
-    
+
     bool errorParsing = false;
     std::map<std::string, std::string> nodes;
     std::stringstream sstr; // reused for string to numeric conversion
@@ -107,19 +107,56 @@ public:
         return true;
     }
 
+    // generic conversion to type T from std::string
+    // override this for special conversions
+    template <typename T>
+    T convert( std::string s ){
+        std::cout << "convert : " <<  s << " to numeric" << endl;
+        T rv = 0;
+        sstr.str("");
+        sstr << s;
+        sstr >> rv;
+        return rv;
+    }
+
 
     // template function for getting any type that can be converted from string via stringstream
     template <typename T>
-    T get( std::string path, T dv = 0 )  {
-        using namespace std;
-        FwdTrackerConfig::canonize( path );
-        sstr.str("");
-        T rv;
+    T get( std::string path, T dv )  {
+        // return default value if path DNE
         if ( false == exists( path ) )
             return dv;
-        sstr << this->nodes[ path ];
-        sstr >> rv;
-        return rv;
+        FwdTrackerConfig::canonize( path );
+        // convrt from string to type T and return
+        return convert<T>( this->nodes[ path ] );
+    }
+
+    template <typename T>
+    vector<T> getVector( std::string path, vector<T> dv ){
+        if ( false == exists( path ) )
+            return dv;
+        
+        FwdTrackerConfig::canonize( path );
+        std::string val = this->nodes[ path ];
+        // remove whitespace
+        val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
+        vector<string> elems;
+
+        // split the string by commas
+        auto split_string = [&]() {
+            std::stringstream  ss(val);
+            std::string str;
+            while (std::getline(ss, str, ',')) {
+                elems.push_back(str);
+            }
+        }();
+
+        // for each element, convert to type T and push into vector
+        vector<T> result;
+        for ( auto sv : elems ){
+            result.push_back( convert<T>( sv ) );
+        }
+        return result;
     }
 
     std::vector<std::string> childrenOf( std::string path ){

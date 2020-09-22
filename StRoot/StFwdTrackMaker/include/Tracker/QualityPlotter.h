@@ -7,6 +7,7 @@
 #include "TH1.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TH3F.h"
 #include "TVector3.h"
 
 #include "GenFit/FitStatus.h"

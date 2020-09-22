@@ -6,35 +6,36 @@ const std::string FwdTrackerConfig::attrDelim = std::string( ":" );
 
 // template specializations
 template <>
-std::string FwdTrackerConfig::get( std::string path, std::string dv) {
+std::string FwdTrackerConfig::get( std::string path, std::string dv )  {
+    // return default value if path DNE
+    if ( false == exists( path ) )
+        return dv;
     FwdTrackerConfig::canonize( path );
-   if ( false == exists( path ) )
-       return dv;
-   return this->nodes[ path ];
+    // directly return string
+    return ( this->nodes[ path ] );
+}
+
+template <>
+std::string FwdTrackerConfig::convert( std::string str ) {
+   return str;
 }
 
 // specialization for bool adds recognition of strings "true" and "false" (lower case)
 template <>
-bool FwdTrackerConfig::get( std::string path, bool dv ){
-    FwdTrackerConfig::canonize( path );
-    if ( false == exists( path ) )
-        return dv;
+bool FwdTrackerConfig::convert( std::string str ){
 
-    if ( this->nodes[path] == "false" )
+    if ( str == "false" )
        return false;
 
-    if ( this->nodes[path] == "true" )
+    if ( str == "true" )
        return true;
-
-    return static_cast<bool>(get<int>( path, 0 ));
+    // fall back to an int cast
+    return static_cast<bool>(convert<int>( str ));
 }
 
 // get as ROOT TString
 template <>
-TString FwdTrackerConfig::get<TString>(std::string path, TString dv) {
-    FwdTrackerConfig::canonize( path );
-    if (false == exists(path))
-        return dv;
-    TString r(get<std::string>(path));
+TString FwdTrackerConfig::convert(std::string str) {
+    TString r(str);
     return r;
 }
