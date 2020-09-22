@@ -99,32 +99,6 @@ class ForwardTrackMaker {
             doTrackFitting = false;
     }
 
-    void init() {
-        LOG_SCOPE_FUNCTION(INFO);
-
-        LOG_F(INFO, "CONFIG FILE: %s", configFile.c_str());
-        cfg.loadFile(configFile, cmdLineConfig);
-        string datatype = cfg.get<string>("Input:type", "sim_mc");
-        LOG_F(INFO, "Data type: %s", datatype.c_str());
-
-        if (nullptr != hitLoader)
-            nEvents = hitLoader->nEvents();
-
-        // Initialize the Tracker System of measure
-        gFwdSystem = new FwdSystem(7);
-
-        gRandom = new TRandom3();
-        gRandom->SetSeed(1);
-
-        // make our quality plotter
-        qPlotter = new QualityPlotter(cfg);
-        qPlotter->makeHistograms(cfg.get<size_t>("TrackFinder:nIterations", 1));
-
-        trackFitter = new TrackFitter(cfg);
-        trackFitter->setup(cfg.get<bool>("TrackFitter:display"));
-
-        setupHistograms();
-    }
 
     void writeEventHistograms() {
         LOG_SCOPE_FUNCTION(INFO);
