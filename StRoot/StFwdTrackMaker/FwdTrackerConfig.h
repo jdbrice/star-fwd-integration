@@ -156,12 +156,13 @@ public:
         std::vector<std::string> elems;
 
         // split the string by commas
-        void split_string = [&]() {
+        auto split_string = [&]() {
             std::stringstream  ss(val);
             std::string str;
             while (std::getline(ss, str, ',')) {
                 elems.push_back(str);
             }
+            return void;
         }();
 
         // for each element, convert to type T and push into vector
