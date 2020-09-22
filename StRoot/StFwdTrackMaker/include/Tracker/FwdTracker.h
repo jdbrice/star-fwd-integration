@@ -115,7 +115,7 @@ class ForwardTrackMaker {
         TFile *fOutput = new TFile(name.c_str(), "RECREATE");
         fOutput->cd();
         // write out the config we use (do before histos):
-        TNamed n("cfg", cfg.toXml());
+        TNamed n("cfg", cfg.dump());
         n.Write();
 
         // fOutput->mkdir( "Input/" );
@@ -140,7 +140,7 @@ class ForwardTrackMaker {
         auto paths = cfg.childrenOf(path);
 
         for (string p : paths) {
-            string name = cfg.get<string>(p + ":name");
+            string name = cfg.get<string>(p + ":name", "");
             bool active = cfg.get<bool>(p + ":active", true);
 
             if (false == active) {
@@ -283,6 +283,7 @@ class ForwardTrackMaker {
 
             if (nEvents > maxEvents)
                 nEvents = maxEvents;
+
         }
 
         // loop over events

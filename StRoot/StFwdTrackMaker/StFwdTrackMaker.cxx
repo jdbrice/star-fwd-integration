@@ -615,7 +615,7 @@ void StFwdTrackMaker::loadFstHits( std::map<int, shared_ptr<McTrack>> &mcTrackMa
         rndCollection = event->rndHitCollection();
     }
     bool siRasterizer = fwdcfg.get<bool>( "SiRasterizer:active", false );
-    LOG_F( INFO, "siRasterizer active=%d, r=%f", (int)(siRasterizer), fwdcfg.get<float>( "SiRasterizer:r") );
+    LOG_F( INFO, "siRasterizer active=%d, r=%f", (int)(siRasterizer), fwdcfg.get<float>( "SiRasterizer:r", 2.85f) );
     if ( siRasterizer || rndCollection == nullptr ){
         LOG_F( INFO, "Loading hits from GEANT with SiRasterizer" );
         loadFstHitsFromGEANT( mcTrackMap, hitMap, count );

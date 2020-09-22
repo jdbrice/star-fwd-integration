@@ -97,11 +97,14 @@ public:
     }
 
     // dump config to a basic string representation - mostly for debugging
-    void dump() {
+    std::string dump() {
         using namespace std;
+        sstr.str("");
+        sstr.clear();
         for ( auto kv : this->nodes ){
-            cout << "[" << kv.first << "] = " << kv.second << endl;
+            sstr << "[" << kv.first << "] = " << kv.second << endl;
         }
+        return sstr.str();
     }
 
     // Does a path exist
@@ -153,7 +156,7 @@ public:
         std::vector<std::string> elems;
 
         // split the string by commas
-        auto split_string = [&]() {
+        void split_string = [&]() {
             std::stringstream  ss(val);
             std::string str;
             while (std::getline(ss, str, ',')) {
