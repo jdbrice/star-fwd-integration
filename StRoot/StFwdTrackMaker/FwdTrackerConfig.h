@@ -18,6 +18,7 @@ protected:
     static const std::string valDNE;// = std::string( "<DNE/>" );
     static const std::string pathDelim;
     static const std::string attrDelim;
+    
     bool errorParsing = false;
     std::map<std::string, std::string> nodes;
     std::stringstream sstr; // reused for string to numeric conversion
@@ -63,6 +64,12 @@ protected:
         }
     } // mapFile
 public:
+
+    FwdTrackerConfig (const FwdTrackerConfig &cfg) {
+        this->errorParsing = cfg.errorParsing;
+        this->nodes = cfg.nodes;
+        this->sstr.str(""); // this is a reused obj, no need to copy
+    }
 
     // sanitizes a path to its canonical form 
     static void canonize( std::string &path ){
