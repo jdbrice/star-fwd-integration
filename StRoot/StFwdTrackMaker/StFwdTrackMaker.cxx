@@ -274,10 +274,7 @@ int StFwdTrackMaker::Init() {
         configFile = mConfigFile;
         LOG_F(INFO, "Config File : %s", mConfigFile.c_str());
     }
-    std::map<string, string> cmdLineConfig;
-    xfg.loadFile(configFile, cmdLineConfig);
 
-    // The main configuration read from XML file
     fwdcfg.load( configFile );
 
     // setup the loguru log file
@@ -331,7 +328,7 @@ int StFwdTrackMaker::Init() {
     mSiRasterizer = new SiRasterizer(fwdcfg);
 
     mForwardTracker = new ForwardTracker();
-    mForwardTracker->setConfig(xfg);
+    mForwardTracker->setConfig(fwdcfg);
     // only save criteria values if we are generating a tree.
     mForwardTracker->setSaveCriteriaValues(mGenTree);
 
@@ -801,11 +798,6 @@ void StFwdTrackMaker::loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcT
 //________________________________________________________________________
 int StFwdTrackMaker::Make() {
     LOG_INFO << "StFwdTrackMaker::Make()   " << endm;
-
-    jdb::XmlConfig _xmlconfig;
-    _xmlconfig.loadFile(mConfigFile);
-
-    fwdcfg.load( mConfigFile );
 
     long long itStart = loguru::now_ns();
     

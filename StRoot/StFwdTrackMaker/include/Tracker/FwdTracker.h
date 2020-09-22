@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "StFwdTrackMaker/include/Tracker/ConfigUtil.h"
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
 #include "StFwdTrackMaker/include/Tracker/HitLoader.h"
 #include "StFwdTrackMaker/include/Tracker/QualityPlotter.h"
@@ -33,7 +32,8 @@
 
 #include "GenFit/FitStatus.h"
 
-#include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
+// #include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
+#include "StFwdTrackMaker/FwdTrackerConfig.h"
 
 // Utility class for evaluating ID and QA truth
 struct MCTruthUtils {
@@ -87,7 +87,7 @@ class ForwardTrackMaker {
     }
 
     // Adopt external configuration file
-    void setConfig(jdb::XmlConfig &_cfg) { cfg = _cfg; }
+    void setConfig(FwdTrackerConfig &_cfg) { cfg = _cfg; }
     // Adopt external hit loader
     void setLoader(IHitLoader *loader) { hitLoader = loader; }
 
@@ -1039,7 +1039,7 @@ class ForwardTrackMaker {
     int tree_vid[tree_max_n], tree_tid[tree_max_n];
     float tree_x[tree_max_n], tree_y[tree_max_n], tree_z[tree_max_n], tree_pt[tree_max_n];
 
-    jdb::XmlConfig cfg;
+    FwdTrackerConfig cfg;
     map<string, string> cmdLineConfig;
     std::string configFile;
     // event level summary histograms

@@ -11,14 +11,13 @@
 
 #include "GenFit/FitStatus.h"
 
-#include "StFwdTrackMaker/XmlConfig/HistoBins.h"
-#include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
+#include "StFwdTrackMaker/FwdTrackerConfig.h"
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
 #include "StFwdTrackMaker/include/Tracker/loguru.h"
 
 class QualityPlotter {
   public:
-    QualityPlotter(jdb::XmlConfig &_cfg) : cfg(_cfg) {
+    QualityPlotter(FwdTrackerConfig &_cfg) : cfg(_cfg) {
     }
 
     void makeHistograms(size_t maxI) {
@@ -501,7 +500,7 @@ class QualityPlotter {
     }
 
   private:
-    jdb::XmlConfig &cfg;
+    FwdTrackerConfig &cfg;
     std::map<std::string, TH1 *> hist;
 
     vector<size_t> nTracksAfterIteration;

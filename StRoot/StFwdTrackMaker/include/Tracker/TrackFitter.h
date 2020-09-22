@@ -29,7 +29,8 @@
 
 #include <vector>
 
-#include "StFwdTrackMaker/XmlConfig/HistoBins.h"
+#include "StFwdTrackMaker/Common.h"
+
 #include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
 #include "StFwdTrackMaker/include/Tracker/STARField.h"
@@ -40,7 +41,7 @@
 class TrackFitter {
 
   public:
-    TrackFitter(jdb::XmlConfig &_cfg) : cfg(_cfg) {
+    TrackFitter(FwdTrackerConfig _cfg) : cfg(_cfg) {
         fTrackRep = 0;
         fTrack = 0;
     }
@@ -191,14 +192,8 @@ class TrackFitter {
             LOG_F(INFO, "Skip Si disk 1 : true");
         }
 
-        makeHistograms();
-    }
-
-    void setBinLabels(TH1 *h, vector<string> labels) {
-        for (size_t i = 1; i < labels.size(); i++) {
-            h->GetXaxis()->SetBinLabel(i, labels[i - 1].c_str());
-            h->SetBinContent(i, 0);
-        }
+        if ( mGenHistograms )
+            makeHistograms();
     }
 
     void makeHistograms() {
@@ -237,7 +232,7 @@ class TrackFitter {
 
         n = "FitStatus";
         hist[n] = new TH1F(n.c_str(), ";", 5, 0, 5);
-        jdb::HistoBins::labelAxis(hist[n]->GetXaxis(), {"Total", "Pass", "Fail", "GoodCardinal", "Exception"});
+        FwdTrackerUtils::labelAxis(hist[n]->GetXaxis(), {"Total", "Pass", "Fail", "GoodCardinal", "Exception"});
 
         n = "FitDuration";
         hist[n] = new TH1F(n.c_str(), "; Duraton (ms)", 5000, 0, 50000);
@@ -247,6 +242,8 @@ class TrackFitter {
     }
 
     void writeHistograms() {
+        if ( false == mGenHistograms )
+            return;
         for (auto nh : hist) {
             nh.second->SetDirectory(gDirectory);
             nh.second->Write();
@@ -330,7 +327,7 @@ class TrackFitter {
         for (size_t i = 0; i < curvs.size(); i++) {
             LOG_F(INFO, "curv[%lu] = %f", i, curvs[i]);
 
-            if (MAKE_HIST)
+            if (mGenHistograms)
                 this->hist["seed_curv"]->Fill(curvs[i]);
 
             if (curvs[i] > 10) {
@@ -371,7 +368,7 @@ class TrackFitter {
         seedMom.SetPtThetaPhi(pt, theta, phi);
         seedPos.SetXYZ(hit_closest_to_IP->getX(), hit_closest_to_IP->getY(), hit_closest_to_IP->getZ());
 
-        if (MAKE_HIST) {
+        if (mGenHistograms) {
             this->hist["seed_pT"]->Fill(seedMom.Pt());
             this->hist["seed_eta"]->Fill(seedMom.Eta());
         }
@@ -541,7 +538,7 @@ class TrackFitter {
 
         auto TCM2 = wrongRep->get6DCov(tst2);
 
-        if (MAKE_HIST) {
+        if (mGenHistograms) {
 
             this->hist["SiProjPosXY"]->Fill(tst.getPos().X(), tst.getPos().Y());
             this->hist["SiProjSigmaXY"]->Fill(sqrt(TCM(0, 0)), sqrt(TCM(1, 1)));
@@ -573,7 +570,7 @@ class TrackFitter {
         LOG_F(INFO, "Cov SI (%0.5f, %0.5f, %0.5f, %0.5f, %0.5f, %0.5f)", TCM(4, 0), TCM(4, 1), TCM(4, 2), TCM(4, 3), TCM(4, 4), TCM(4, 5));
         LOG_F(INFO, "Cov SI (%0.5f, %0.5f, %0.5f, %0.5f, %0.5f, %0.5f)", TCM(5, 0), TCM(5, 1), TCM(5, 2), TCM(5, 3), TCM(5, 4), TCM(5, 5));
 
-        if (MAKE_HIST) {
+        if (mGenHistograms) {
 
             this->hist["VertexProjPosXY"]->Fill(tst.getPos().X(), tst.getPos().Y());
             this->hist["VertexProjSigmaXY"]->Fill(sqrt(TCM(0, 0)), sqrt(TCM(1, 1)));
@@ -610,7 +607,7 @@ class TrackFitter {
         LOG_F(INFO, "Cov ECAL (%0.5f, %0.5f, %0.5f, %0.5f, %0.5f, %0.5f)", TCM(4, 0), TCM(4, 1), TCM(4, 2), TCM(4, 3), TCM(4, 4), TCM(4, 5));
         LOG_F(INFO, "Cov ECAL (%0.5f, %0.5f, %0.5f, %0.5f, %0.5f, %0.5f)", TCM(5, 0), TCM(5, 1), TCM(5, 2), TCM(5, 3), TCM(5, 4), TCM(5, 5));
 
-        if (MAKE_HIST) {
+        if (mGenHistograms) {
             this->hist["ECalProjPosXY"]->Fill(tst.getPos().X(), tst.getPos().Y());
             float sigmaR = sqrt(TCM(0, 0) + TCM(1, 1));
             this->hist["ECalProjSigmaR"]->Fill( sigmaR );
@@ -671,7 +668,7 @@ class TrackFitter {
         long long itStart = loguru::now_ns();
 
         LOG_F(INFO, "Track candidate size: %lu", trackCand.size());
-        this->hist["FitStatus"]->Fill("Total", 1);
+        if (mGenHistograms) this->hist["FitStatus"]->Fill("Total", 1);
 
         // The PV information, if we want to use it
         TVectorD pv(3);
@@ -787,7 +784,7 @@ class TrackFitter {
             LOG_F(INFO, "Exception on track fit");
             // std::cerr << e.what();
             // std::cerr << "Exception on track fit" << std::endl;
-            hist["FitStatus"]->Fill("Exception", 1);
+            if (mGenHistograms) hist["FitStatus"]->Fill("Exception", 1);
         }
 
         LOG_F(INFO, "Get fit status and momentum");
@@ -809,7 +806,7 @@ class TrackFitter {
 
             // Clone the cardinal rep for persistency
             fTrackRep = cardinalRep->clone(); // save the result of the fit
-            if (fitTrack.getFitStatus(cardinalRep)->isFitConverged()) {
+            if (fitTrack.getFitStatus(cardinalRep)->isFitConverged() && true == mGenHistograms ) {
                 this->hist["FitStatus"]->Fill("GoodCardinal", 1);
             }
 
@@ -821,10 +818,10 @@ class TrackFitter {
                 LOG_F(INFO, "Estimated Curv: %f", curv);
                 LOG_F(INFO, "SeedPosALT( X=%0.2f, Y=%0.2f, Z=%0.2f )", seedPos.X(), seedPos.Y(), seedPos.Z());
                 p.SetXYZ(0, 0, 0);
-                this->hist["FitStatus"]->Fill("Fail", 1);
+                if (mGenHistograms) this->hist["FitStatus"]->Fill("Fail", 1);
 
                 long long duration = (loguru::now_ns() - itStart) * 1e-6; // milliseconds
-                this->hist["FailedFitDuration"]->Fill(duration);
+                if (mGenHistograms) this->hist["FailedFitDuration"]->Fill(duration);
                 return p;
             }
 
@@ -841,10 +838,10 @@ class TrackFitter {
             LOG_F(INFO, "Estimated Curv: %f", curv);
             LOG_F(INFO, "SeedPosALT( X=%0.2f, Y=%0.2f, Z=%0.2f )", seedPos.X(), seedPos.Y(), seedPos.Z());
             p.SetXYZ(0, 0, 0);
-            this->hist["FitStatus"]->Fill("Exception", 1);
+            if (mGenHistograms) this->hist["FitStatus"]->Fill("Exception", 1);
 
             long long duration = (loguru::now_ns() - itStart) * 1e-6; // milliseconds
-            this->hist["FailedFitDuration"]->Fill(duration);
+            if (mGenHistograms) this->hist["FailedFitDuration"]->Fill(duration);
 
             return p;
         }
@@ -860,16 +857,18 @@ class TrackFitter {
         LOG_F(INFO, "Estimated Curv: %f", curv);
         LOG_F(INFO, "SeedPosALT( X=%0.2f, Y=%0.2f, Z=%0.2f )", seedPos.X(), seedPos.Y(), seedPos.Z());
         LOG_F(INFO, "FitMom( pT=%0.2f, eta=%0.2f, phi=%0.2f )", p.Pt(), p.Eta(), p.Phi());
-        hist["FitStatus"]->Fill("Pass", 1);
+        
 
-        if (MAKE_HIST) {
+        if (mGenHistograms) {
+            this->hist["FitStatus"]->Fill("Pass", 1);
             this->hist["delta_fit_seed_pT"]->Fill(p.Pt() - seedMom.Pt());
             this->hist["delta_fit_seed_eta"]->Fill(p.Eta() - seedMom.Eta());
             this->hist["delta_fit_seed_phi"]->Fill(p.Phi() - seedMom.Phi());
         }
 
         long long duration = (loguru::now_ns() - itStart) * 1e-6; // milliseconds
-        this->hist["FitDuration"]->Fill(duration);
+        if (mGenHistograms) this->hist["FitDuration"]->Fill(duration);
+
 
         return p;
     }
@@ -890,9 +889,10 @@ class TrackFitter {
     genfit::Track *getTrack() { return fTrack; }
 
   private:
-    jdb::XmlConfig &cfg;
+    FwdTrackerConfig cfg;
     std::map<std::string, TH1 *> hist;
-    bool MAKE_HIST = true;
+    bool mGenHistograms = false;
+
     genfit::EventDisplay *display;
     std::vector<genfit::Track *> event;
     vector<genfit::Track> displayTracks;

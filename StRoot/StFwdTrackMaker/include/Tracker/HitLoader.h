@@ -1,18 +1,8 @@
-#ifndef HitLoader_h
-#define HitLoader_h
+#ifndef FWD_HIT_LOADER_H
+#define FWD_HIT_LOADER_H
 
 #include <map>
-
-#include "TFile.h"
-#include "TTree.h"
-#include "TRandom.h"
-#include "TRandom3.h"
-
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
-#include "StFwdTrackMaker/include/Tracker/loguru.h"
-#include "StFwdTrackMaker/include/Tracker/ConfigUtil.h"
-
-#include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
 
 class IHitLoader
 {
