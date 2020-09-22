@@ -139,7 +139,7 @@ public:
         std::string val = this->nodes[ path ];
         // remove whitespace
         val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
-        std::vector<string> elems;
+        std::vector<std::string> elems;
 
         // split the string by commas
         auto split_string = [&]() {
