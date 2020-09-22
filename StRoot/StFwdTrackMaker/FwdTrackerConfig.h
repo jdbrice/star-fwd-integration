@@ -111,7 +111,6 @@ public:
     // override this for special conversions
     template <typename T>
     T convert( std::string s ){
-        std::cout << "convert : " <<  s << " to numeric" << endl;
         T rv = 0;
         sstr.str("");
         sstr << s;
