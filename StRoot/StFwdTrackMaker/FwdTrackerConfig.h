@@ -9,19 +9,23 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 // Class provides an interface for reading configuration from an XML file
 class FwdTrackerConfig {
 protected:
 
-    const std::string valDNE = std::string( "<DNE/>" );
+    static const std::string valDNE;// = std::string( "<DNE/>" );
+    static const std::string pathDelim;
+    static const std::string attrDelim;
+    bool errorParsing = false;
     std::map<std::string, std::string> nodes;
     std::stringstream sstr; // reused for string to numeric conversion
 
     void mapFile(TXMLEngine &xml, XMLNodePointer_t node, Int_t level, std::string path = "") {
         using namespace std;
         // add the path delimeter above top level
-        if ( "" != path) path += ".";
+        if ( "" != path) path += FwdTrackerConfig::pathDelim;
 
         // we skip the root node to maintain consistency with original XmlConfig
         if ( level > 1)
@@ -29,13 +33,14 @@ protected:
 
         // get the node name and content if it exists
         const string node_name = xml.GetNodeName(node);
-        const string node_content = xml.GetNodeContent(node) != nullptr ? xml.GetNodeContent(node) : valDNE;
+        const string node_content = xml.GetNodeContent(node) != nullptr ? xml.GetNodeContent(node) : FwdTrackerConfig::valDNE;
 
+        // be careful about repeated nodes
         if ( nodes.count( path ) == 0 ) {
-            nodes[ path ] = node_content;
-        } else {
-            path += TString::Format( "[%d]", nodes.count( path ) ).Data();
-            nodes[ path ] = node_content;
+            this->nodes[ path ] = node_content;
+        } else { // add an array index if more than one
+            path += TString::Format( "[%zu]", nodes.count( path ) ).Data();
+            this->nodes[ path ] = node_content;
         }
 
         // loop through attributes of this node
@@ -44,9 +49,9 @@ protected:
 
             // get the attribute name and value if exists
             const string attr_name = xml.GetAttrName(attr);
-            const string attr_val = xml.GetAttrValue(attr) != nullptr ? xml.GetAttrValue(attr) : valDNE;
-
-            nodes[ (path + ":" + attr_name) ] = attr_val;
+            const string attr_val = xml.GetAttrValue(attr) != nullptr ? xml.GetAttrValue(attr) : FwdTrackerConfig::valDNE;
+            // save attributes with the ":" 
+            this->nodes[ (path + FwdTrackerConfig::attrDelim + attr_name) ] = attr_val;
             attr = xml.GetNextAttr(attr);
         }
 
@@ -59,10 +64,25 @@ protected:
     } // mapFile
 public:
 
+    // sanitizes a path to its canonical form 
+    static void canonize( std::string &path ){
+        // remove whitespace
+        path.erase(std::remove_if(path.begin(), path.end(), ::isspace), path.end());
+
+        // removes "[0]" found in paths, so that the first element in a list can be accessed by index 0 or bare path
+        size_t pos = path.find( "[0]" );
+
+        // branchless version avoids using if to catch found or not
+        size_t len = 3 * (pos != std::string::npos); // 3 if true, 0 if false
+        pos = pos * (pos != std::string::npos); // pos if true, 0 if false
+        path.erase( pos, len ); // does nothing if "[0]" not found
+        return;
+    }
+
     // dump config to a basic string representation - mostly for debugging
     void dump() {
         using namespace std;
-        for ( auto kv : nodes ){
+        for ( auto kv : this->nodes ){
             cout << "[" << kv.first << "] = " << kv.second << endl;
         }
     }
@@ -70,10 +90,11 @@ public:
     // Does a path exist
     // Either node or attribute - used to determine if default value is used
     bool exists( std::string path ){
-        if ( 0 == nodes.count( path ) )
+        FwdTrackerConfig::canonize( path );
+        if ( 0 == this->nodes.count( path ) )
             return false;
 
-        if ( valDNE == nodes[path] )
+        if ( FwdTrackerConfig::valDNE == this->nodes[path] )
             return false;
         
         return true;
@@ -84,11 +105,12 @@ public:
     template <typename T>
     T get( std::string path, T dv = 0 )  {
         using namespace std;
+        FwdTrackerConfig::canonize( path );
         sstr.str("");
         T rv;
         if ( false == exists( path ) )
             return dv;
-        sstr << nodes[ path ];
+        sstr << this->nodes[ path ];
         sstr >> rv;
         return rv;
     }
@@ -99,10 +121,10 @@ public:
 
         // test a path to see if it is an attribute
         auto is_attribute = [&](string str){
-            return ( str.find( ":" ) != string::npos );
+            return ( str.find( FwdTrackerConfig::attrDelim ) != string::npos );
         };
 
-        for ( auto kv : nodes ){
+        for ( auto kv : this->nodes ){
 
             // get the first n characters of this path
             string parent = (kv.first).substr( 0, path.length() );
@@ -135,12 +157,13 @@ public:
         // empty the map of nodes
         nodes.clear();
 
-        // First create engine
+        // Create XML engine for parsing file
         TXMLEngine xml;
 
         // Now try to parse xml file
         XMLDocPointer_t xmldoc = xml.ParseFile(filename.c_str());
         if (!xmldoc) { // parse failed, TODO inform of error
+            this->errorParsing = true;
             return;
         }
 
