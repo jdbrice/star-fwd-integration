@@ -1,5 +1,4 @@
 #include "FwdTrackerConfig.h"
-#include "TString.h"
 
 // template specializations
 template <>

@@ -2,6 +2,7 @@
 #define FWD_TRACKER_CONFIG_H
 
 #include "TXMLEngine.h"
+#include "TString.h"
 
 #include <string>
 #include <iostream>
