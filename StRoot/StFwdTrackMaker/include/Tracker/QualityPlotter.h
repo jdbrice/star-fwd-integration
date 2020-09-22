@@ -35,25 +35,13 @@ class QualityPlotter {
         hist["nHitsOnTrack"] = new TH1F("nHitsOnTrack", ";nHit", 10, 0, 10);
         hist["nHitsOnTrackMc"] = new TH1F("nHitsOnTrackMc", ";nHit", 10, 0, 10);
 
-        jdb::HistoBins hb_InvPtRes(-5, 5, 0.01); // default
-
-        if (cfg.exists("QualityPlotter.Bins.InvPtRes")) {
-            hb_InvPtRes.load(cfg, "QualityPlotter.Bins.InvPtRes");
-        }
-
-        jdb::HistoBins hb_InvPtRes2D(-2, 2, 0.01); // default
-
-        if (cfg.exists("QualityPlotter.Bins.InvPtRes2D")) {
-            hb_InvPtRes2D.load(cfg, "QualityPlotter.Bins.InvPtRes2D");
-        }
-
-        hist["InvPtRes"] = new TH1F("InvPtRes", ";(p_{T}^{MC} - p_{T}^{RC}) / p_{T}^{MC}", hb_InvPtRes.nBins(), hb_InvPtRes.bins.data());
-        hist["InvPtResVsNHits"] = new TH2F("InvPtResVsNHits", ";(p_{T}^{MC} - p_{T}^{RC}) / p_{T}^{MC}", 10, 0, 10, hb_InvPtRes.nBins(), hb_InvPtRes.bins.data());
-        hist["PtRes"] = new TH1F("PtRes", ";(p_{T}^{MC} - p_{T}^{RC}) / p_{T}^{MC}", hb_InvPtRes.nBins(), hb_InvPtRes.bins.data());
-        hist["PtResVsTrue"] = new TH2F("PtResVsTrue", ";q^{MC} #times p_{T}^{MC};(p_{T}^{MC} - p_{T}^{RC}) / p_{T}^{MC}", 100, -5, 5, hb_InvPtRes2D.nBins(), hb_InvPtRes2D.bins.data());
-        hist["InvPtResVsTrue"] = new TH2F("InvPtResVsTrue", ";q^{MC} #times p_{T}^{MC}; #sigma_{p_{T}^{-1}}", 100, -5, 5, hb_InvPtRes2D.nBins(), hb_InvPtRes2D.bins.data());
-        hist["DeltaPt"] = new TH1F("DeltaPt", ";p_{T}^{RC} - p_{T}^{MC} (GeV/c)", hb_InvPtRes.nBins(), hb_InvPtRes.bins.data());
-        hist["InvPtResVsEta"] = new TH2F("InvPtResVsEta", ";#eta^{MC}; #sigma_{p_{T}^{-1}}", 300, 2, 5, hb_InvPtRes2D.nBins(), hb_InvPtRes2D.bins.data());
+        hist["InvPtRes"] = new TH1F("InvPtRes", ";(p_{T}^{MC} - p_{T}^{RC}) / p_{T}^{MC}", 500, -5, 5);
+        hist["InvPtResVsNHits"] = new TH2F("InvPtResVsNHits", ";(p_{T}^{MC} - p_{T}^{RC}) / p_{T}^{MC}", 10, 0, 10, 500, -5, 5);
+        hist["PtRes"] = new TH1F("PtRes", ";(p_{T}^{MC} - p_{T}^{RC}) / p_{T}^{MC}", 500, -5, 5);
+        hist["PtResVsTrue"] = new TH2F("PtResVsTrue", ";q^{MC} #times p_{T}^{MC};(p_{T}^{MC} - p_{T}^{RC}) / p_{T}^{MC}", 100, -5, 5, 200, -2, 2);
+        hist["InvPtResVsTrue"] = new TH2F("InvPtResVsTrue", ";q^{MC} #times p_{T}^{MC}; #sigma_{p_{T}^{-1}}", 100, -5, 5, 200, -2, 2);
+        hist["DeltaPt"] = new TH1F("DeltaPt", ";p_{T}^{RC} - p_{T}^{MC} (GeV/c)", 500, -5, 5);
+        hist["InvPtResVsEta"] = new TH2F("InvPtResVsEta", ";#eta^{MC}; #sigma_{p_{T}^{-1}}", 300, 2, 5, 200, -2, 2);
 
         hist["RecoPtVsMcPt"] = new TH2F("RecoPtVsMcPt", "; p_{T}^{MC}; p_{T}^{RC}", 100, 0, 5, 100, 0, 5);
         hist["QMatrix"] = new TH2F("QMatrix", ";GEN;RECO", 6, -3, 3, 6, -3, 3);

@@ -34,6 +34,7 @@
 
 // #include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
 #include "StFwdTrackMaker/FwdTrackerConfig.h"
+#include "StFwdTrackMaker/Common.h"
 
 // Utility class for evaluating ID and QA truth
 struct MCTruthUtils {
@@ -240,7 +241,7 @@ class ForwardTrackMaker {
         hist["nFailedReFits"] = new TH1I("nFailedReFits", ";;# failed REfits", 10, 0, 10);
 
         hist["FitStatus"] = new TH1I("FitStatus", ";;# failed REfits", 15, 0, 15);
-        jdb::HistoBins::labelAxis(hist["FitStatus"]->GetXaxis(), {"Seeds", "AttemptFit", "GoodFit", "BadFit", "GoodCardinal", "PossibleReFit", "AttemptReFit", "GoodReFit", "BadReFit", "w3Si","w2Si", "w1Si", "w0Si" });
+        FwdTrackerUtils::labelAxis(hist["FitStatus"]->GetXaxis(), {"Seeds", "AttemptFit", "GoodFit", "BadFit", "GoodCardinal", "PossibleReFit", "AttemptReFit", "GoodReFit", "BadReFit", "w3Si","w2Si", "w1Si", "w0Si" });
 
         hist["FitDuration"] = new TH1I("FitDuration", ";Duration (ms)", 5000, 0, 50000);
         hist["nSiHitsFound"] = new TH2I( "nSiHitsFound", ";Si Disk; n Hits", 5, 0, 5, 10, 0, 10 );
