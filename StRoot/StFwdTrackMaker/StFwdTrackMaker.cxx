@@ -193,7 +193,7 @@ class ForwardTracker : public ForwardTrackMaker {
 
         // initialize the track fitter
         trackFitter = new TrackFitter(cfg);
-        trackFitter->setup(cfg.get<bool>("TrackFitter:display"));
+        trackFitter->setup(cfg.get<bool>("TrackFitter:display", false));
 
         ForwardTrackMaker::initialize();
     }
@@ -305,7 +305,7 @@ int StFwdTrackMaker::Init() {
         std::vector<string> paths = fwdcfg.childrenOf(path);
 
         for (string p : paths) {
-            string name = fwdcfg.get<string>(p + ":name");
+            string name = fwdcfg.get<string>(p + ":name", "");
             mlt_crits[name]; // create the entry
             mlTree->Branch(name.c_str(), &mlt_crits[name]);
             mlTree->Branch((name + "_trackIds").c_str(), &mlt_crit_track_ids[name]);
@@ -316,7 +316,7 @@ int StFwdTrackMaker::Init() {
         paths = fwdcfg.childrenOf(path);
 
         for (string p : paths) {
-            string name = fwdcfg.get<string>(p + ":name");
+            string name = fwdcfg.get<string>(p + ":name", "");
             mlt_crits[name]; // create the entry
             mlTree->Branch(name.c_str(), &mlt_crits[name]);
             mlTree->Branch((name + "_trackIds").c_str(), &mlt_crit_track_ids[name]);

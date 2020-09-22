@@ -107,7 +107,7 @@ class ForwardTrackMaker {
         string name = "results.root";
 
         if (cfg.exists("Output:url")) {
-            name = cfg.get<string>("Output:url");
+            name = cfg.get<string>("Output:url", "fwdTrackerOutput.root");
         }
 
         LOG_F(INFO, "EventSummary : %s", name.c_str());
@@ -279,7 +279,7 @@ class ForwardTrackMaker {
         unsigned long long firstEvent = cfg.get<unsigned long long>("Input:first-event", 0);
 
         if (cfg.exists("Input:max-events")) {
-            unsigned long long maxEvents = cfg.get<unsigned long long>("Input:max-events");
+            unsigned long long maxEvents = cfg.get<unsigned long long>("Input:max-events", 0);
 
             if (nEvents > maxEvents)
                 nEvents = maxEvents;
