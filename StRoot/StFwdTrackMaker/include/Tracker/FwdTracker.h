@@ -88,7 +88,7 @@ class ForwardTrackMaker {
     }
 
     // Adopt external configuration file
-    void setConfig(FwdTrackerConfig &_cfg) { cfg = _cfg; }
+    void setConfig(FwdTrackerConfig _cfg) { cfg = _cfg; }
     // Adopt external hit loader
     void setLoader(IHitLoader *loader) { hitLoader = loader; }
 
