@@ -65,10 +65,20 @@ protected:
     } // mapFile
 public:
 
+    // the copy and assignment are needed bc stringstream copy ctor is private;
+    // copy ctor
     FwdTrackerConfig (const FwdTrackerConfig &cfg) {
         this->errorParsing = cfg.errorParsing;
         this->nodes = cfg.nodes;
         this->sstr.str(""); // this is a reused obj, no need to copy
+    }
+
+    // assignment 
+    FwdTrackerConfig& operator=( const FwdTrackerConfig& cfg ) {
+        this->errorParsing = cfg.errorParsing;
+        this->nodes = cfg.nodes;
+        this->sstr.str(""); // this is a reused obj, no need to copy
+        return *this;
     }
 
     // sanitizes a path to its canonical form 
@@ -111,8 +121,9 @@ public:
     // override this for special conversions
     template <typename T>
     T convert( std::string s ){
-        T rv = 0;
+        T rv;
         sstr.str("");
+        sstr.clear();
         sstr << s;
         sstr >> rv;
         return rv;
