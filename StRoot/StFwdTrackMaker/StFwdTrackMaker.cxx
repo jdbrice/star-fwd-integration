@@ -233,7 +233,7 @@ class ForwardHitLoader : public IHitLoader {
 };
 
 //________________________________________________________________________
-StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(0), mForwardHitLoader(0), mGenHistograms(false), mGenTree(false), mFieldAdaptor(new StarFieldAdaptor()){
+StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(0), mForwardHitLoader(0), mFieldAdaptor(new StarFieldAdaptor()), mGenHistograms(false), mGenTree(false){
     SetAttr("useFtt",1);                 // Default Ftt on 
     SetAttr("useFst",1);                 // Default Fst on
     SetAttr("config", "config.xml");     // Default configuration file (user may override before Init())
