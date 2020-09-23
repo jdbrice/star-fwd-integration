@@ -4,7 +4,11 @@ const std::string FwdTrackerConfig::valDNE = std::string( "<DNE/>" );
 const std::string FwdTrackerConfig::pathDelim = std::string( "." );
 const std::string FwdTrackerConfig::attrDelim = std::string( ":" );
 
+////
 // template specializations
+////
+
+// Specialization for string to avoid extra conversions
 template <>
 std::string FwdTrackerConfig::get( std::string path, std::string dv )  {
     // return default value if path DNE
@@ -12,17 +16,18 @@ std::string FwdTrackerConfig::get( std::string path, std::string dv )  {
         return dv;
     FwdTrackerConfig::canonize( path );
     // directly return string
-    return ( this->nodes[ path ] );
+    return ( this->mNodes[ path ] );
 }
 
+// conversion to string is a noop
 template <>
-std::string FwdTrackerConfig::convert( std::string str ) {
+std::string FwdTrackerConfig::convert( std::string str )  {
    return str;
 }
 
 // specialization for bool adds recognition of strings "true" and "false" (lower case)
 template <>
-bool FwdTrackerConfig::convert( std::string str ){
+bool FwdTrackerConfig::convert( std::string str )  {
 
     if ( str == "false" )
        return false;
@@ -35,7 +40,7 @@ bool FwdTrackerConfig::convert( std::string str ){
 
 // get as ROOT TString
 template <>
-TString FwdTrackerConfig::convert(std::string str) {
+TString FwdTrackerConfig::convert(std::string str)  {
     TString r(str);
     return r;
 }

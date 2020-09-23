@@ -19,9 +19,10 @@ protected:
     static const std::string pathDelim;
     static const std::string attrDelim;
 
-    bool errorParsing = false;
-    std::map<std::string, std::string> nodes;
-    std::stringstream sstr; // reused for string to numeric conversion
+    bool mErrorParsing = false;
+    // read only map of the config, read with get<> functions
+    std::map<std::string, std::string> mNodes;
+    std::stringstream mSStr; // reused for string to numeric conversion
 
     void mapFile(TXMLEngine &xml, XMLNodePointer_t node, Int_t level, std::string path = "") {
         using namespace std;
@@ -37,11 +38,11 @@ protected:
         const string node_content = xml.GetNodeContent(node) != nullptr ? xml.GetNodeContent(node) : FwdTrackerConfig::valDNE;
 
         // be careful about repeated nodes
-        if ( nodes.count( path ) == 0 ) {
-            this->nodes[ path ] = node_content;
+        if ( mNodes.count( path ) == 0 ) {
+            this->mNodes[ path ] = node_content;
         } else { // add an array index if more than one
-            path += TString::Format( "[%zu]", nodes.count( path ) ).Data();
-            this->nodes[ path ] = node_content;
+            path += TString::Format( "[%zu]", mNodes.count( path ) ).Data();
+            this->mNodes[ path ] = node_content;
         }
 
         // loop through attributes of this node
@@ -51,8 +52,9 @@ protected:
             // get the attribute name and value if exists
             const string attr_name = xml.GetAttrName(attr);
             const string attr_val = xml.GetAttrValue(attr) != nullptr ? xml.GetAttrValue(attr) : FwdTrackerConfig::valDNE;
-            // save attributes with the ":" 
-            this->nodes[ (path + FwdTrackerConfig::attrDelim + attr_name) ] = attr_val;
+            
+            // save attributes with the attribute delim ":" 
+            this->mNodes[ (path + FwdTrackerConfig::attrDelim + attr_name) ] = attr_val;
             attr = xml.GetNextAttr(attr);
         }
 
@@ -68,21 +70,21 @@ public:
     // the copy and assignment are needed bc stringstream copy ctor is private;
     // copy ctor
     FwdTrackerConfig (const FwdTrackerConfig &cfg) {
-        this->errorParsing = cfg.errorParsing;
-        this->nodes = cfg.nodes;
-        this->sstr.str(""); // this is a reused obj, no need to copy
+        this->mErrorParsing = cfg.mErrorParsing;
+        this->mNodes = cfg.mNodes;
+        this->mSStr.str(""); // this is a reused obj, no need to copy
     }
 
     // assignment 
     FwdTrackerConfig& operator=( const FwdTrackerConfig& cfg ) {
-        this->errorParsing = cfg.errorParsing;
-        this->nodes = cfg.nodes;
-        this->sstr.str(""); // this is a reused obj, no need to copy
+        this->mErrorParsing = cfg.mErrorParsing;
+        this->mNodes = cfg.mNodes;
+        this->mSStr.str(""); // this is a reused obj, no need to copy
         return *this;
     }
 
     // sanitizes a path to its canonical form 
-    static void canonize( std::string &path ){
+    static void canonize( std::string &path ) {
         // remove whitespace
         path.erase(std::remove_if(path.begin(), path.end(), ::isspace), path.end());
 
@@ -99,22 +101,22 @@ public:
     // dump config to a basic string representation - mostly for debugging
     std::string dump() {
         using namespace std;
-        sstr.str("");
-        sstr.clear();
-        for ( auto kv : this->nodes ){
-            sstr << "[" << kv.first << "] = " << kv.second << endl;
+        mSStr.str("");
+        mSStr.clear();
+        for ( auto kv : this->mNodes ){
+            mSStr << "[" << kv.first << "] = " << kv.second << endl;
         }
-        return sstr.str();
+        return mSStr.str();
     }
 
     // Does a path exist
     // Either node or attribute - used to determine if default value is used
-    bool exists( std::string path ){
+    bool exists( std::string path ) const {
         FwdTrackerConfig::canonize( path );
-        if ( 0 == this->nodes.count( path ) )
+        if ( 0 == this->mNodes.count( path ) )
             return false;
 
-        if ( FwdTrackerConfig::valDNE == this->nodes[path] )
+        if ( FwdTrackerConfig::valDNE == this->mNodes.at(path) )
             return false;
         
         return true;
@@ -123,12 +125,12 @@ public:
     // generic conversion to type T from std::string
     // override this for special conversions
     template <typename T>
-    T convert( std::string s ){
+    T convert( std::string s ) {
         T rv;
-        sstr.str("");
-        sstr.clear();
-        sstr << s;
-        sstr >> rv;
+        mSStr.str("");
+        mSStr.clear();
+        mSStr << s;
+        mSStr >> rv;
         return rv;
     }
 
@@ -141,16 +143,16 @@ public:
             return dv;
         FwdTrackerConfig::canonize( path );
         // convrt from string to type T and return
-        return convert<T>( this->nodes[ path ] );
+        return convert<T>( this->mNodes.at( path ) );
     }
 
     template <typename T>
-    std::vector<T> getVector( std::string path, std::vector<T> dv ){
+    std::vector<T> getVector( std::string path, std::vector<T> dv ) {
         if ( false == exists( path ) )
             return dv;
         
         FwdTrackerConfig::canonize( path );
-        std::string val = this->nodes[ path ];
+        std::string val = this->mNodes.at( path );
         // remove whitespace
         val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
         std::vector<std::string> elems;
@@ -162,7 +164,6 @@ public:
             while (std::getline(ss, str, ',')) {
                 elems.push_back(str);
             }
-            return;
         }();
 
         // for each element, convert to type T and push into vector
@@ -173,6 +174,7 @@ public:
         return result;
     }
 
+    // list the paths of children nodes for a given node
     std::vector<std::string> childrenOf( std::string path ){
         using namespace std;
         vector<string> result;
@@ -182,7 +184,7 @@ public:
             return ( str.find( FwdTrackerConfig::attrDelim ) != string::npos );
         };
 
-        for ( auto kv : this->nodes ){
+        for ( auto kv : this->mNodes ){
 
             // get the first n characters of this path
             string parent = (kv.first).substr( 0, path.length() );
@@ -212,8 +214,8 @@ public:
     void load( std::string filename ) {
         using namespace std;
 
-        // empty the map of nodes
-        nodes.clear();
+        // empty the map of mNodes
+        mNodes.clear();
 
         // Create XML engine for parsing file
         TXMLEngine xml;
@@ -221,7 +223,7 @@ public:
         // Now try to parse xml file
         XMLDocPointer_t xmldoc = xml.ParseFile(filename.c_str());
         if (!xmldoc) { // parse failed, TODO inform of error
-            this->errorParsing = true;
+            this->mErrorParsing = true;
             return;
         }
 
