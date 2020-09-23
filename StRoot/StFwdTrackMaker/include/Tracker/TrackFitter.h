@@ -31,7 +31,6 @@
 
 #include "StFwdTrackMaker/Common.h"
 
-#include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
 #include "StFwdTrackMaker/include/Tracker/STARField.h"
 #include "StFwdTrackMaker/include/Tracker/loguru.h"

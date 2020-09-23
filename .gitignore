@@ -16,3 +16,5 @@ tests/xmlreadfile_C.d
 tests/xmlreadfile_C.so
 tests/xmlreadfile.C
 .vscode/settings.json
+test.C
+to-remove

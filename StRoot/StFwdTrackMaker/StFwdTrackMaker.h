@@ -5,7 +5,6 @@
 
 #ifndef __CINT__
 #include "GenFit/Track.h"
-#include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
 #endif
 
 #include "FwdTrackerConfig.h"
@@ -87,8 +86,6 @@ class StFwdTrackMaker : public StMaker {
     // I could not get the library generation to succeed with these.
     // so I have removed them
     #ifndef __CINT__
-        jdb::XmlConfig xfg;
-
         void loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap );
         void loadStgcHits( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count = 0 );
         void loadStgcHitsFromGEANT( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count = 0 );

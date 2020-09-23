@@ -32,7 +32,6 @@
 
 #include "GenFit/FitStatus.h"
 
-// #include "StFwdTrackMaker/XmlConfig/XmlConfig.h"
 #include "StFwdTrackMaker/FwdTrackerConfig.h"
 #include "StFwdTrackMaker/Common.h"
 
