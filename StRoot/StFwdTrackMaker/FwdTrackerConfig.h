@@ -22,7 +22,7 @@ protected:
     bool mErrorParsing = false;
     // read only map of the config, read with get<> functions
     std::map<std::string, std::string> mNodes;
-    std::stringstream mSStr; // reused for string to numeric conversion
+    static std::stringstream sstr; // reused for string to numeric conversion
 
     void mapFile(TXMLEngine &xml, XMLNodePointer_t node, Int_t level, std::string path = "") {
         using namespace std;
@@ -72,14 +72,14 @@ public:
     FwdTrackerConfig (const FwdTrackerConfig &cfg) {
         this->mErrorParsing = cfg.mErrorParsing;
         this->mNodes = cfg.mNodes;
-        this->mSStr.str(""); // this is a reused obj, no need to copy
+        // FwdTrackerConfig::sstr.str(""); // this is a reused obj, no need to copy
     }
 
     // assignment 
     FwdTrackerConfig& operator=( const FwdTrackerConfig& cfg ) {
         this->mErrorParsing = cfg.mErrorParsing;
         this->mNodes = cfg.mNodes;
-        this->mSStr.str(""); // this is a reused obj, no need to copy
+        // FwdTrackerConfig::sstr.str(""); // this is a reused obj, no need to copy
         return *this;
     }
 
@@ -99,14 +99,14 @@ public:
     }
 
     // dump config to a basic string representation - mostly for debugging
-    std::string dump() {
+    std::string dump() const {
         using namespace std;
-        mSStr.str("");
-        mSStr.clear();
+        FwdTrackerConfig::sstr.str("");
+        FwdTrackerConfig::sstr.clear();
         for ( auto kv : this->mNodes ){
-            mSStr << "[" << kv.first << "] = " << kv.second << endl;
+            FwdTrackerConfig::sstr << "[" << kv.first << "] = " << kv.second << endl;
         }
-        return mSStr.str();
+        return FwdTrackerConfig::sstr.str();
     }
 
     // Does a path exist
@@ -125,19 +125,19 @@ public:
     // generic conversion to type T from std::string
     // override this for special conversions
     template <typename T>
-    T convert( std::string s ) {
+    T convert( std::string s ) const {
         T rv;
-        mSStr.str("");
-        mSStr.clear();
-        mSStr << s;
-        mSStr >> rv;
+        FwdTrackerConfig::sstr.str("");
+        FwdTrackerConfig::sstr.clear();
+        FwdTrackerConfig::sstr << s;
+        FwdTrackerConfig::sstr >> rv;
         return rv;
     }
 
 
     // template function for getting any type that can be converted from string via stringstream
     template <typename T>
-    T get( std::string path, T dv )  {
+    T get( std::string path, T dv ) const {
         // return default value if path DNE
         if ( false == exists( path ) )
             return dv;
@@ -147,7 +147,7 @@ public:
     }
 
     template <typename T>
-    std::vector<T> getVector( std::string path, std::vector<T> dv ) {
+    std::vector<T> getVector( std::string path, std::vector<T> dv ) const {
         if ( false == exists( path ) )
             return dv;
         
@@ -175,7 +175,7 @@ public:
     }
 
     // list the paths of children nodes for a given node
-    std::vector<std::string> childrenOf( std::string path ){
+    std::vector<std::string> childrenOf( std::string path ) const {
         using namespace std;
         vector<string> result;
 
