@@ -15,9 +15,9 @@
 class FwdTrackerConfig {
 protected:
 
-    static const std::string valDNE;// = std::string( "<DNE/>" );
-    static const std::string pathDelim;
-    static const std::string attrDelim;
+    static const std::string valDNE; // used for nodes that DNE
+    static const std::string pathDelim; // separate node levels
+    static const std::string attrDelim; // separate attributes on nodes
 
     bool mErrorParsing = false;
     // read only map of the config, read with get<> functions
@@ -66,22 +66,6 @@ protected:
         }
     } // mapFile
 public:
-
-    // the copy and assignment are needed bc stringstream copy ctor is private;
-    // copy ctor
-    FwdTrackerConfig (const FwdTrackerConfig &cfg) {
-        this->mErrorParsing = cfg.mErrorParsing;
-        this->mNodes = cfg.mNodes;
-        // FwdTrackerConfig::sstr.str(""); // this is a reused obj, no need to copy
-    }
-
-    // assignment 
-    FwdTrackerConfig& operator=( const FwdTrackerConfig& cfg ) {
-        this->mErrorParsing = cfg.mErrorParsing;
-        this->mNodes = cfg.mNodes;
-        // FwdTrackerConfig::sstr.str(""); // this is a reused obj, no need to copy
-        return *this;
-    }
 
     // sanitizes a path to its canonical form 
     static void canonize( std::string &path ) {
