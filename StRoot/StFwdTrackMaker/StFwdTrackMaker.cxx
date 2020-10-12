@@ -146,32 +146,27 @@ class SiRasterizer {
     ~SiRasterizer() {}
     void setup(FwdTrackerConfig &_cfg) {
         cfg = _cfg;
-
-        raster_r = cfg.get<double>("SiRasterizer:r", 3.0);
-        raster_phi = cfg.get<double>("SiRasterizer:phi", 0.1);
-        if (active())
-            LOG_F(INFO, "SiRasterizer (active) r=%f, phi=%f", raster_r, raster_phi);
-        else {
-            LOG_F(INFO, "SiRasterizer (inactive)");
-        }
+        mRasterR = cfg.get<double>("SiRasterizer:r", 3.0);
+        mRasterPhi = cfg.get<double>("SiRasterizer:phi", 0.1);
     }
 
     bool active() {
         return cfg.get<bool>("SiRasterizer:active", false);
     }
 
-    TVector3 raster(TVector3 _p) {
-        TVector3 p = _p;
+    TVector3 raster(TVector3 p0) {
+        TVector3 p = p0;
         double r = p.Perp();
         double phi = p.Phi();
+        const double minR = 5.0;
         // 5.0 is the r minimum of the Si
-        p.SetPerp(5.0 + (floor((r - 5.0) / raster_r) * raster_r + raster_r / 2.0));
-        p.SetPhi(-TMath::Pi() + (floor((phi + TMath::Pi()) / raster_phi) * raster_phi + raster_phi / 2.0));
+        p.SetPerp(minR + (floor((r - minR) / mRasterR) * mRasterR + mRasterR / 2.0));
+        p.SetPhi(-TMath::Pi() + (floor((phi + TMath::Pi()) / mRasterPhi) * mRasterPhi + mRasterPhi / 2.0));
         return p;
     }
 
     FwdTrackerConfig cfg;
-    double raster_r, raster_phi;
+    double mRasterR, mRasterPhi;
 };
 
 //  Wrapper class around the forward tracker
