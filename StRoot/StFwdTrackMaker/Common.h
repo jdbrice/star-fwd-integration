@@ -1,15 +1,20 @@
 #ifndef FWD_TRACK_MAKER_COMMON_H
 #define FWD_TRACK_MAKER_COMMON_H
 
+#include "TAxis.h"
+#include <vector>
+#include <string>
+
+
 class FwdTrackerUtils {
     public:
-    static void labelAxis( TAxis *_x, vector<string> _labels )
+    static void labelAxis( TAxis *axis, std::vector<std::string> labels )
     {
-       if ( nullptr == _x ) return;
+       if ( !axis ) return;
 
-       for ( unsigned int i = 0; i <= static_cast<unsigned int>(_x->GetNbins()); i++ ) {
-          if ( i < _labels.size() )
-             _x->SetBinLabel( i + 1, _labels[i].c_str() );
+       for ( int i = 0; i <= axis->GetNbins(); i++ ) {
+          if ( i < labels.size() )
+             axis->SetBinLabel( i + 1, labels[i].c_str() );
        }
     }
 };

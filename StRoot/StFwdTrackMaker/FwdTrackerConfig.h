@@ -27,7 +27,7 @@ protected:
     void mapFile(TXMLEngine &xml, XMLNodePointer_t node, Int_t level, std::string path = "") {
         using namespace std;
         // add the path delimeter above top level
-        if ( "" != path) path += FwdTrackerConfig::pathDelim;
+        if ( !path.empty() ) path += FwdTrackerConfig::pathDelim;
 
         // we skip the root node to maintain consistency with original XmlConfig
         if ( level > 1)
@@ -70,7 +70,7 @@ public:
     // sanitizes a path to its canonical form 
     static void canonize( std::string &path ) {
         // remove whitespace
-        path.erase(std::remove_if(path.begin(), path.end(), ::isspace), path.end());
+        path.erase(std::remove_if(path.begin(), path.end(), std::isspace), path.end());
 
         // removes "[0]" found in paths, so that the first element in a list can be accessed by index 0 or bare path
         size_t pos = path.find( "[0]" );
@@ -123,7 +123,7 @@ public:
     template <typename T>
     T get( std::string path, T dv ) const {
         // return default value if path DNE
-        if ( false == exists( path ) )
+        if ( !exists( path ) )
             return dv;
         FwdTrackerConfig::canonize( path );
         // convrt from string to type T and return
@@ -132,13 +132,13 @@ public:
 
     template <typename T>
     std::vector<T> getVector( std::string path, std::vector<T> dv ) const {
-        if ( false == exists( path ) )
+        if ( !exists( path ) )
             return dv;
         
         FwdTrackerConfig::canonize( path );
         std::string val = this->mNodes.at( path );
         // remove whitespace
-        val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
+        val.erase(std::remove_if(val.begin(), val.end(), std::isspace), val.end());
         std::vector<std::string> elems;
 
         // split the string by commas
@@ -177,7 +177,7 @@ public:
             if ( parent == kv.first ) continue;
 
             // if parent path matches query path then it is a child.
-            if ( parent == path && false == is_attribute( kv.first )){
+            if ( parent == path && !is_attribute( kv.first )){
                 result.push_back( kv.first );
             }
         } // loop over all nodes

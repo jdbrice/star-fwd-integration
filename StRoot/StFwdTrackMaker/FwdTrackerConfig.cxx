@@ -13,7 +13,7 @@ std::stringstream FwdTrackerConfig::sstr;
 template <>
 std::string FwdTrackerConfig::get( std::string path, std::string dv ) const {
     // return default value if path DNE
-    if ( false == exists( path ) )
+    if ( !exists( path ) )
         return dv;
     FwdTrackerConfig::canonize( path );
     // directly return string
