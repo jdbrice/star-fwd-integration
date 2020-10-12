@@ -68,17 +68,17 @@ class TrackFitter {
         // Determine which Magnetic field to use
         // Either constant field or real field from StarFieldAdaptor
         if (mConfig.get<bool>("TrackFitter:constB", false)) {
-            mBField = make_unique<genfit::AbsBField>(new genfit::ConstField(0., 0., 5.)); // 0.5 T Bz
+            mBField = std::make_unique<genfit::AbsBField>(new genfit::ConstField(0., 0., 5.)); // 0.5 T Bz
             LOG_INFO << "StFwdTrackMaker: Tracking with constant magnetic field" << endl;
         } else {
-            mBField = make_unique<genfit::AbsBField>(new StarFieldAdaptor());
+            mBField = std::make_unique<genfit::AbsBField>(new StarFieldAdaptor());
             LOG_INFO << "StFwdTrackMaker: Tracking with StarFieldAdapter" << endl;
         }
         // we must have one of the two available fields at this point
         genfit::FieldManager::getInstance()->init(mBField); 
 
         // initialize the main mFitter using a KalmanFitter with reference tracks
-        mFitter = make_unique<genfit::AbsKalmanFitter>(new genfit::KalmanFitterRefTrack());
+        mFitter = std::make_unique<genfit::AbsKalmanFitter>(new genfit::KalmanFitterRefTrack());
 
         // Here we load several options from the config, 
         // to customize the mFitter behavior
