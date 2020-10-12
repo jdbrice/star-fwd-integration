@@ -35,6 +35,9 @@ class FwdGeomUtils {
 
         double stgcZ( int index ) {
 
+            // This ftt_z_delta is needed to match the z location of hits (midpint of active volume?) to the z location of the mother volume.  
+            // NOTE: It may be possible to improve this when the higher precision FTT geometry model is addd
+            const double ftt_z_delta = 0.435028;
             stringstream spath;
             spath << "/HALL_1/CAVE_1/STGM_1/TGCP_" << (index + 1) * 8 << "/"; 
             // 0 -> 8
@@ -43,7 +46,7 @@ class FwdGeomUtils {
             // 3 -> 32
             bool can = cd( spath.str().c_str() );
             if ( can && _matrix != nullptr ){
-                return _matrix->GetTranslation()[2];
+                return _matrix->GetTranslation()[2] + ftt_z_delta;
             }
             return 0.0;
         }
