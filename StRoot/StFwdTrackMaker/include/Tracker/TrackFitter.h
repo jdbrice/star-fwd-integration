@@ -600,7 +600,7 @@ class TrackFitter {
             mFitter->processTrackWithRep(&fitTrack, trackRepPos);
             mFitter->processTrackWithRep(&fitTrack, trackRepNeg);
 
-        } catch (genfit::Exception &e) 
+        } catch (genfit::Exception &e) {
             if (mGenHistograms) mHist["FitStatus"]->Fill("Exception", 1);
         }
 
