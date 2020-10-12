@@ -68,17 +68,17 @@ class TrackFitter {
         // Determine which Magnetic field to use
         // Either constant field or real field from StarFieldAdaptor
         if (mConfig.get<bool>("TrackFitter:constB", false)) {
-            mBField = new genfit::ConstField(0., 0., 5.); // 0.5 T Bz
+            mBField = make_unique<genfit::AbsBField>(new genfit::ConstField(0., 0., 5.)); // 0.5 T Bz
             LOG_INFO << "StFwdTrackMaker: Tracking with constant magnetic field" << endl;
         } else {
-            mBField = new StarFieldAdaptor();
+            mBField = make_unique<genfit::AbsBField>(new StarFieldAdaptor());
             LOG_INFO << "StFwdTrackMaker: Tracking with StarFieldAdapter" << endl;
         }
         // we must have one of the two available fields at this point
         genfit::FieldManager::getInstance()->init(mBField); 
 
         // initialize the main mFitter using a KalmanFitter with reference tracks
-        mFitter = new genfit::KalmanFitterRefTrack();
+        mFitter = make_unique<genfit::AbsKalmanFitter>(new genfit::KalmanFitterRefTrack());
 
         // Here we load several options from the config, 
         // to customize the mFitter behavior
@@ -675,7 +675,7 @@ class TrackFitter {
     genfit::Track *getTrack() { return mFitTrack; }
 
   protected:
-    std::unique_ptr<::AbsBField> mBField;
+    std::unique_ptr<genfit::AbsBField> mBField;
 
     FwdTrackerConfig mConfig; // main config object
 
@@ -684,7 +684,7 @@ class TrackFitter {
     bool mGenHistograms = false;
 
     // Main GenFit fitter instance
-    genfit::AbsKalmanFitter *mFitter = nullptr;
+    std::unique_ptr<genfit::AbsKalmanFitter> mFitter = nullptr;
 
     // PDG codes for the default plc type for fits
     const int mPdgPiPlus = 211;
