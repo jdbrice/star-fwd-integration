@@ -217,39 +217,39 @@ class QualityPlotter {
             if (kv.second == nullptr)
                 continue;
 
-            this->get("nHitsOnTrackMc")->Fill(kv.second->hits.size());
-            this->get("McPt")->Fill(kv.second->_pt);
-            this->get("McEta")->Fill(kv.second->_eta);
-            this->get("McPhi")->Fill(kv.second->_phi);
+            this->get("nHitsOnTrackMc")->Fill(kv.second->mHits.size());
+            this->get("McPt")->Fill(kv.second->mPt);
+            this->get("McEta")->Fill(kv.second->mEta);
+            this->get("McPhi")->Fill(kv.second->mPhi);
 
-            if (kv.second->hits.size() >= 4) {
-                this->get("McPt_4hits")->Fill(kv.second->_pt);
-                this->get("McEta_4hits")->Fill(kv.second->_eta);
-                this->get("McPhi_4hits")->Fill(kv.second->_phi);
+            if (kv.second->mHits.size() >= 4) {
+                this->get("McPt_4hits")->Fill(kv.second->mPt);
+                this->get("McEta_4hits")->Fill(kv.second->mEta);
+                this->get("McPhi_4hits")->Fill(kv.second->mPhi);
 
-                this->get("McPtPhi_4hits")->Fill(kv.second->_pt, kv.second->_phi);
-                ((TH3 *)this->get("McPtEtaPhi_4hits"))->Fill(kv.second->_pt, kv.second->_eta, kv.second->_phi);
+                this->get("McPtPhi_4hits")->Fill(kv.second->mPt, kv.second->mPhi);
+                ((TH3 *)this->get("McPtEtaPhi_4hits"))->Fill(kv.second->mPt, kv.second->mEta, kv.second->mPhi);
             }
 
-            if (kv.second->hits.size() >= 5) {
-                this->get("McPt_5hits")->Fill(kv.second->_pt);
-                this->get("McEta_5hits")->Fill(kv.second->_eta);
-                this->get("McPhi_5hits")->Fill(kv.second->_phi);
+            if (kv.second->mHits.size() >= 5) {
+                this->get("McPt_5hits")->Fill(kv.second->mPt);
+                this->get("McEta_5hits")->Fill(kv.second->mEta);
+                this->get("McPhi_5hits")->Fill(kv.second->mPhi);
             }
 
-            if (kv.second->hits.size() >= 6) {
-                this->get("McPt_6hits")->Fill(kv.second->_pt);
-                this->get("McEta_6hits")->Fill(kv.second->_eta);
-                this->get("McPhi_6hits")->Fill(kv.second->_phi);
+            if (kv.second->mHits.size() >= 6) {
+                this->get("McPt_6hits")->Fill(kv.second->mPt);
+                this->get("McEta_6hits")->Fill(kv.second->mEta);
+                this->get("McPhi_6hits")->Fill(kv.second->mPhi);
             }
 
-            if (kv.second->hits.size() >= 7) {
-                this->get("McPt_7hits")->Fill(kv.second->_pt);
-                this->get("McEta_7hits")->Fill(kv.second->_eta);
-                this->get("McPhi_7hits")->Fill(kv.second->_phi);
+            if (kv.second->mHits.size() >= 7) {
+                this->get("McPt_7hits")->Fill(kv.second->mPt);
+                this->get("McEta_7hits")->Fill(kv.second->mEta);
+                this->get("McPhi_7hits")->Fill(kv.second->mPhi);
             }
 
-            for (auto h : kv.second->hits) {
+            for (auto h : kv.second->mHits) {
                 auto fh = static_cast<FwdHit *>(h);
                 this->get("McHitMap")->Fill(abs(fh->_vid));
                 std::string n = "McHitMapLayer" + std::to_string(fh->getLayer());
@@ -289,19 +289,19 @@ class QualityPlotter {
             this->get("AllQuality")->Fill(quality);
 
             if (mctid > 0 && quality >= 3.0 / 4.0 - 0.001) {
-                this->get("McPtFoundAllQ")->Fill(mcTrackMap[mctid]->_pt);
-                this->get("McEtaFoundAllQ")->Fill(mcTrackMap[mctid]->_eta);
-                this->get("McPhiFoundAllQ")->Fill(mcTrackMap[mctid]->_phi);
+                this->get("McPtFoundAllQ")->Fill(mcTrackMap[mctid]->mPt);
+                this->get("McEtaFoundAllQ")->Fill(mcTrackMap[mctid]->mEta);
+                this->get("McPhiFoundAllQ")->Fill(mcTrackMap[mctid]->mPhi);
 
                 // for ( size_t min_track_len : { 4, 5, 6, 7 } )
                 {
                     size_t min_track_len = 4;
                     if (t.size() >= min_track_len) {
-                        this->get(TString::Format("McPtPhiFound%uAllQ", min_track_len).Data())->Fill(mcTrackMap[mctid]->_pt, mcTrackMap[mctid]->_phi);
-                        ((TH3 *)this->get(TString::Format("McPtEtaPhiFound%uAllQ", min_track_len).Data()))->Fill(mcTrackMap[mctid]->_pt, mcTrackMap[mctid]->_eta, mcTrackMap[mctid]->_phi);
-                        this->get(TString::Format("McPtFound%uAllQ", min_track_len).Data())->Fill(mcTrackMap[mctid]->_pt);
-                        this->get(TString::Format("McEtaFound%uAllQ", min_track_len).Data())->Fill(mcTrackMap[mctid]->_eta);
-                        this->get(TString::Format("McPhiFound%uAllQ", min_track_len).Data())->Fill(mcTrackMap[mctid]->_phi);
+                        this->get(TString::Format("McPtPhiFound%uAllQ", min_track_len).Data())->Fill(mcTrackMap[mctid]->mPt, mcTrackMap[mctid]->mPhi);
+                        ((TH3 *)this->get(TString::Format("McPtEtaPhiFound%uAllQ", min_track_len).Data()))->Fill(mcTrackMap[mctid]->mPt, mcTrackMap[mctid]->mEta, mcTrackMap[mctid]->mPhi);
+                        this->get(TString::Format("McPtFound%uAllQ", min_track_len).Data())->Fill(mcTrackMap[mctid]->mPt);
+                        this->get(TString::Format("McEtaFound%uAllQ", min_track_len).Data())->Fill(mcTrackMap[mctid]->mEta);
+                        this->get(TString::Format("McPhiFound%uAllQ", min_track_len).Data())->Fill(mcTrackMap[mctid]->mPhi);
                     }
                 }
 
@@ -313,23 +313,23 @@ class QualityPlotter {
                 {
                     size_t min_track_len = 4;
                     if (t.size() >= min_track_len) {
-                        this->get(TString::Format("McPtPhiFound%u", min_track_len).Data())->Fill(mcTrackMap[mctid]->_pt, mcTrackMap[mctid]->_phi);
-                        ((TH3 *)this->get(TString::Format("McPtEtaPhiFound%u", min_track_len).Data()))->Fill(mcTrackMap[mctid]->_pt, mcTrackMap[mctid]->_eta, mcTrackMap[mctid]->_phi);
-                        this->get(TString::Format("McPtFound%u", min_track_len).Data())->Fill(mcTrackMap[mctid]->_pt);
-                        this->get(TString::Format("McEtaFound%u", min_track_len).Data())->Fill(mcTrackMap[mctid]->_eta);
-                        this->get(TString::Format("McPhiFound%u", min_track_len).Data())->Fill(mcTrackMap[mctid]->_phi);
+                        this->get(TString::Format("McPtPhiFound%u", min_track_len).Data())->Fill(mcTrackMap[mctid]->mPt, mcTrackMap[mctid]->mPhi);
+                        ((TH3 *)this->get(TString::Format("McPtEtaPhiFound%u", min_track_len).Data()))->Fill(mcTrackMap[mctid]->mPt, mcTrackMap[mctid]->mEta, mcTrackMap[mctid]->mPhi);
+                        this->get(TString::Format("McPtFound%u", min_track_len).Data())->Fill(mcTrackMap[mctid]->mPt);
+                        this->get(TString::Format("McEtaFound%u", min_track_len).Data())->Fill(mcTrackMap[mctid]->mEta);
+                        this->get(TString::Format("McPhiFound%u", min_track_len).Data())->Fill(mcTrackMap[mctid]->mPhi);
                     }
                 }
 
-                this->get("McPtFound")->Fill(mcTrackMap[mctid]->_pt);
-                this->get("McPtPhiFound")->Fill(mcTrackMap[mctid]->_pt, mcTrackMap[mctid]->_phi);
-                ((TH3 *)this->get("McPtEtaPhiFound"))->Fill(mcTrackMap[mctid]->_pt, mcTrackMap[mctid]->_eta, mcTrackMap[mctid]->_phi);
-                this->get("McEtaFound")->Fill(mcTrackMap[mctid]->_eta);
-                this->get("McPhiFound")->Fill(mcTrackMap[mctid]->_phi);
+                this->get("McPtFound")->Fill(mcTrackMap[mctid]->mPt);
+                this->get("McPtPhiFound")->Fill(mcTrackMap[mctid]->mPt, mcTrackMap[mctid]->mPhi);
+                ((TH3 *)this->get("McPtEtaPhiFound"))->Fill(mcTrackMap[mctid]->mPt, mcTrackMap[mctid]->mEta, mcTrackMap[mctid]->mPhi);
+                this->get("McEtaFound")->Fill(mcTrackMap[mctid]->mEta);
+                this->get("McPhiFound")->Fill(mcTrackMap[mctid]->mPhi);
 
-                float mcpt = mcTrackMap[mctid]->_pt;
-                float mceta = mcTrackMap[mctid]->_eta;
-                int mcq = (int)mcTrackMap[mctid]->_q;
+                float mcpt = mcTrackMap[mctid]->mPt;
+                float mceta = mcTrackMap[mctid]->mEta;
+                int mcq = (int)mcTrackMap[mctid]->mQ;
                 float rcpt = 0;
 
                 int rcq = 0;

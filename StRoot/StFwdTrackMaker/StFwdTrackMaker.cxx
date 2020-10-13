@@ -500,8 +500,8 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
             mTreeZ[mTreeN] = z;
             mTreeTID[mTreeN] = track_id;
             mTreeVID[mTreeN] = plane_id;
-            mTreeHPt[mTreeN] = mcTrackMap[track_id]->_pt;
-            mTreeHSV[mTreeN] = mcTrackMap[track_id]->_start_vertex;
+            mTreeHPt[mTreeN] = mcTrackMap[track_id]->mPt;
+            mTreeHSV[mTreeN] = mcTrackMap[track_id]->mStartVertex;
             mTreeN++;
         }
 
@@ -519,11 +519,11 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
 
         // this rejects GEANT hits with eta -999 - do we understand this effect?
         if ( filterGEANT ) {
-            if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->_eta) > 5.0 ){
+            if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->mEta) > 5.0 ){
                 
                 if ( mGenHistograms ) this->mHistograms[TString::Format("stgc%dHitMapSec", plane_id).Data()]->Fill(x, y);
                 continue;
-            } else if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->_eta) < 5.0 ){
+            } else if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->mEta) < 5.0 ){
                 if ( mGenHistograms ) this->mHistograms[TString::Format("stgc%dHitMapPrim", plane_id).Data()]->Fill(x, y);
             }
         }
@@ -777,21 +777,21 @@ int StFwdTrackMaker::Make() {
         if ( mctm.second == nullptr ) continue;
 
         if ( mGenHistograms ){
-            mHistograms[ "McEventPt" ] ->Fill( mctm.second->_pt );
-            mHistograms[ "McEventEta" ] ->Fill( mctm.second->_eta );
-            mHistograms[ "McEventPhi" ] ->Fill( mctm.second->_phi );
+            mHistograms[ "McEventPt" ] ->Fill( mctm.second->mPt );
+            mHistograms[ "McEventEta" ] ->Fill( mctm.second->mEta );
+            mHistograms[ "McEventPhi" ] ->Fill( mctm.second->mPhi );
         }
 
-        if ( mctm.second->_eta > 2.5 && mctm.second->_eta < 4.0 ){
+        if ( mctm.second->mEta > 2.5 && mctm.second->mEta < 4.0 ){
             
             if ( mGenHistograms ){
-                mHistograms[ "McEventFwdPt" ] ->Fill( mctm.second->_pt );
-                mHistograms[ "McEventFwdEta" ] ->Fill( mctm.second->_eta );
-                mHistograms[ "McEventFwdPhi" ] ->Fill( mctm.second->_phi );
+                mHistograms[ "McEventFwdPt" ] ->Fill( mctm.second->mPt );
+                mHistograms[ "McEventFwdEta" ] ->Fill( mctm.second->mEta );
+                mHistograms[ "McEventFwdPhi" ] ->Fill( mctm.second->mPhi );
             }
 
             nForwardTracksNoThreshold++;
-            if ( mctm.second->_pt > 0.05  )
+            if ( mctm.second->mPt > 0.05  )
                 nForwardTracks++;
         }
     } // loop on mcTrackMap

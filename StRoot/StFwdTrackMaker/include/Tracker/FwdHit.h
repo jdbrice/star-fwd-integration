@@ -35,30 +35,35 @@ class FwdSystem : public KiTrack::ISectorSystem {
 class McTrack {
   public:
     McTrack() {
-        _pt = -999;
-        _eta = -999;
-        _phi = -999;
-        _q = 0;
+        mPt = -999;
+        mEta = -999;
+        mPhi = -999;
+        mQ = 0;
     }
-    McTrack(float pt, float eta = -999, float phi = -999, int q = 0,
+    McTrack(double pt, double eta = -999, double phi = -999, int q = 0,
             int start_vertex = -1) {
-        _pt = pt;
-        _eta = eta;
-        _phi = phi;
-        _q = q;
-        _start_vertex = start_vertex;
+        mPt = pt;
+        mEta = eta;
+        mPhi = phi;
+        mQ = q;
+        mStartVertex = start_vertex;
     }
-    void addHit(KiTrack::IHit *hit) { hits.push_back(hit); }
 
-    void addFSIHit(KiTrack::IHit *hit) { fsi_hits.push_back(hit); }
+    void addHit(KiTrack::IHit *hit) { mHits.push_back(hit); }
+    // void addFstHit(KiTrack::IHit *hit) { mFstHits.push_back(hit); }
 
-    float _pt, _eta, _phi;
-    int _tid, _q, _start_vertex;
+    double mPt, mEta, mPhi;
+    int mTid, mQ, mStartVertex;
 
-    std::vector<KiTrack::IHit *> hits;
-    std::vector<KiTrack::IHit *> fsi_hits;
+    std::vector<KiTrack::IHit *> mHits;
+    // std::vector<KiTrack::IHit *> mFstHits;
 };
 
+
+/*
+ * Note, this class does not follow STAR naming convention.
+ * Instead, keep the conventions of KiTrack
+ */
 class FwdHit : public KiTrack::IHit {
   public:
     FwdHit(unsigned int id, float x, float y, float z, int vid, int tid,
@@ -75,10 +80,11 @@ class FwdHit : public KiTrack::IHit {
         _covmat.ResizeTo( 3, 3 );
         _covmat = covmat;
 
-        int _map[] = {0, 0, 0, 0, 0, 1, 2, 0, 0, 3, 4, 5, 6}; // ftsref6a
+        // these are the sector ids mapped to layers
+        int map[] = {0, 0, 0, 0, 0, 1, 2, 0, 0, 3, 4, 5, 6}; // ftsref6a
 
         if (vid > 0)
-            _sector = _map[vid];
+            _sector = map[vid];
         else {
             _sector = abs(vid); // set directly if you want
             // now set vid back so we retain info on the tru origin of the hit
@@ -92,7 +98,7 @@ class FwdHit : public KiTrack::IHit {
     }
 
     int _tid; // aka ID truth
-    int _vid;
+    int _vid; // volume id
     unsigned int _id; // just a unique id for each hit in this event.
     std::shared_ptr<McTrack> _mcTrack;
     TMatrixDSym _covmat;

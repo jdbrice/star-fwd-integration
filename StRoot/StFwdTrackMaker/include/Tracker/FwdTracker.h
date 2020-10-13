@@ -436,14 +436,14 @@ class ForwardTrackMaker {
         }
         if (mctm.count(idt)) {
             auto mct = mctm[idt];
-            mcSeedMom.SetPtEtaPhi(mct->_pt, mct->_eta, mct->_phi);
-            if (mct->_pt < mConfig.get<float>("TrackFitter.McFilter:pt-min", 0.0) ||
-                mct->_pt > mConfig.get<float>("TrackFitter.McFilter:pt-max", 1e10)) {
+            mcSeedMom.SetPtEtaPhi(mct->mPt, mct->mEta, mct->mPhi);
+            if (mct->mPt < mConfig.get<float>("TrackFitter.McFilter:pt-min", 0.0) ||
+                mct->mPt > mConfig.get<float>("TrackFitter.McFilter:pt-max", 1e10)) {
                 
                 return;
             }
-            if (mct->_eta < mConfig.get<float>("TrackFitter.McFilter:eta-min", 0.0) ||
-                mct->_eta > mConfig.get<float>("TrackFitter.McFilter:eta-max", 1e10)) {
+            if (mct->mEta < mConfig.get<float>("TrackFitter.McFilter:eta-min", 0.0) ||
+                mct->mEta > mConfig.get<float>("TrackFitter.McFilter:eta-max", 1e10)) {
                 
                 return;
             }
@@ -504,14 +504,14 @@ class ForwardTrackMaker {
 
 
 
-            if (mc_track->hits.size() < 4){ // rquire min 4 hits on track
+            if (mc_track->mHits.size() < 4){ // require min 4 hits on track
                 continue;
             }
 
             std::set<size_t> uvid;
             Seed_t track;
 
-            for (auto h : mc_track->hits) {
+            for (auto h : mc_track->mHits) {
                 track.push_back(h);
                 uvid.insert(static_cast<FwdHit *>(h)->_vid);
             }
