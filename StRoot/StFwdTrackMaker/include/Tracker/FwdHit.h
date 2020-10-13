@@ -136,7 +136,7 @@ class FwdConnector : public KiTrack::ISectorConnector {
 
 class SeedQual {
   public:
-    inline double operator()(Seed_t s) { return double(s.size()) / FwdSystem::sNFwdLayers ; }
+    inline double operator()(Seed_t s) { return double(s.size()) / FwdSystem::sNFttLayers ; } // seeds only use the 4 hits from Ftt
 };
 
 class SeedCompare {
