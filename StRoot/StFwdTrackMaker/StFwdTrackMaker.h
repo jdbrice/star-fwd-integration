@@ -9,6 +9,8 @@
 
 #include "FwdTrackerConfig.h"
 
+#include <memory>
+
 namespace KiTrack {
 class IHit;
 };
@@ -61,27 +63,32 @@ class StFwdTrackMaker : public StMaker {
 
   private:
   protected:
-    FwdTrackerConfig fwdcfg;
-    ForwardTracker *mForwardTracker;
-    ForwardHitLoader *mForwardHitLoader;
-    StarFieldAdaptor *mFieldAdaptor;
 
-    SiRasterizer *mSiRasterizer;
-
+    // Track Seed typdef 
     typedef std::vector<KiTrack::IHit *> Seed_t;
 
-    bool mGenHistograms;
-    std::map<std::string, TH1 *> histograms;
-    TFile *mlFile;
-    TTree *mlTree;
-    bool mGenTree;
+    FwdTrackerConfig mFwdConfig;
+    std::unique_ptr<ForwardTracker> mForwardTracker;
+    std::unique_ptr<ForwardHitLoader> mForwardHitLoader;
+    StarFieldAdaptor *mFieldAdaptor;
+
+    std::unique_ptr<SiRasterizer> mSiRasterizer;
+
+    
+
+    bool mGenHistograms = false;
+    std::map<std::string, TH1 *> mHistograms;
+    TFile *mTreeFile = 0;
+    TTree *mTree = 0;
+    bool mGenTree = false;
     std::string mConfigFile;
 
-    float mlt_x[MAX_TREE_ELEMENTS], mlt_y[MAX_TREE_ELEMENTS], mlt_z[MAX_TREE_ELEMENTS];
-    int mlt_n, mlt_nt, mlt_tid[MAX_TREE_ELEMENTS], mlt_vid[MAX_TREE_ELEMENTS], mlt_hpt[MAX_TREE_ELEMENTS], mlt_hsv[MAX_TREE_ELEMENTS];
-    float mlt_pt[MAX_TREE_ELEMENTS], mlt_eta[MAX_TREE_ELEMENTS], mlt_phi[MAX_TREE_ELEMENTS];
-    std::map<string, std::vector<float>> mlt_crits;
-    std::map<string, std::vector<int>> mlt_crit_track_ids;
+    // elements used only if the mGenTree = true
+    float mTreeX[MAX_TREE_ELEMENTS], mTreeY[MAX_TREE_ELEMENTS], mTreeZ[MAX_TREE_ELEMENTS];
+    int mTreeN, mTreeNTracks, mTreeTID[MAX_TREE_ELEMENTS], mTreeVID[MAX_TREE_ELEMENTS], mTreeHPt[MAX_TREE_ELEMENTS], mTreeHSV[MAX_TREE_ELEMENTS];
+    float mTreePt[MAX_TREE_ELEMENTS], mTreeEta[MAX_TREE_ELEMENTS], mTreePhi[MAX_TREE_ELEMENTS];
+    std::map<string, std::vector<float>> mTreeCrits;
+    std::map<string, std::vector<int>> mTreeCritTrackIds;
 
     // I could not get the library generation to succeed with these.
     // so I have removed them
