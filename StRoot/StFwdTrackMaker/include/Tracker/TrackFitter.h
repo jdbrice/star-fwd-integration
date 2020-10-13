@@ -139,9 +139,9 @@ class TrackFitter {
         }
 
         // get default vertex values used in simulation from the config
-        mVertexSigmaXY = mConfig.get<float>("TrackFitter.Vertex:sigmaXY", 1.0f);
-        mVertexSigmaZ = mConfig.get<float>("TrackFitter.Vertex:sigmaZ", 30.0f);
-        mVertexPos = mConfig.getVector<float>("TrackFitter.Vertex:pos", {0.0f,0.0f,0.0f});
+        mVertexSigmaXY = mConfig.get<double>("TrackFitter.Vertex:sigmaXY", 1.0);
+        mVertexSigmaZ = mConfig.get<double>("TrackFitter.Vertex:sigmaZ", 30.0);
+        mVertexPos = mConfig.getVector<double>("TrackFitter.Vertex:pos", {0.0,0.0,0.0});
         mIncludeVertexInFit = mConfig.get<bool>("TrackFitter.Vertex:includeInFit", false);
 
         if ( mGenHistograms )
@@ -709,9 +709,9 @@ class TrackFitter {
     vector<double> mFSTZLocations, mFTTZLocations;
 
     // parameter ALIASED from mConfig wrt PV vertex
-    float mVertexSigmaXY = 1;
-    float mVertexSigmaZ = 30;
-    vector<float> mVertexPos;
+    double mVertexSigmaXY = 1;
+    double mVertexSigmaZ = 30;
+    vector<double> mVertexPos;
     bool mIncludeVertexInFit = false;
 
     // GenFit state
