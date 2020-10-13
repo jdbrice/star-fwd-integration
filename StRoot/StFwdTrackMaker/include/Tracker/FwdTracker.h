@@ -152,7 +152,7 @@ class ForwardTrackMaker {
             auto crit = KiTrack::Criteria::createCriterion(name, vmin, vmax);
             crit->setSaveValues(mSaveCriteriaValues);
             if (mSaveCriteriaValues)
-                crits.push_back(new KiTrack::CriteriaKeeper(crit)); // KiTrack::CriteriaKeeper intercepts values and saves them
+                crits.push_back(new CriteriaKeeper(crit)); // CriteriaKeeper intercepts values and saves them
             else
                 crits.push_back(crit);
         }
@@ -168,14 +168,14 @@ class ForwardTrackMaker {
 
         for (auto crit : mTwoHitCrit) {
             if (crit_name == crit->getName()) {
-                auto critKeeper = static_cast<KiTrack::CriteriaKeeper *>(crit);
+                auto critKeeper = static_cast<CriteriaKeeper *>(crit);
                 return critKeeper->getValues();
             }
         }
 
         for (auto crit : mThreeHitCrit) {
             if (crit_name == crit->getName()) {
-                auto critKeeper = static_cast<KiTrack::CriteriaKeeper *>(crit);
+                auto critKeeper = static_cast<CriteriaKeeper *>(crit);
                 return critKeeper->getValues();
             }
         }
@@ -191,14 +191,14 @@ class ForwardTrackMaker {
 
         for (auto crit : mTwoHitCrit) {
             if (crit_name == crit->getName()) {
-                auto critKeeper = static_cast<KiTrack::CriteriaKeeper *>(crit);
+                auto critKeeper = static_cast<CriteriaKeeper *>(crit);
                 return critKeeper->getTrackIds();
             }
         }
 
         for (auto crit : mThreeHitCrit) {
             if (crit_name == crit->getName()) {
-                auto critKeeper = static_cast<KiTrack::CriteriaKeeper *>(crit);
+                auto critKeeper = static_cast<CriteriaKeeper *>(crit);
                 return critKeeper->getTrackIds();
             }
         }

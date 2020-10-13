@@ -1,7 +1,7 @@
 #ifndef CRITERIA_KEEPER_H
 #define CRITERIA_KEEPER_H
 
-namespace KiTrack {
+
 class CriteriaKeeper : public ICriterion {
 
   public:
@@ -67,6 +67,6 @@ class CriteriaKeeper : public ICriterion {
     std::vector<float> values;
     std::vector<int> track_ids;
 };
-} // namespace KiTrack
+
 
 #endif
