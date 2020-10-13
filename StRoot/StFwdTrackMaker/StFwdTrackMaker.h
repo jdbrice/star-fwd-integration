@@ -9,8 +9,6 @@
 
 #include "FwdTrackerConfig.h"
 
-#include <memory>
-
 namespace KiTrack {
 class IHit;
 };
@@ -67,13 +65,6 @@ class StFwdTrackMaker : public StMaker {
     // Track Seed typdef 
     typedef std::vector<KiTrack::IHit *> Seed_t;
 
-    FwdTrackerConfig mFwdConfig;
-    std::unique_ptr<ForwardTracker> mForwardTracker;
-    std::unique_ptr<ForwardHitLoader> mForwardHitLoader;
-    StarFieldAdaptor *mFieldAdaptor;
-
-    std::unique_ptr<SiRasterizer> mSiRasterizer;
-
     
 
     bool mGenHistograms = false;
@@ -93,6 +84,10 @@ class StFwdTrackMaker : public StMaker {
     // I could not get the library generation to succeed with these.
     // so I have removed them
     #ifndef __CINT__
+        std::shared_ptr<SiRasterizer> mSiRasterizer;
+        FwdTrackerConfig mFwdConfig;
+        std::shared_ptr<ForwardTracker> mForwardTracker;
+        std::shared_ptr<ForwardHitLoader> mForwardHitLoader;
         void loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap );
         void loadStgcHits( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count = 0 );
         void loadStgcHitsFromGEANT( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count = 0 );

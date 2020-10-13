@@ -195,6 +195,19 @@ class ForwardTracker : public ForwardTrackMaker {
     void finish() {
         qPlotter->finish();
         writeEventHistograms();
+
+        if (gFwdSystem){
+            delete gFwdSystem;
+            gFwdSystem = 0;
+        }
+        if (qPlotter){
+            delete qPlotter;
+            qPlotter = 0;
+        }
+        if (trackFitter){
+            delete trackFitter;
+            trackFitter= 0;
+        }
     }
 };
 
@@ -226,11 +239,10 @@ class ForwardHitLoader : public IHitLoader {
 };
 
 //________________________________________________________________________
-StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(0), mForwardHitLoader(0), mFieldAdaptor(new StarFieldAdaptor()), mGenHistograms(false), mGenTree(false){
+StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(nullptr), mForwardHitLoader(nullptr), mGenHistograms(false), mGenTree(false){
     SetAttr("useFtt",1);                 // Default Ftt on 
     SetAttr("useFst",1);                 // Default Fst on
     SetAttr("config", "config.xml");     // Default configuration file (user may override before Init())
-    SetAttr("logfile","everything.log"); // Default filename for log-guru output 
     SetAttr("fillEvent",1); // fill StEvent
 };
 
@@ -311,15 +323,14 @@ int StFwdTrackMaker::Init() {
 
 
     // create an SiRasterizer in case we need it 
-    mSiRasterizer = new SiRasterizer(mFwdConfig);
-    
-    mForwardTracker = new ForwardTracker();
+    mSiRasterizer = std::shared_ptr<SiRasterizer>( new SiRasterizer(mFwdConfig));
+    mForwardTracker = std::shared_ptr<ForwardTracker>(new ForwardTracker());
     mForwardTracker->setConfig(mFwdConfig);
 
     // only save criteria values if we are generating a tree.
     mForwardTracker->setSaveCriteriaValues(mGenTree);
 
-    mForwardHitLoader = new ForwardHitLoader();
+    mForwardHitLoader = std::shared_ptr<ForwardHitLoader>(new ForwardHitLoader());
     mForwardTracker->setLoader(mForwardHitLoader);
     mForwardTracker->initialize();
 

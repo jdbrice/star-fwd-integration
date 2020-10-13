@@ -89,20 +89,15 @@ class ForwardTrackMaker {
     // Adopt external configuration file
     void setConfig(FwdTrackerConfig _cfg) { cfg = _cfg; }
     // Adopt external hit loader
-    void setLoader(IHitLoader *loader) { hitLoader = loader; }
+    void setLoader(std::shared_ptr<IHitLoader>loader) { hitLoader = loader; }
 
     virtual void initialize() {
         setupHistograms();
 
-        LOG_INFO << "CFG:" << endm << endm;
-        LOG_INFO << cfg.dump() << endm;
-
         doTrackFitting = !(cfg.get<bool>("TrackFitter:off", false));
-        LOG_INFO << "doTrackFitting = " << doTrackFitting << endm;
+
         if (!cfg.exists("TrackFitter"))
             doTrackFitting = false;
-        LOG_INFO << "doTrackFitting = " << doTrackFitting << endm;
-
     }
 
 
@@ -1043,7 +1038,7 @@ class ForwardTrackMaker {
     std::vector<genfit::Track *> _globalTracks;
 
     QualityPlotter *qPlotter;
-    IHitLoader *hitLoader;
+    std::shared_ptr<IHitLoader> hitLoader;
 
     TrackFitter *trackFitter = nullptr;
 
