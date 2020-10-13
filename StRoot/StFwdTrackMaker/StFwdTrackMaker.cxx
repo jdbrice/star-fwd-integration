@@ -863,38 +863,54 @@ int StFwdTrackMaker::Make() {
             return kStWarn;
         }
 
-      // Now fill StEvent
-      FillEvent();
+        // Now fill StEvent
+        FillEvent();
 
-      // Now loop over the tracks and do printout
-      int nnodes = stEvent->trackNodes().size();
+        // Now loop over the tracks and do printout
+        int nnodes = stEvent->trackNodes().size();
 
-    for ( int i = 0; i < nnodes; i++ ) {
+        for ( int i = 0; i < nnodes; i++ ) {
 
-        const StTrackNode *node = stEvent->trackNodes()[i];
-        StGlobalTrack *track = (StGlobalTrack *)node->track(global);
-        StTrackGeometry *geometry = track->geometry();
+            const StTrackNode *node = stEvent->trackNodes()[i];
+            StGlobalTrack *track = (StGlobalTrack *)node->track(global);
+            StTrackGeometry *geometry = track->geometry();
 
-        StThreeVectorF origin = geometry->origin();
-        StThreeVectorF momentum = geometry->momentum();
+            StThreeVectorF origin = geometry->origin();
+            StThreeVectorF momentum = geometry->momentum();
 
 
-        StDcaGeometry *dca = track->dcaGeometry();
-        if ( dca ) {
-            origin = dca->origin();
-            momentum = dca->momentum();
-        }
-        else {
-            LOG_INFO << "d c a geometry missing" << endm;
-        }
+            StDcaGeometry *dca = track->dcaGeometry();
+            if ( dca ) {
+                origin = dca->origin();
+                momentum = dca->momentum();
+            }
+            else {
+                LOG_INFO << "d c a geometry missing" << endm;
+            }
 
-        int idtruth = track->idTruth();
-        
-        auto mctrack = mcTrackMap[ idtruth ];
+            int idtruth = track->idTruth();
+            
+            auto mctrack = mcTrackMap[ idtruth ];
 
-    } // loop on nnodes
+        } // loop on nnodes
 
     } // IAttr FillEvent
+
+    // delete the hits from the hitmap
+    for ( auto kv : hitMap ){
+        for ( auto h : kv.second ){
+            delete h;
+        }
+        kv.second.clear();
+    }
+
+    for ( auto kv : fsiHitMap ){
+        for ( auto h : kv.second ){
+            delete h;
+        }
+        kv.second.clear();
+    }
+    
 
     return kStOK;
 } // Make
