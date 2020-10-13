@@ -178,7 +178,7 @@ class ForwardTracker : public ForwardTrackMaker {
         nEvents = 1; // only process single event
 
         // Create the forward system...
-        gFwdSystem = new FwdSystem(7);
+        FwdSystem::sInstance = new FwdSystem();
 
         // make our quality plotter
         mQualityPlotter = new QualityPlotter(mConfig);
@@ -198,9 +198,9 @@ class ForwardTracker : public ForwardTrackMaker {
             writeEventHistograms();
         }
 
-        if (gFwdSystem){
-            delete gFwdSystem;
-            gFwdSystem = 0;
+        if (FwdSystem::sInstance){
+            delete FwdSystem::sInstance;
+            FwdSystem::sInstance = 0;
         }
         if (mQualityPlotter){
             delete mQualityPlotter;

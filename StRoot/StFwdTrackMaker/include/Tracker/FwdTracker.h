@@ -690,7 +690,7 @@ class ForwardTrackMaker {
 
         } else { // the subset and hit removal
 
-            size_t minHitsOnTrack = mConfig.get<size_t>(subsetPath + ":min-hits-on-track", 7);
+            size_t minHitsOnTrack = mConfig.get<size_t>(subsetPath + ":min-hits-on-track", FwdSystem::sNFttLayers);
             acceptedTracks = automaton.getTracks(minHitsOnTrack);
         }// subset off
 

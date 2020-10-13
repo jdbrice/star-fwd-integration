@@ -15,16 +15,20 @@ class StHit;
 
 class FwdSystem : public KiTrack::ISectorSystem {
   public:
-    FwdSystem(const int ndisks) : KiTrack::ISectorSystem(), _ndisks(ndisks){};
+    static const int sNFwdLayers = 7;
+    static const int sNFttLayers = 4;
+    static const int sNFstLayers = 3;
+    FwdSystem(const int ndisks = FwdSystem::sNFwdLayers) : KiTrack::ISectorSystem(), mNDisks(ndisks){};
     ~FwdSystem(){/* */};
     virtual unsigned int getLayer(int diskid) const throw(KiTrack::OutOfRange) {
         return diskid;
     }
 
-    int _ndisks;
-    std::string getInfoOnSector(int sec) const { return "TODO"; }
+    int mNDisks;
+    std::string getInfoOnSector(int sec) const { return "NOOP"; }
+    static FwdSystem *sInstance; // setup and torn down by StFwdTrackMaker
 };
-FwdSystem *gFwdSystem;
+
 //_____________________________________________________________________________________________
 
 // small class to store Mc Track information
@@ -84,8 +88,8 @@ class FwdHit : public KiTrack::IHit {
     };
 
     const KiTrack::ISectorSystem *getSectorSystem() const {
-        return gFwdSystem;
-    } // need to implement
+        return FwdSystem::sInstance;
+    }
 
     int _tid; // aka ID truth
     int _vid;
@@ -101,7 +105,7 @@ using Seed_t = std::vector<KiTrack::IHit *>;
 class FwdConnector : public KiTrack::ISectorConnector {
   public:
     FwdConnector(unsigned int distance)
-        : _system(*gFwdSystem), _distance(distance) {}
+        : _system(*FwdSystem::sInstance), _distance(distance) {}
     ~FwdConnector(){/**/};
 
     // Return the possible sectors (layers) given current
@@ -132,7 +136,7 @@ class FwdConnector : public KiTrack::ISectorConnector {
 
 class SeedQual {
   public:
-    inline double operator()(Seed_t s) { return double(s.size()) / 7.0; }
+    inline double operator()(Seed_t s) { return double(s.size()) / FwdSystem::sNFwdLayers ; }
 };
 
 class SeedCompare {
