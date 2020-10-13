@@ -94,7 +94,7 @@ class ForwardTrackMaker {
     void setLoader(std::shared_ptr<IHitLoader>loader) { mHitLoader = loader; }
 
     virtual void initialize() {
-        setupHistograms();
+        if (mGenHistograms) setupHistograms();
 
         mDoTrackFitting = !(mConfig.get<bool>("TrackFitter:off", false));
 
@@ -104,7 +104,6 @@ class ForwardTrackMaker {
 
 
     void writeEventHistograms() {
-        LOG_SCOPE_FUNCTION(INFO);
         // build the name
         string name = "results.root";
 
@@ -232,7 +231,6 @@ class ForwardTrackMaker {
     }
 
     void setupHistograms() {
-        LOG_SCOPE_FUNCTION(INFO);
 
         mHist["input_nhits"] = new TH1I("input_nhits", ";# hits", 1000, 0, 1000);
         mHist["nAttemptedFits"] = new TH1I("nAttemptedFits", ";;# attempted fits", 10, 0, 10);
@@ -250,10 +248,8 @@ class ForwardTrackMaker {
     }
 
     void fillHistograms() {
-        LOG_SCOPE_FUNCTION(INFO);
 
-        if (mHitLoader != nullptr) {
-            LOG_F(INFO, "h=%p", mHist["input_nhits"]);
+        if (mGenHistograms && mHitLoader != nullptr) {
             auto hm = mHitLoader->load(1);
             for (auto hp : hm)
                 mHist["input_nhits"]->Fill(hp.second.size());
@@ -261,7 +257,10 @@ class ForwardTrackMaker {
     }
 
     void writeHistograms() {
-        LOG_SCOPE_FUNCTION(INFO);
+        if ( !mGenHistograms ){
+            return;
+        }
+
         for (auto nh : mHist) {
             nh.second->SetDirectory(gDirectory);
             nh.second->Write();
@@ -295,8 +294,10 @@ class ForwardTrackMaker {
             doEvent(iEvent);
         }
 
-        mQualityPlotter->finish();
-        writeEventHistograms();
+        if (mGenHistograms){
+            mQualityPlotter->finish();
+            writeEventHistograms();
+        }
     }
 
     Seed_t::iterator findHitById(Seed_t &track, unsigned int _id) {
@@ -311,7 +312,6 @@ class ForwardTrackMaker {
     }
 
     void removeHits(std::map<int, std::vector<KiTrack::IHit *>> &hitmap, std::vector<Seed_t> &tracks) {
-        LOG_SCOPE_FUNCTION(INFO);
 
         for (auto track : tracks) {
             if (track.size() > 0) {
@@ -336,11 +336,7 @@ class ForwardTrackMaker {
     } // removeHits
 
     void doEvent(unsigned long long int iEvent = 0) {
-        LOG_SCOPE_FUNCTION(INFO);
-        LOG_F(INFO, "/******************************EVENT START ********************************/");
-        LOG_F(INFO, "iEvent = %llu", iEvent);
-
-        /************** Cleanup **************************/
+        /************** Cleanup ****************************************/
         // Moved cleanup to the start of doEvent, so that the fit results
         // persist after the call
         mRecoTracks.clear();
@@ -362,7 +358,9 @@ class ForwardTrackMaker {
         mGlobalTracks.clear();
         /************** Cleanup **************************/
 
-        mQualityPlotter->startEvent(); // starts the timer for this event
+        if (mGenHistograms ){
+            mQualityPlotter->startEvent(); // starts the timer for this event
+        }
 
         mTotalHitsRemoved = 0;
 
@@ -396,7 +394,9 @@ class ForwardTrackMaker {
             }
             /***********************************************/
 
-            mQualityPlotter->summarizeEvent(mRecoTracks, mcTrackMap, mFitMoms, mFitStatus);
+            if (mGenHistograms ){
+                mQualityPlotter->summarizeEvent(mRecoTracks, mcTrackMap, mFitMoms, mFitStatus);
+            }
             return;
         }
 
@@ -418,13 +418,16 @@ class ForwardTrackMaker {
         }
         /***********************************************/
 
-        mQualityPlotter->summarizeEvent(mRecoTracks, mcTrackMap, mFitMoms, mFitStatus);
+        if ( mGenHistograms ){
+            mQualityPlotter->summarizeEvent(mRecoTracks, mcTrackMap, mFitMoms, mFitStatus);
+        }
     } // doEvent
 
     void trackFitting(Seed_t &track) {
-        LOG_SCOPE_FUNCTION(INFO);
 
-        mHist["FitStatus"]->Fill("Seeds", 1);
+        if ( mGenHistograms ){
+            mHist["FitStatus"]->Fill("Seeds", 1);
+        }
 
         // Calculate the MC info first and check filters
         int idt = 0;
@@ -461,7 +464,9 @@ class ForwardTrackMaker {
         // Done with Mc Filter
 
         if (mDoTrackFitting) {
-            mHist["FitStatus"]->Fill("AttemptFit", 1);
+            if ( mGenHistograms ){
+                mHist["FitStatus"]->Fill("AttemptFit", 1);
+            }
 
             TVector3 p;
             if (true == mConfig.get<bool>("TrackFitter:mcSeed", false)) {
@@ -470,17 +475,19 @@ class ForwardTrackMaker {
                 p = mTrackFitter->fitTrack(track);
             }
 
-            if (p.Perp() > 1e-3) {
-                mHist["FitStatus"]->Fill("GoodFit", 1);
-            } else {
-                mHist["FitStatus"]->Fill("BadFit", 1);
+            if ( mGenHistograms ){
+                if (p.Perp() > 1e-3) {
+                    mHist["FitStatus"]->Fill("GoodFit", 1);
+                } else {
+                    mHist["FitStatus"]->Fill("BadFit", 1);
+                }
             }
 
             mFitMoms.push_back(p);
             mFitStatus.push_back(mTrackFitter->getStatus());
 
             auto ft = mTrackFitter->getTrack();
-            if (ft->getFitStatus(ft->getCardinalRep())->isFitConverged() && p.Perp() > 1e-3) {
+            if ( mGenHistograms && ft->getFitStatus(ft->getCardinalRep())->isFitConverged() && p.Perp() > 1e-3) {
                 mHist["FitStatus"]->Fill("GoodCardinal", 1);
             }
 
@@ -492,7 +499,7 @@ class ForwardTrackMaker {
             mytrack->setMcTrackId(idtruth);
             mGlobalTracks.push_back(mytrack);
         } else {
-            LOG_F(INFO, "Skipping Track Fitting");
+            // Skipping Track Fitting
         }
     }
 
@@ -541,9 +548,13 @@ class ForwardTrackMaker {
         }
         long long itEnd = loguru::now_ns();
         long long duration = (itEnd - itStart) * 1e-6; // milliseconds
-        this->mHist["FitDuration"]->Fill(duration);
+        if ( mGenHistograms ){
+            this->mHist["FitDuration"]->Fill(duration);
+        }
 
-        mQualityPlotter->afterIteration(0, mRecoTracks);
+        if ( mGenHistograms ){
+            mQualityPlotter->afterIteration(0, mRecoTracks);
+        }
     }
 
 
@@ -574,8 +585,13 @@ class ForwardTrackMaker {
         return n_hits_kept;
     }
 
+    /*doTrackingOnHitmapSubset
+     * @brief Does track finding steps on a subset of hits (phi slice)
+     * @param iIteration: tracking iteration (for determining params)
+     * @param hitmap: the hitmap to use, should already be subset of original
+     * @returns a list of track seeds
+     */
     vector<Seed_t> doTrackingOnHitmapSubset( size_t iIteration, std::map<int, std::vector<KiTrack::IHit*> > &hitmap  ) {
-        LOG_SCOPE_FUNCTION(INFO);
         /*************************************************************/
         // Step 2
         // build 2-hit segments (setup parent child relationships)
@@ -710,14 +726,12 @@ class ForwardTrackMaker {
             acceptedTracks = automaton.getTracks(minHitsOnTrack);
             LOG_F(INFO, "We have %lu Tracks to work with", acceptedTracks.size());
 
-            // mQualityPlotter->afterIteration(iIteration, tracks);
         }// subset off
 
         return acceptedTracks;
     } // doTrackingOnHitmapSubset
 
     void doTrackIteration(size_t iIteration, std::map<int, std::vector<KiTrack::IHit *>> &hitmap) {
-        LOG_SCOPE_FUNCTION(INFO);
         LOG_F(INFO, "Tracking Iteration %lu", iIteration);
 
         // empty the list of reco tracks for the iteration
@@ -734,7 +748,9 @@ class ForwardTrackMaker {
         }
 
         // this starts the timer for the iteration
-        mQualityPlotter->startIteration();
+        if ( mGenHistograms ){
+            mQualityPlotter->startIteration();
+        }
 
 
         if ( false ) { // no phi slicing!
@@ -812,7 +828,9 @@ class ForwardTrackMaker {
             trackFitting(t);
         }
 
-        mQualityPlotter->afterIteration( iIteration, mRecoTracksThisItertion );
+        if ( mGenHistograms ){
+            mQualityPlotter->afterIteration( iIteration, mRecoTracksThisItertion );
+        }
 
         // Add the set of all accepted tracks (this iteration) to our collection of found tracks from all iterations
         mRecoTracks.insert( mRecoTracks.end(), mRecoTracksThisItertion.begin(), mRecoTracksThisItertion.end() );
@@ -820,72 +838,66 @@ class ForwardTrackMaker {
     } // doTrackIteration
 
     void addSiHitsMc() {
-        LOG_SCOPE_FUNCTION(INFO);
         std::map<int, std::vector<KiTrack::IHit *>> hitmap = mHitLoader->loadSi(0);
-        LOG_F(INFO, "hitmap size = %lu (should be 3)", hitmap.size());
 
-        LOG_F(INFO, "We have %d global tracks to work with", mGlobalTracks.size());
         for (size_t i = 0; i < mGlobalTracks.size(); i++) {
-            LOG_F(INFO, "mGlobalTracks mcTrackId = %d", mGlobalTracks[i]->getMcTrackId());
 
             if (mGlobalTracks[i]->getFitStatus(mGlobalTracks[i]->getCardinalRep())->isFitConverged() == false || mFitMoms[i].Perp() < 1e-3) {
-                LOG_F(WARNING, "Original Track fit did not converge, skipping");
                 return;
             }
 
-            mHist["FitStatus"]->Fill("PossibleReFit", 1);
+            if ( mGenHistograms){
+                mHist["FitStatus"]->Fill("PossibleReFit", 1);
+            }
 
             std::vector<KiTrack::IHit *> si_hits_for_this_track(3, nullptr);
 
             for (size_t j = 0; j < 3; j++) {
-                LOG_F(INFO, "Checking hitmap[%lu]", j);
                 for (auto h0 : hitmap[j]) {
-                    LOG_F(INFO, "Checking hit with _tid=%lu", dynamic_cast<FwdHit *>(h0)->_tid);
                     if (dynamic_cast<FwdHit *>(h0)->_tid == mGlobalTracks[i]->getMcTrackId()) {
                         si_hits_for_this_track[j] = h0;
-                        LOG_F(INFO, "Found Si hit on layer %lu", j);
                         break;
                     }
                 } // loop on hits in this layer of hitmap
             }     // loop on hitmap layers
 
-            LOG_F(INFO, "Si hit0 = %p", si_hits_for_this_track[0]);
-            LOG_F(INFO, "Si hit1 = %p", si_hits_for_this_track[1]);
-            LOG_F(INFO, "Si hit2 = %p", si_hits_for_this_track[2]);
-
             size_t nSiHitsFound = 0;
             if ( si_hits_for_this_track[0] != nullptr ) nSiHitsFound++;
             if ( si_hits_for_this_track[1] != nullptr ) nSiHitsFound++;
             if ( si_hits_for_this_track[2] != nullptr ) nSiHitsFound++;
-            LOG_F( INFO, "nSiHitsFound = %lu", nSiHitsFound );
 
-            this->mHist[ "nSiHitsFound" ]->Fill( 1, ( si_hits_for_this_track[0] != nullptr ? 1 : 0 ) );
-            this->mHist[ "nSiHitsFound" ]->Fill( 2, ( si_hits_for_this_track[1] != nullptr ? 1 : 0 ) );
-            this->mHist[ "nSiHitsFound" ]->Fill( 3, ( si_hits_for_this_track[2] != nullptr ? 1 : 0 ) );
+            if ( mGenHistograms ){
+                this->mHist[ "nSiHitsFound" ]->Fill( 1, ( si_hits_for_this_track[0] != nullptr ? 1 : 0 ) );
+                this->mHist[ "nSiHitsFound" ]->Fill( 2, ( si_hits_for_this_track[1] != nullptr ? 1 : 0 ) );
+                this->mHist[ "nSiHitsFound" ]->Fill( 3, ( si_hits_for_this_track[2] != nullptr ? 1 : 0 ) );
+            }
 
             if (nSiHitsFound >= 1) {
-                mHist["FitStatus"]->Fill("AttemptReFit", 1);
+                if ( mGenHistograms ){
+                    mHist["FitStatus"]->Fill("AttemptReFit", 1);
+                }
                 TVector3 p = mTrackFitter->refitTrackWithSiHits(mGlobalTracks[i], si_hits_for_this_track);
 
-                if (p.Perp() == mFitMoms[i].Perp()) {
-                    mHist["FitStatus"]->Fill("BadReFit", 1);
+                if ( mGenHistograms ){
+                    if (p.Perp() == mFitMoms[i].Perp()) {
+                        mHist["FitStatus"]->Fill("BadReFit", 1);
 
-                } else {
-                    mHist["FitStatus"]->Fill("GoodReFit", 1);
+                    } else {
+                        mHist["FitStatus"]->Fill("GoodReFit", 1);
+                    }
                 }
 
-                LOG_F(INFO, "Global track now has: %lu points", mGlobalTracks[i]->getNumPoints());
-                LOG_F(INFO, "pt was: %0.2f and now is: %0.2f", mFitMoms[i].Perp(), p.Perp());
                 mFitMoms[i] = p;
             } // we have 3 Si hits to refit with
 
-            mHist["FitStatus"]->Fill( TString::Format( "w%uSi", nSiHitsFound ).Data(), 1 );
+            if ( mGenHistograms ){
+                mHist["FitStatus"]->Fill( TString::Format( "w%uSi", nSiHitsFound ).Data(), 1 );
+            }
 
         }     // loop on the global tracks
     }         // ad Si hits via MC associations
 
     void addSiHits() {
-        LOG_SCOPE_FUNCTION(INFO);
         std::map<int, std::vector<KiTrack::IHit *>> hitmap = mHitLoader->loadSi(0);
 
         LOG_F(INFO, "hitmap size = %lu (should be 3)", hitmap.size());
@@ -898,7 +910,9 @@ class ForwardTrackMaker {
                 return;
             }
 
-            mHist["FitStatus"]->Fill("PossibleReFit", 1);
+            if ( mGenHistograms ){
+                mHist["FitStatus"]->Fill("PossibleReFit", 1);
+            }
 
             std::vector<KiTrack::IHit *> hits_near_disk0;
             std::vector<KiTrack::IHit *> hits_near_disk1;
@@ -922,9 +936,11 @@ class ForwardTrackMaker {
 
             size_t nSiHitsFound = 0; // this is really # of disks on which a hit is found
 
-            this->mHist[ "nSiHitsFound" ]->Fill( 1, hits_near_disk0.size() );
-            this->mHist[ "nSiHitsFound" ]->Fill( 2, hits_near_disk1.size() );
-            this->mHist[ "nSiHitsFound" ]->Fill( 3, hits_near_disk2.size() );
+            if ( mGenHistograms ){
+                this->mHist[ "nSiHitsFound" ]->Fill( 1, hits_near_disk0.size() );
+                this->mHist[ "nSiHitsFound" ]->Fill( 2, hits_near_disk1.size() );
+                this->mHist[ "nSiHitsFound" ]->Fill( 3, hits_near_disk2.size() );
+            }
 
             //  TODO: HANDLE multiple points found?
             if ( hits_near_disk0.size() == 1 ) {
@@ -949,32 +965,35 @@ class ForwardTrackMaker {
             if (nSiHitsFound >= 1) {
                 LOG_SCOPE_F( INFO, "attempting to Refit with %lu si hits", nSiHitsFound );
 
-                mHist["FitStatus"]->Fill("AttemptReFit", 1);
+                if ( mGenHistograms ){
+                    mHist["FitStatus"]->Fill("AttemptReFit", 1);
+                }
                 TVector3 p = mTrackFitter->refitTrackWithSiHits(mGlobalTracks[i], hits_to_add);
 
-                if (p.Perp() == mFitMoms[i].Perp()) {
-                    mHist["FitStatus"]->Fill("BadReFit", 1);
+                if ( mGenHistograms ){
+                    if (p.Perp() == mFitMoms[i].Perp()) {
+                        mHist["FitStatus"]->Fill("BadReFit", 1);
 
-                } else {
-                    mHist["FitStatus"]->Fill("GoodReFit", 1);
-
-                    mFitMoms[i] = p;
+                    } else {
+                        mHist["FitStatus"]->Fill("GoodReFit", 1);
+                        
+                    }
                 }
 
-                // LOG_F(INFO, "Global track now has: %lu point", mGlobalTracks[i]->getNumPoints());
-                // LOG_F(INFO, "pt was: %0.2f and now is: %0.2f", mFitMoms[i].Perp(), p.Perp());
+                mFitMoms[i] = p;
 
             } else {
-                // mFitMoms[ i ] = TVector3( 1000, 1000, 1000 );
+                // unable to refit
             }
 
-            mHist["FitStatus"]->Fill( TString::Format( "w%uSi", nSiHitsFound ).Data(), 1 );
+            if ( mGenHistograms ){
+                mHist["FitStatus"]->Fill( TString::Format( "w%uSi", nSiHitsFound ).Data(), 1 );
+            }
 
         } // loop on globals
     }     // addSiHits
 
     std::vector<KiTrack::IHit *> findSiHitsNearMe(std::vector<KiTrack::IHit *> &available_hits, genfit::MeasuredStateOnPlane &msp, double dphi = 0.004 * 15.5, double dr = 0.75) {
-        LOG_SCOPE_FUNCTION(INFO);
         double probe_phi = TMath::ATan2(msp.getPos().Y(), msp.getPos().X());
         double probe_r = sqrt(pow(msp.getPos().X(), 2) + pow(msp.getPos().Y(), 2));
 
@@ -1038,6 +1057,7 @@ class ForwardTrackMaker {
     std::vector<KiTrack::ICriterion *> mThreeHitCrit;
 
     // histograms of the raw input data
+    bool mGenHistograms = false; // controls these histograms and use of QualityPlotter
     std::map<std::string, TH1 *> mHist;
     // std::map<std::string, std::vector<float>> criteriaValues;
 

@@ -193,8 +193,11 @@ class ForwardTracker : public ForwardTrackMaker {
     }
 
     void finish() {
-        mQualityPlotter->finish();
-        writeEventHistograms();
+
+        if ( mGenHistograms ){
+            mQualityPlotter->finish();
+            writeEventHistograms();
+        }
 
         if (gFwdSystem){
             delete gFwdSystem;
