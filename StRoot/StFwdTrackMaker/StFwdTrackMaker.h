@@ -100,13 +100,13 @@ class StFwdTrackMaker : public StMaker {
 
     // Fill StEvent
     void FillEvent();
-    void FillDetectorInfo(StTrackDetectorInfo *info, genfit::Track *track, bool increment);
-    void FillTrack(StTrack *otrack, genfit::Track *itrack, const Seed_t &iseed, StTrackDetectorInfo *info);
-    void FillTrackFlags(StTrack *otrack, genfit::Track *itrack);
-    void FillTrackGeometry(StTrack *otrack, genfit::Track *itrack, double zplane, int io);
-    void FillTrackDcaGeometry ( StGlobalTrack    *otrack, genfit::Track *itrack );
-    void FillTrackFitTraits(StTrack *otrack, genfit::Track *itrack);
-    void FillTrackMatches(StTrack *otrack, genfit::Track *itrack);
+    void FillDetectorInfo(StTrackDetectorInfo *info, const genfit::Track *track, bool increment);
+    void FillTrack(StTrack *otrack, const genfit::Track *itrack, const Seed_t &iseed, StTrackDetectorInfo *info);
+    void FillTrackFlags(StTrack *otrack, const genfit::Track *itrack);
+    void FillTrackGeometry(StTrack *otrack, const genfit::Track *itrack, double zplane, int io);
+    void FillTrackDcaGeometry ( StGlobalTrack    *otrack, const genfit::Track *itrack );
+    void FillTrackFitTraits(StTrack *otrack, const genfit::Track *itrack);
+    void FillTrackMatches(StTrack *otrack, const genfit::Track *itrack);
 };
 
 #endif

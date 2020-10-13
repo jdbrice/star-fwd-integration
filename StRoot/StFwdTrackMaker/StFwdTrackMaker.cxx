@@ -1024,7 +1024,7 @@ void StFwdTrackMaker::FillEvent()
 }
 
 
-void StFwdTrackMaker::FillTrack( StTrack *otrack, genfit::Track *itrack, const Seed_t &iseed, StTrackDetectorInfo *info )
+void StFwdTrackMaker::FillTrack( StTrack *otrack, const genfit::Track *itrack, const Seed_t &iseed, StTrackDetectorInfo *info )
 {
   const double z_stgc[] = { 280.9, 303.7, 326.6, 349.4 };
 
@@ -1084,7 +1084,7 @@ void StFwdTrackMaker::FillTrack( StTrack *otrack, genfit::Track *itrack, const S
 }
 
 
-void StFwdTrackMaker::FillTrackFlags( StTrack *otrack, genfit::Track *itrack )
+void StFwdTrackMaker::FillTrackFlags( StTrack *otrack, const genfit::Track *itrack )
 {
 
   int flag = 0;
@@ -1143,7 +1143,7 @@ void StFwdTrackMaker::FillTrackFlags( StTrack *otrack, genfit::Track *itrack )
 }
 
 
-void StFwdTrackMaker::FillTrackMatches( StTrack *otrack, genfit::Track *itrack )
+void StFwdTrackMaker::FillTrackMatches( StTrack *otrack, const genfit::Track *itrack )
 {
   // TODO:
 
@@ -1167,7 +1167,7 @@ void StFwdTrackMaker::FillTrackMatches( StTrack *otrack, genfit::Track *itrack )
 }
 
 
-void StFwdTrackMaker::FillTrackFitTraits( StTrack *otrack, genfit::Track *itrack )
+void StFwdTrackMaker::FillTrackFitTraits( StTrack *otrack, const genfit::Track *itrack )
 {
 
   unsigned short g3id_pid_hypothesis = 6; // TODO: do not hard code this
@@ -1248,7 +1248,7 @@ void StFwdTrackMaker::FillTrackFitTraits( StTrack *otrack, genfit::Track *itrack
 }
 
 
-void StFwdTrackMaker::FillTrackGeometry( StTrack *otrack, genfit::Track *itrack, double zplane, int io )
+void StFwdTrackMaker::FillTrackGeometry( StTrack *otrack, const genfit::Track *itrack, double zplane, int io )
 {
   int ipoint = 0;
 
@@ -1331,7 +1331,7 @@ void StFwdTrackMaker::FillTrackGeometry( StTrack *otrack, genfit::Track *itrack,
 }
 
 
-void StFwdTrackMaker::FillTrackDcaGeometry( StGlobalTrack *otrack, genfit::Track *itrack )
+void StFwdTrackMaker::FillTrackDcaGeometry( StGlobalTrack *otrack, const genfit::Track *itrack )
 {
   // We will need the event
   StEvent *stEvent = static_cast<StEvent *>(GetInputDS("StEvent"));
@@ -1460,7 +1460,7 @@ void StFwdTrackMaker::FillTrackDcaGeometry( StGlobalTrack *otrack, genfit::Track
 }
 
 
-void StFwdTrackMaker::FillDetectorInfo( StTrackDetectorInfo *info, genfit::Track *track, bool increment )
+void StFwdTrackMaker::FillDetectorInfo( StTrackDetectorInfo *info, const genfit::Track *track, bool increment )
 {
   //   // here is where we would fill in
   //   // 1) total number of hits
