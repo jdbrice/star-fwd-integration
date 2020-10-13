@@ -4,7 +4,7 @@
 #include "TAxis.h"
 #include <vector>
 #include <string>
-
+#include <chrono>
 
 class FwdTrackerUtils {
     public:
@@ -16,6 +16,10 @@ class FwdTrackerUtils {
           if ( i < labels.size() )
              axis->SetBinLabel( i + 1, labels[i].c_str() );
        }
+    }
+
+    static long long nowNanoSecond(){
+      return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
 };
 

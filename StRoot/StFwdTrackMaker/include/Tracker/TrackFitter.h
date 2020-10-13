@@ -34,7 +34,6 @@
 
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
 #include "StFwdTrackMaker/include/Tracker/STARField.h"
-#include "StFwdTrackMaker/include/Tracker/loguru.h"
 #include "StFwdTrackMaker/include/Tracker/FwdGeomUtils.h"
 
 #include "StarGenerator/UTIL/StarRandom.h"
@@ -341,7 +340,6 @@ class TrackFitter {
 
 
     genfit::MeasuredStateOnPlane projectToFst(size_t si_plane, genfit::Track *fitTrack) {
-        LOG_SCOPE_FUNCTION(INFO);
         if (si_plane > 2) {
             genfit::MeasuredStateOnPlane nil;
             return nil;
@@ -517,7 +515,7 @@ class TrackFitter {
      * 
      */
     TVector3 fitTrack(vector<KiTrack::IHit *> trackCand, double *Vertex = 0, TVector3 *McSeedMom = 0) {
-        long long itStart = loguru::now_ns();
+        long long itStart = FwdTrackerUtils::nowNanoSecond();
         if (mGenHistograms) this->mHist["FitStatus"]->Fill("Total", 1);
 
         // The PV information, if we want to use it
@@ -649,7 +647,7 @@ class TrackFitter {
                 fitTrack.getFitStatus(trackRepNeg)->isFitConverged() == false) {
         
                 p.SetXYZ(0, 0, 0);
-                long long duration = (loguru::now_ns() - itStart) * 1e-6; // milliseconds
+                long long duration = (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6; // milliseconds
                 if (mGenHistograms) {
                     this->mHist["FitStatus"]->Fill("Fail", 1);
                     this->mHist["FailedFitDuration"]->Fill(duration);
@@ -665,7 +663,7 @@ class TrackFitter {
             LOG_WARN << "Exception on track fit: " << e.what() << endm;
             p.SetXYZ(0, 0, 0);
 
-            long long duration = (loguru::now_ns() - itStart) * 1e-6; // milliseconds
+            long long duration = (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6; // milliseconds
             if (mGenHistograms) {
                 this->mHist["FitStatus"]->Fill("Exception", 1);
                 this->mHist["FailedFitDuration"]->Fill(duration);
@@ -674,7 +672,7 @@ class TrackFitter {
             return p;
         } // try/catch 
 
-        long long duration = (loguru::now_ns() - itStart) * 1e-6; // milliseconds
+        long long duration = (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6; // milliseconds
         if (mGenHistograms) {
             this->mHist["FitStatus"]->Fill("Pass", 1);
             this->mHist["delta_fit_seed_pT"]->Fill(p.Pt() - seedMom.Pt());

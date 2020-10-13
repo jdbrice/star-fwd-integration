@@ -13,8 +13,9 @@
 #include "GenFit/FitStatus.h"
 
 #include "StFwdTrackMaker/FwdTrackerConfig.h"
+#include "StFwdTrackMaker/Common.h"
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
-#include "StFwdTrackMaker/include/Tracker/loguru.h"
+
 
 class QualityPlotter {
   public:
@@ -154,34 +155,31 @@ class QualityPlotter {
     TH1 *get(std::string hn) {
         if (hist.count(hn) > 0)
             return hist[hn];
-
-        LOG_F(ERROR, "histogram name=%s does not exist, returning NULL", hn.c_str());
         return nullptr; //careful
     }
 
     void startIteration() {
         // start the timer
-        itStart = loguru::now_ns();
+        itStart = FwdTrackerUtils::nowNanoSecond();
     }
     void afterIteration(size_t iteration, std::vector<Seed_t> acceptedTracks) {
 
         size_t nTracks = acceptedTracks.size();
         nTracksAfterIteration.push_back(nTracks); // assume that we call the iterations in order
 
-        long long itEnd = loguru::now_ns();
+        long long itEnd = FwdTrackerUtils::nowNanoSecond();
         long long duration = (itEnd - itStart) * 1e-6; // milliseconds
         this->get("DurationIt" + to_string(iteration))->Fill(duration);
-        LOG_F(INFO, "Duration( It=%lu ) = %lld", iteration, duration);
     }
 
     void startEvent() {
-        eventStart = loguru::now_ns();
+        eventStart = FwdTrackerUtils::nowNanoSecond();
     }
     void summarizeEvent(std::vector<Seed_t> foundTracks, std::map<int, shared_ptr<McTrack>> &mcTrackMap, std::vector<TVector3> fitMoms, std::vector<genfit::FitStatus> fitStatus) {
-        LOG_SCOPE_FUNCTION(INFO);
+
         using namespace std;
 
-        long long duration = (loguru::now_ns() - eventStart) * 1e-6; // milliseconds
+        long long duration = (FwdTrackerUtils::nowNanoSecond() - eventStart) * 1e-6; // milliseconds
         this->get("DurationPerEvent")->Fill(duration);
 
         // make a map of the number of tracks found for each # of hits
@@ -195,10 +193,6 @@ class QualityPlotter {
             if (tracks_found_by_nHits.count(i) > 0)
                 this->get("nHitsOnTrack")->Fill(i, tracks_found_by_nHits[i]);
         }
-
-        // if ( tracks_found_by_nHits.size() > 1 ){
-        // 	LOG_F( INFO, "FOUND ACCEPTANCE" );
-        // }
 
         // the total number of tracks found (all nHits)
         size_t nTotal = foundTracks.size();
@@ -269,15 +263,10 @@ class QualityPlotter {
 
         for (auto t : foundTracks) {
 
-            if (t.size() > 7) {
-                LOG_F(INFO, "too many hits!");
-            }
-
             map<int, float> qual_map;
 
             for (auto hit : t) {
                 qual_map[static_cast<FwdHit *>(hit)->_tid]++;
-                LOG_F(INFO, "_tid = %d", static_cast<FwdHit *>(hit)->_tid);
             }
 
             for (auto &kv : qual_map) {

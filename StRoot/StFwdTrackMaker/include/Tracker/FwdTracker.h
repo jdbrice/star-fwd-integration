@@ -20,7 +20,6 @@
 #include "StFwdTrackMaker/include/Tracker/HitLoader.h"
 #include "StFwdTrackMaker/include/Tracker/QualityPlotter.h"
 #include "StFwdTrackMaker/include/Tracker/TrackFitter.h"
-#include "StFwdTrackMaker/include/Tracker/loguru.h"
 
 #include "Criteria/Criteria.h"
 #include "Criteria/ICriterion.h"
@@ -111,7 +110,6 @@ class ForwardTrackMaker {
             name = mConfig.get<string>("Output:url", "fwdTrackerOutput.root");
         }
 
-        LOG_F(INFO, "EventSummary : %s", name.c_str());
 
         TFile *fOutput = new TFile(name.c_str(), "RECREATE");
         fOutput->cd();
@@ -145,13 +143,12 @@ class ForwardTrackMaker {
             bool active = mConfig.get<bool>(p + ":active", true);
 
             if (false == active) {
-                LOG_F(INFO, "Skipping Criteria %s (active=false)", name.c_str());
                 continue;
             }
 
             float vmin = mConfig.get<float>(p + ":min", 0);
             float vmax = mConfig.get<float>(p + ":max", 1);
-            LOG_F(INFO, "Loading Criteria from %s (name=%s, min=%f, max=%f)", p.c_str(), name.c_str(), vmin, vmax);
+            
             auto crit = KiTrack::Criteria::createCriterion(name, vmin, vmax);
             crit->setSaveValues(mSaveCriteriaValues);
             if (mSaveCriteriaValues)
@@ -288,7 +285,6 @@ class ForwardTrackMaker {
         }
 
         // loop over events
-        LOG_F(INFO, "Looping on %llu events starting from event %llu", nEvents, firstEvent);
 
         for (unsigned long long iEvent = firstEvent; iEvent < firstEvent + nEvents; iEvent++) {
             doEvent(iEvent);
@@ -322,7 +318,7 @@ class ForwardTrackMaker {
                     auto hitit = std::find(hitmap[sector].begin(), hitmap[sector].end(), hit);
 
                     if (hitit == hitmap[sector].end()) {
-                        LOG_F(ERROR, "Hit on track but not in hitmap!");
+
                     } else {
                         hitmap[sector].erase(hitit);
                         mTotalHitsRemoved++;
@@ -386,11 +382,9 @@ class ForwardTrackMaker {
             /***********************************************/
             // REFIT with Silicon hits
             if (mConfig.get<bool>("TrackFitter:refitSi", true)) {
-                LOG_SCOPE_F(INFO, "Refitting with Si hits (MC association)");
                 addSiHitsMc();
-                LOG_F(INFO, "Finished adding Si hits");
             } else {
-                LOG_F(INFO, "Skipping Si Refit");
+                // skip Si refit
             }
             /***********************************************/
 
@@ -401,7 +395,7 @@ class ForwardTrackMaker {
         }
 
         size_t nIterations = mConfig.get<size_t>("TrackFinder:nIterations", 0);
-        LOG_F(INFO, "Running %lu Tracking Iterations", nIterations);
+
 
         for (size_t iIteration = 0; iIteration < nIterations; iIteration++) {
             doTrackIteration(iIteration, hitmap);
@@ -410,11 +404,9 @@ class ForwardTrackMaker {
         /***********************************************/
         // REFIT with Silicon hits
         if (mConfig.get<bool>("TrackFitter:refitSi", true)) {
-            LOG_SCOPE_F(INFO, "Refitting");
             addSiHits();
-            LOG_F(INFO, "Finished adding Si hits");
         } else {
-            LOG_F(INFO, "Skipping Si Refit");
+            // Skipping Si Refit
         }
         /***********************************************/
 
@@ -440,7 +432,6 @@ class ForwardTrackMaker {
         auto mctm = mHitLoader->getMcTrackMap();
 
         if (qual < mConfig.get<float>("TrackFitter.McFilter:quality-min", 0.0)) {
-            LOG_F(INFO, "McFilter: Skipping low quality (q=%f) track", qual);
             return;
         }
         if (mctm.count(idt)) {
@@ -448,17 +439,17 @@ class ForwardTrackMaker {
             mcSeedMom.SetPtEtaPhi(mct->_pt, mct->_eta, mct->_phi);
             if (mct->_pt < mConfig.get<float>("TrackFitter.McFilter:pt-min", 0.0) ||
                 mct->_pt > mConfig.get<float>("TrackFitter.McFilter:pt-max", 1e10)) {
-                LOG_F(INFO, "McFilter: Skipping low pt (pt=%f) track", mct->_pt);
+                
                 return;
             }
             if (mct->_eta < mConfig.get<float>("TrackFitter.McFilter:eta-min", 0.0) ||
                 mct->_eta > mConfig.get<float>("TrackFitter.McFilter:eta-max", 1e10)) {
-                LOG_F(INFO, "McFilter: Skipping low eta (eta=%f) track", mct->_eta);
+                
                 return;
             }
-            LOG_F(INFO, "Checking McFilter on track id=%d, quality=%f, (%f, %f, %f), charge=%d", idt, qual, mct->_pt, mct->_eta, mct->_phi, mct->_q);
+            
         } else {
-            LOG_F(INFO, "Cannot find the McTrack ID = %d ", idt);
+            // cannot find the track
         }
 
         // Done with Mc Filter
@@ -504,7 +495,7 @@ class ForwardTrackMaker {
     }
 
     void doMcTrackFinding(std::map<int, shared_ptr<McTrack>> mcTrackMap) {
-        LOG_SCOPE_FUNCTION( INFO );
+
         mQualityPlotter->startIteration();
 
         // we will build reco tracks from each McTrack
@@ -513,8 +504,7 @@ class ForwardTrackMaker {
 
 
 
-            if (mc_track->hits.size() < 4){
-                LOG_F( INFO, "Skipping track with %lu < 4", mc_track->hits.size() );
+            if (mc_track->hits.size() < 4){ // rquire min 4 hits on track
                 continue;
             }
 
@@ -524,7 +514,6 @@ class ForwardTrackMaker {
             for (auto h : mc_track->hits) {
                 track.push_back(h);
                 uvid.insert(static_cast<FwdHit *>(h)->_vid);
-                LOG_F( INFO, "Track has hit on layer %lu", static_cast<FwdHit *>(h)->_vid );
             }
 
             if (uvid.size() == track.size()) { // only add tracks that have one hit per volume
@@ -535,18 +524,16 @@ class ForwardTrackMaker {
                 mRecoTrackQuality.push_back(qual);
                 mRecoTrackIdTruth.push_back(idt);
             } else {
-                LOG_F( INFO, "Skipping track that doesnt have hits on all layers " );
+                //Skipping track that doesnt have hits on all layers 
             }
         }
 
-        LOG_F(INFO, "Made %lu Reco Tracks from MC Tracks", mRecoTracks.size());
-
-        long long itStart = loguru::now_ns();
+        long long itStart = FwdTrackerUtils::nowNanoSecond();
         // Fit each accepted track seed
         for (auto t : mRecoTracks) {
             trackFitting(t);
         }
-        long long itEnd = loguru::now_ns();
+        long long itEnd = FwdTrackerUtils::nowNanoSecond();
         long long duration = (itEnd - itStart) * 1e-6; // milliseconds
         if ( mGenHistograms ){
             this->mHist["FitDuration"]->Fill(duration);
@@ -620,21 +607,17 @@ class ForwardTrackMaker {
             connPath = "TrackFinder.Connector";
 
         unsigned int distance = mConfig.get<unsigned int>(connPath + ":distance", 1);
-        LOG_F(INFO, "Connector( distance = %u )", distance);
+        
         FwdConnector connector(distance);
         builder.addSectorConnector(&connector);
 
         // Get the segments and return an automaton object for further work
-        LOG_F(INFO, "Getting the 1 hit segments");
+        
         KiTrack::Automaton automaton = builder.get1SegAutomaton();
 
         // at any point we can get a list of tracks out like this:
         // std::vector < std::vector< KiTrack::IHit* > > tracks = automaton.getTracks();
         // we can apply an optional parameter <nHits> to only get tracks with >=nHits in them
-
-        // Report the number of segments and connections after the first step
-        LOG_F(INFO, "nSegments=%lu", automaton.getSegments().size());
-        LOG_F(INFO, "nConnections=%u", automaton.getNumberOfConnections());
 
         /*************************************************************/
         // Step 3
@@ -656,18 +639,14 @@ class ForwardTrackMaker {
         bool doCleanBadStates = mConfig.get<bool>(criteriaPath + ":cleanBadStates", true);
 
         if (doAutomation) {
-            LOG_F(INFO, "Doing Automation Step");
             automaton.doAutomaton();
         } else {
-            LOG_F(INFO, "Not running Automation Step");
+            //Not running Automation Step
         }
 
         if (doAutomation && doCleanBadStates) {
             automaton.cleanBadStates();
         }
-
-        LOG_F(INFO, "nSegments=%lu", automaton.getSegments().size());
-        LOG_F(INFO, "nConnections=%u", automaton.getNumberOfConnections());
 
         /*************************************************************/
         // Step 4
@@ -684,23 +663,14 @@ class ForwardTrackMaker {
         std::vector<Seed_t> rejectedTracks;
 
         if (findSubsets) {
-            LOG_SCOPE_F(INFO, "SubsetNN");
-            LOG_F(INFO, "Trying to get best set of tracks given all the possibilities");
-
             size_t minHitsOnTrack = mConfig.get<size_t>(subsetPath + ":min-hits-on-track", 7);
-            LOG_F(INFO, "Getting all tracks with at least %lu hits on them", minHitsOnTrack);
+            // Getting all tracks with at least minHitsOnTrack hits on them
             std::vector<Seed_t> tracks = automaton.getTracks(minHitsOnTrack);
-            LOG_F(INFO, "We have %lu Tracks to work with", tracks.size());
 
             float omega = mConfig.get<float>(subsetPath + ".Omega", 0.75);
             float stableThreshold = mConfig.get<float>(subsetPath + ".StableThreshold", 0.1);
             float Ti = mConfig.get<float>(subsetPath + ".InitialTemp", 2.1);
             float Tf = mConfig.get<float>(subsetPath + ".InfTemp", 0.1);
-
-            LOG_F(INFO, "SubsetHopfiledNN Settings:");
-            LOG_F(INFO, "Temp (initial=%0.3f, inf=%0.3f)", Ti, Tf);
-            LOG_F(INFO, "Omega=%0.3f", omega);
-            LOG_F(INFO, "StableThreshold=%0.3f", stableThreshold);
 
             KiTrack::SubsetHopfieldNN<Seed_t> subset;
             subset.add(tracks);
@@ -716,23 +686,18 @@ class ForwardTrackMaker {
             acceptedTracks = subset.getAccepted();
             rejectedTracks = subset.getRejected();
 
-            LOG_F(INFO, "We had %lu tracks. Accepted = %lu, Rejected = %lu", tracks.size(), acceptedTracks.size(), rejectedTracks.size());
+            LOG_DEBUG << "We had " << tracks.size() << " tracks. Accepted = " << acceptedTracks.size() << ", Rejected = " << rejectedTracks.size() << endm;
 
         } else { // the subset and hit removal
-            LOG_F(INFO, "The SubsetNN Step is turned OFF. This also means the Hit Remover is turned OFF (requires SubsetNN step)");
 
             size_t minHitsOnTrack = mConfig.get<size_t>(subsetPath + ":min-hits-on-track", 7);
-            LOG_F(INFO, "Getting all tracks with at least %lu hits on them", minHitsOnTrack);
             acceptedTracks = automaton.getTracks(minHitsOnTrack);
-            LOG_F(INFO, "We have %lu Tracks to work with", acceptedTracks.size());
-
         }// subset off
 
         return acceptedTracks;
     } // doTrackingOnHitmapSubset
 
     void doTrackIteration(size_t iIteration, std::map<int, std::vector<KiTrack::IHit *>> &hitmap) {
-        LOG_F(INFO, "Tracking Iteration %lu", iIteration);
 
         // empty the list of reco tracks for the iteration
         mRecoTracksThisItertion.clear();
@@ -741,10 +706,8 @@ class ForwardTrackMaker {
         size_t nHitsThisIteration = nHitsInHitMap(hitmap);
 
         if (nHitsThisIteration < 4) {
-            LOG_F(INFO, "No hits left in the hitmap! Skipping this iteration");
+            // No hits left in the hitmap! Skipping this iteration
             return;
-        } else {
-            LOG_F(INFO, "Working with %lu hits this iteration", nHitsThisIteration);
         }
 
         // this starts the timer for the iteration
@@ -767,17 +730,15 @@ class ForwardTrackMaker {
             size_t phi_slice_count = mConfig.get<size_t>( pslPath, 1 );
 
             if ( phi_slice_count == 0 || phi_slice_count > 100 ){
-                LOG_F( WARNING, "Invalid phi_slice_count = %lu, resetting to 1", phi_slice_count);
+                LOG_WARN << "Invalid phi_slice_count = " << phi_slice_count << ", resetting to 1" << endm;
                 phi_slice_count= 1;
             }
 
-            LOG_F( INFO, "Using %lu phi_slices", phi_slice_count );
             float phi_slice = 2 * TMath::Pi() / (float) phi_slice_count;
             for ( size_t phi_slice_index = 0; phi_slice_index < phi_slice_count; phi_slice_index++ ){
 
                 float phi_min = phi_slice_index * phi_slice - TMath::Pi();
                 float phi_max = (phi_slice_index + 1) * phi_slice - TMath::Pi();
-                LOG_F( INFO, "Working with hits in %0.2f < phi < %0.2f", phi_min, phi_max );
 
                 /*************************************************************/
                 // Step 1A
@@ -788,10 +749,7 @@ class ForwardTrackMaker {
                 if ( phi_slice_count > 1 ){
                     nHitsThisSlice = sliceHitMapInPhi( hitmap, slicedHitMap, phi_min, phi_max );
                     if ( nHitsThisSlice < 4 ) {
-                        LOG_F( INFO, "This phi ( %f < phi < %f ) only has %lu hits, Skipping this Slice", phi_min, phi_max, nHitsThisSlice );
                         continue;
-                    } else {
-                        LOG_F( INFO, "Working with %lu hits this Slice", nHitsThisSlice );
                     }
                 } else { // no need to slice
                     // I think this incurs a copy, maybe we can find a way to avoid.
@@ -814,15 +772,8 @@ class ForwardTrackMaker {
         if ( false == mConfig.exists( hrmPath ) ) hrmPath = "TrackFinder.HitRemover";
 
         if ( true == mConfig.get<bool>( hrmPath + ":active", true ) ){
-            LOG_F( INFO, "Removing hits, BEFORE n = %lu", nHitsInHitMap( hitmap ) );
             removeHits( hitmap, mRecoTracksThisItertion );
-            LOG_F( INFO, "Removing hits, AFTER n = %lu", nHitsInHitMap( hitmap ) );
-        } else {
-            LOG_F( INFO, "Hit Remover is turned OFF" );
         }
-
-
-        // mDoTrackFitting( mRecoTracksThisItertion );
 
         for (auto t : mRecoTracksThisItertion) {
             trackFitting(t);
@@ -900,13 +851,11 @@ class ForwardTrackMaker {
     void addSiHits() {
         std::map<int, std::vector<KiTrack::IHit *>> hitmap = mHitLoader->loadSi(0);
 
-        LOG_F(INFO, "hitmap size = %lu (should be 3)", hitmap.size());
-
         // loop on global tracks
         for (size_t i = 0; i < mGlobalTracks.size(); i++) {
 
             if (mGlobalTracks[i]->getFitStatus(mGlobalTracks[i]->getCardinalRep())->isFitConverged() == false) {
-                LOG_F(WARNING, "Original Track fit did not converge, skipping");
+                // Original Track fit did not converge, skipping 
                 return;
             }
 
@@ -927,11 +876,9 @@ class ForwardTrackMaker {
                 hits_near_disk1 = findSiHitsNearMe(hitmap[1], msp1);
                 hits_near_disk0 = findSiHitsNearMe(hitmap[0], msp0);
             } catch (genfit::Exception &e) {
-                LOG_F(ERROR, "Failed to project to Si disk: %s", e.what());
+                // Failed to project to Si disk: ", e.what()
             }
 
-            LOG_F(INFO, "There are (%lu, %lu, %lu) hits near the track on Si disks 0, 1, 2", hits_near_disk0.size(), hits_near_disk1.size(), hits_near_disk2.size());
-            LOG_F(INFO, "Track already has %lu points", mGlobalTracks[i]->getNumPoints());
             vector<KiTrack::IHit *> hits_to_add;
 
             size_t nSiHitsFound = 0; // this is really # of disks on which a hit is found
@@ -963,8 +910,6 @@ class ForwardTrackMaker {
             }
 
             if (nSiHitsFound >= 1) {
-                LOG_SCOPE_F( INFO, "attempting to Refit with %lu si hits", nSiHitsFound );
-
                 if ( mGenHistograms ){
                     mHist["FitStatus"]->Fill("AttemptReFit", 1);
                 }
@@ -1003,10 +948,7 @@ class ForwardTrackMaker {
             double h_phi = TMath::ATan2(h->getY(), h->getX());
             double h_r = sqrt(pow(h->getX(), 2) + pow(h->getY(), 2));
             double mdphi = fabs(h_phi - probe_phi);
-            if ( mdphi > 2 * TMath::Pi() ) {
-                LOG_F( WARNING, "BAD WRAP" );
-            }
-            LOG_F(1, "hit_phi=%0.2f - mphi=%0.2f = %0.2f", h_phi, probe_phi, fabs(h_phi - probe_phi));
+            
             if ( mdphi < dphi || fabs( h_r - probe_r ) < dr) { // handle 2pi edge
                 found_hits.push_back(h);
             }

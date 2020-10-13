@@ -7,7 +7,6 @@
 
 #include "StarMagField/StarMagField.h"
 
-#include "StFwdTrackMaker/include/Tracker/loguru.h"
 #include "GenFit/AbsBField.h"
 
 //_______________________________________________________________________________________
