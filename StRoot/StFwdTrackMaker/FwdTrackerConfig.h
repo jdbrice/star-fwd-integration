@@ -99,10 +99,6 @@ public:
         FwdTrackerConfig::canonize( path );
         if ( 0 == this->mNodes.count( path ) )
             return false;
-
-        if ( FwdTrackerConfig::valDNE == this->mNodes.at(path) )
-            return false;
-        
         return true;
     }
 
