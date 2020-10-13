@@ -95,14 +95,13 @@ class TrackFitter {
         // b) not provided in config
 
         // NOTE: these defaults are needed since the geometry file might not include FST (bug being worked on separately)
-        mFSTZLocations = mConfig.getVector<float>("TrackFitter.Geometry:fst", {140.286011, 154.286011, 168.286011 });
-        if ( fwdGeoUtils.siZ( 0 ) > 1.0 ) { // returns 0.0 on failure
-            // The geometry has the silicon detector, so use its z locations
-            mFSTZLocations.clear();
-            mFSTZLocations.push_back( fwdGeoUtils.siZ( 0 ) );
-            mFSTZLocations.push_back( fwdGeoUtils.siZ( 1 ) );
-            mFSTZLocations.push_back( fwdGeoUtils.siZ( 2 ) );
-        } else {
+        mFSTZLocations = fwdGeoUtils.fstZ(
+            mConfig.getVector<double>("TrackFitter.Geometry:fst", 
+                {140.286011, 154.286011, 168.286011 }
+            )
+        );
+
+        if ( fwdGeoUtils.fstZ( 0 ) < 1.0 ) { // returns 0.0 on failure
             LOG_WARN << "Using FST z-locations from config or defautl, may not match hits" << endm;
         }
 
@@ -118,16 +117,11 @@ class TrackFitter {
 
         // Now load FTT
         // mConfig.getVector<>(...) requires a default, hence the 
-        mFTTZLocations = mConfig.getVector<float>("TrackFitter.Geometry:ftt", {0.0f, 0.0f, 0.0f, 0.0f});
+        mFTTZLocations = fwdGeoUtils.fttZ(
+            mConfig.getVector<double>("TrackFitter.Geometry:ftt", {0.0f, 0.0f, 0.0f, 0.0f})
+            );
 
-        if ( fwdGeoUtils.stgcZ( 0 ) > 1.0 ) { // returns 0.0 on failure
-            mFTTZLocations.clear();
-
-            mFTTZLocations.push_back( fwdGeoUtils.stgcZ( 0 ) );
-            mFTTZLocations.push_back( fwdGeoUtils.stgcZ( 1 ) );
-            mFTTZLocations.push_back( fwdGeoUtils.stgcZ( 2 ) );
-            mFTTZLocations.push_back( fwdGeoUtils.stgcZ( 3 ) );
-        } else {
+        if ( fwdGeoUtils.fttZ( 0 ) < 1.0 ) { // returns 0.0 on failure
             LOG_WARN << "Using FTT z-locations from config or default, may not match hits" << endm;
         }
 
@@ -712,7 +706,7 @@ class TrackFitter {
     vector<genfit::SharedPlanePtr> mFSTPlanes;
 
     // det z locations loaded from geom or config
-    vector<float> mFSTZLocations, mFTTZLocations;
+    vector<double> mFSTZLocations, mFTTZLocations;
 
     // parameter ALIASED from mConfig wrt PV vertex
     float mVertexSigmaXY = 1;

@@ -2,6 +2,7 @@
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
 #include "StFwdTrackMaker/include/Tracker/FwdTracker.h"
 #include "StFwdTrackMaker/include/Tracker/TrackFitter.h"
+#include "StFwdTrackMaker/include/Tracker/FwdGeomUtils.h"
 
 #include "KiTrack/IHit.h"
 #include "GenFit/Track.h"
@@ -993,7 +994,14 @@ void StFwdTrackMaker::FillEvent()
 
 void StFwdTrackMaker::FillTrack( StTrack *otrack, const genfit::Track *itrack, const Seed_t &iseed, StTrackDetectorInfo *info )
 {
-    const double z_stgc[] = { 280.9, 303.7, 326.6, 349.4 };
+    vector<double> fttZ;
+    if ( gGeoManager ){
+        FwdGeomUtils fwdGeoUtils( gGeoManager );
+        fttZ = fwdGeoUtils.fttZ( {0.0, 0.0, 0.0, 0.0} );
+    } else {
+        fttZ = {0.0, 0.0, 0.0, 0.0};
+        LOG_WARN << "Could not load Ftt geometry, tracks will be invalid" << endm;
+    }
 
     // otrack == output track
     // itrack == input track (genfit)
@@ -1033,8 +1041,8 @@ void StFwdTrackMaker::FillTrack( StTrack *otrack, const genfit::Track *itrack, c
     // to fill the inner geometry.
     //
     // TODO: We may need to extend our "geometry" classes for RK parameters
-    FillTrackGeometry( otrack, itrack, z_stgc[0], kInnerGeometry );
-    FillTrackGeometry( otrack, itrack, z_stgc[3], kOuterGeometry );
+    FillTrackGeometry( otrack, itrack, fttZ[0], kInnerGeometry );
+    FillTrackGeometry( otrack, itrack, fttZ[3], kOuterGeometry );
 
     // Next fill the fit traits
     FillTrackFitTraits( otrack, itrack );

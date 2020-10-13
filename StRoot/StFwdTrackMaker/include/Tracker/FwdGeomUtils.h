@@ -33,10 +33,17 @@ class FwdGeomUtils {
             return ret;
         }
 
-        double stgcZ( int index ) {
+        vector<double> fttZ( vector<double> defaultZ ) {
+            double z0 = fttZ(0);
+            if ( z0 > 1.0 ) { // returns 0 on faiure
+                vector<double> z = {z0, fttZ(1), fttZ(2), fttZ(3)};
+            }
+            return defaultZ;
+        }
+        double fttZ( int index ) {
 
             // This ftt_z_delta is needed to match the z location of hits (midpint of active volume?) to the z location of the mother volume.  
-            // NOTE: It may be possible to improve this when the higher precision FTT geometry model is addd
+            // NOTE: It may be possible to improve this when the higher precision FTT geometry model is added
             const double ftt_z_delta = 0.435028;
             stringstream spath;
             spath << "/HALL_1/CAVE_1/STGM_1/TGCP_" << (index + 1) * 8 << "/"; 
@@ -51,8 +58,15 @@ class FwdGeomUtils {
             return 0.0;
         }
 
-        double siZ( int index ) {
+        vector<double> fstZ( vector<double> defaultZ ) {
+            double z0 = fstZ(0);
+            if ( z0 > 1.0 ) { // returns 0 on faiure
+                vector<double> z = {z0, fstZ(1), fstZ(2)};
+            }
+            return defaultZ;
+        }
 
+        double fstZ( int index ) {
             stringstream spath;
             spath << "/HALL_1/CAVE_1/FTSM_1/FTSD_" << (index + 1) << "/"; 
             bool can = cd( spath.str().c_str() );
