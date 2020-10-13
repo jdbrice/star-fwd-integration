@@ -37,7 +37,7 @@
 // Utility class for evaluating ID and QA truth
 struct MCTruthUtils {
 
-    static int domCon(std::vector<KiTrack::IHit *> hits, float &qual) {
+    static int dominantContribution(std::vector<KiTrack::IHit *> hits, float &qual) {
         std::map<int, int> count;
         int total = 0;
 
@@ -424,7 +424,7 @@ class ForwardTrackMaker {
         // Calculate the MC info first and check filters
         int idt = 0;
         float qual = 0;
-        idt = MCTruthUtils::domCon(track, qual);
+        idt = MCTruthUtils::dominantContribution(track, qual);
         mRecoTrackQuality.push_back(qual);
         mRecoTrackIdTruth.push_back(idt);
         TVector3 mcSeedMom;
@@ -486,7 +486,7 @@ class ForwardTrackMaker {
             mGlobalTrackReps.push_back(mTrackFitter->getTrackRep()->clone());
             genfit::Track *mytrack = new genfit::Track(*mTrackFitter->getTrack());
             float qatruth;
-            int idtruth = MCTruthUtils::domCon(track, qatruth);
+            int idtruth = MCTruthUtils::dominantContribution(track, qatruth);
             mytrack->setMcTrackId(idtruth);
             mGlobalTracks.push_back(mytrack);
         } else {
@@ -520,7 +520,7 @@ class ForwardTrackMaker {
                 mRecoTracks.push_back(track);
                 int idt = 0;
                 float qual = 0;
-                MCTruthUtils::domCon(track, qual);
+                idt = MCTruthUtils::dominantContribution(track, qual);
                 mRecoTrackQuality.push_back(qual);
                 mRecoTrackIdTruth.push_back(idt);
             } else {
