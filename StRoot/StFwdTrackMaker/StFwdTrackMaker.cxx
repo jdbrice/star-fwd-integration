@@ -182,31 +182,31 @@ class ForwardTracker : public ForwardTrackMaker {
         gFwdSystem = new FwdSystem(7);
 
         // make our quality plotter
-        qPlotter = new QualityPlotter(cfg);
-        qPlotter->makeHistograms(cfg.get<size_t>("TrackFinder:nIterations", 1));
+        mQualityPlotter = new QualityPlotter(mConfig);
+        mQualityPlotter->makeHistograms(mConfig.get<size_t>("TrackFinder:nIterations", 1));
 
         // initialize the track fitter
-        trackFitter = new TrackFitter(cfg);
-        trackFitter->setup();
+        mTrackFitter = new TrackFitter(mConfig);
+        mTrackFitter->setup();
 
         ForwardTrackMaker::initialize();
     }
 
     void finish() {
-        qPlotter->finish();
+        mQualityPlotter->finish();
         writeEventHistograms();
 
         if (gFwdSystem){
             delete gFwdSystem;
             gFwdSystem = 0;
         }
-        if (qPlotter){
-            delete qPlotter;
-            qPlotter = 0;
+        if (mQualityPlotter){
+            delete mQualityPlotter;
+            mQualityPlotter = 0;
         }
-        if (trackFitter){
-            delete trackFitter;
-            trackFitter= 0;
+        if (mTrackFitter){
+            delete mTrackFitter;
+            mTrackFitter= 0;
         }
     }
 };
