@@ -75,9 +75,9 @@ public:
         // removes "[0]" found in paths, so that the first element in a list can be accessed by index 0 or bare path
         size_t pos = path.find( "[0]" );
 
-        // branchless version avoids using if to catch found or not
-        size_t len = 3 * (pos != std::string::npos); // 3 if true, 0 if false
-        pos = pos * (pos != std::string::npos); // pos if true, 0 if false
+        // branchless version using ternary op
+        size_t len = (pos != std::string::npos) ? 3 : 0;
+        pos = (pos != std::string::npos) ? pos : 0;
         path.erase( pos, len ); // does nothing if "[0]" not found
         return;
     }
