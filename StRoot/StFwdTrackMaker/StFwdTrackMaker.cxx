@@ -183,7 +183,6 @@ class ForwardTracker : public ForwardTrackMaker {
 
         // make our quality plotter
         qPlotter = new QualityPlotter(cfg);
-        LOG_INFO << "Booking histograms for nIterations=" << cfg.get<size_t>("TrackFinder:nIterations", 1) << endm;
         qPlotter->makeHistograms(cfg.get<size_t>("TrackFinder:nIterations", 1));
 
         // initialize the track fitter
@@ -194,7 +193,6 @@ class ForwardTracker : public ForwardTrackMaker {
     }
 
     void finish() {
-        LOG_SCOPE_FUNCTION(INFO);
         qPlotter->finish();
         writeEventHistograms();
     }
@@ -237,27 +235,23 @@ StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(0), mF
 };
 
 int StFwdTrackMaker::Finish() {
-    LOG_SCOPE_FUNCTION(INFO);
-
     mForwardTracker->finish();
-
-    gDirectory->mkdir("StFwdTrackMaker");
-    gDirectory->cd("StFwdTrackMaker");
-
+    
     if ( mGenHistograms ) {
-        for (auto nh : histograms) {
+        gDirectory->mkdir("StFwdTrackMaker");
+        gDirectory->cd("StFwdTrackMaker");
+        for (auto nh : mHistograms) {
             nh.second->SetDirectory(gDirectory);
             nh.second->Write();
         }
     }
 
     if (mGenTree) {
-        mlTree->Print();
-        mlFile->cd();
-        mlTree->Write();
-        mlFile->Write();
+        mTree->Print();
+        mTreeFile->cd();
+        mTree->Write();
+        mTreeFile->Write();
     }
-
     return kStOk;
 }
 
@@ -267,63 +261,61 @@ int StFwdTrackMaker::Init() {
     std::string configFile = SAttr("config");
     if (mConfigFile.length() > 4) {
         configFile = mConfigFile;
-        LOG_F(INFO, "Config File : %s", mConfigFile.c_str());
+        LOG_INFO << "Forward Tracker is using config file : " <<  mConfigFile << endm;
     }
 
-    fwdcfg.load( configFile );
-
-    // setup the loguru log file
-    std::string loggerFile = SAttr("logfile"); // user can changed before Init
-    loguru::add_file( loggerFile.c_str(), loguru::Truncate, loguru::Verbosity_2);
-    loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
+    mFwdConfig.load( configFile );
 
     if (mGenTree) {
-        mlFile = new TFile("mltree.root", "RECREATE");
-        mlTree = new TTree("Stg", "stg hits");
-        mlTree->Branch("n", &mlt_n, "n/I");
-        mlTree->Branch("x", mlt_x, "x[n]/F");
-        mlTree->Branch("y", mlt_y, "y[n]/F");
-        mlTree->Branch("z", mlt_z, "z[n]/F");
-        mlTree->Branch("tid", &mlt_tid, "tid[n]/I");
-        mlTree->Branch("vid", &mlt_vid, "vid[n]/I");
-        mlTree->Branch("hpt", &mlt_hpt, "hpt[n]/F");
-        mlTree->Branch("hsv", &mlt_hsv, "hsv[n]/I");
+        mTreeFile = new TFile("mltree.root", "RECREATE");
+        mTree = new TTree("Stg", "stg hits");
+        mTree->Branch("n", &mTreeN, "n/I");
+        mTree->Branch("x", mTreeX, "x[n]/F");
+        mTree->Branch("y", mTreeY, "y[n]/F");
+        mTree->Branch("z", mTreeZ, "z[n]/F");
+        mTree->Branch("tid", &mTreeTID, "tid[n]/I");
+        mTree->Branch("vid", &mTreeVID, "vid[n]/I");
+        mTree->Branch("hpt", &mTreeHPt, "hpt[n]/F");
+        mTree->Branch("hsv", &mTreeHSV, "hsv[n]/I");
 
         // mc tracks
-        mlTree->Branch("nt", &mlt_nt, "nt/I");
-        mlTree->Branch("pt", &mlt_pt, "pt[nt]/F");
-        mlTree->Branch("eta", &mlt_eta, "eta[nt]/F");
-        mlTree->Branch("phi", &mlt_phi, "phi[nt]/F");
-        mlTree->Branch("tid", &mlt_tid, "tid/I");
+        mTree->Branch("nt", &mTreeNTracks, "nt/I");
+        mTree->Branch("pt", &mTreePt, "pt[nt]/F");
+        mTree->Branch("eta", &mTreeEta, "eta[nt]/F");
+        mTree->Branch("phi", &mTreePhi, "phi[nt]/F");
+        mTree->Branch("tid", &mTreeTID, "tid/I");
 
         std::string path = "TrackFinder.Iteration[0].SegmentBuilder";
-        std::vector<string> paths = fwdcfg.childrenOf(path);
+        std::vector<string> paths = mFwdConfig.childrenOf(path);
 
         for (string p : paths) {
-            string name = fwdcfg.get<string>(p + ":name", "");
-            mlt_crits[name]; // create the entry
-            mlTree->Branch(name.c_str(), &mlt_crits[name]);
-            mlTree->Branch((name + "_trackIds").c_str(), &mlt_crit_track_ids[name]);
+            string name = mFwdConfig.get<string>(p + ":name", "");
+            mTreeCrits[name]; // create the entry
+            mTree->Branch(name.c_str(), &mTreeCrits[name]);
+            mTree->Branch((name + "_trackIds").c_str(), &mTreeCritTrackIds[name]);
         }
 
         // Three hit criteria
         path = "TrackFinder.Iteration[0].ThreeHitSegments";
-        paths = fwdcfg.childrenOf(path);
+        paths = mFwdConfig.childrenOf(path);
 
         for (string p : paths) {
-            string name = fwdcfg.get<string>(p + ":name", "");
-            mlt_crits[name]; // create the entry
-            mlTree->Branch(name.c_str(), &mlt_crits[name]);
-            mlTree->Branch((name + "_trackIds").c_str(), &mlt_crit_track_ids[name]);
+            string name = mFwdConfig.get<string>(p + ":name", "");
+            mTreeCrits[name]; // create the entry
+            mTree->Branch(name.c_str(), &mTreeCrits[name]);
+            mTree->Branch((name + "_trackIds").c_str(), &mTreeCritTrackIds[name]);
         }
 
-        mlTree->SetAutoFlush(0);
+        mTree->SetAutoFlush(0);
     } // gen tree
 
-    mSiRasterizer = new SiRasterizer(fwdcfg);
 
+    // create an SiRasterizer in case we need it 
+    mSiRasterizer = new SiRasterizer(mFwdConfig);
+    
     mForwardTracker = new ForwardTracker();
-    mForwardTracker->setConfig(fwdcfg);
+    mForwardTracker->setConfig(mFwdConfig);
+
     // only save criteria values if we are generating a tree.
     mForwardTracker->setSaveCriteriaValues(mGenTree);
 
@@ -332,42 +324,42 @@ int StFwdTrackMaker::Init() {
     mForwardTracker->initialize();
 
     if ( mGenHistograms ){
-        histograms["McEventEta"] = new TH1D("McEventEta", ";MC Track Eta", 1000, -5, 5);
-        histograms["McEventPt"] = new TH1D("McEventPt", ";MC Track Pt (GeV/c)", 1000, 0, 10);
-        histograms["McEventPhi"] = new TH1D("McEventPhi", ";MC Track Phi", 1000, 0, 6.2831852);
+        mHistograms["McEventEta"] = new TH1D("McEventEta", ";MC Track Eta", 1000, -5, 5);
+        mHistograms["McEventPt"] = new TH1D("McEventPt", ";MC Track Pt (GeV/c)", 1000, 0, 10);
+        mHistograms["McEventPhi"] = new TH1D("McEventPhi", ";MC Track Phi", 1000, 0, 6.2831852);
 
         // these are tracks within 2.5 < eta < 4.0
-        histograms["McEventFwdEta"] = new TH1D("McEventFwdEta", ";MC Track Eta", 1000, -5, 5);
-        histograms["McEventFwdPt"] = new TH1D("McEventFwdPt", ";MC Track Pt (GeV/c)", 1000, 0, 10);
-        histograms["McEventFwdPhi"] = new TH1D("McEventFwdPhi", ";MC Track Phi", 1000, 0, 6.2831852);
+        mHistograms["McEventFwdEta"] = new TH1D("McEventFwdEta", ";MC Track Eta", 1000, -5, 5);
+        mHistograms["McEventFwdPt"] = new TH1D("McEventFwdPt", ";MC Track Pt (GeV/c)", 1000, 0, 10);
+        mHistograms["McEventFwdPhi"] = new TH1D("McEventFwdPhi", ";MC Track Phi", 1000, 0, 6.2831852);
 
-        // create histograms
-        histograms["nMcTracks"] = new TH1I("nMcTracks", ";# MC Tracks/Event", 1000, 0, 1000);
-        histograms["nMcTracksFwd"] = new TH1I("nMcTracksFwd", ";# MC Tracks/Event", 1000, 0, 1000);
-        histograms["nMcTracksFwdNoThreshold"] = new TH1I("nMcTracksFwdNoThreshold", ";# MC Tracks/Event", 1000, 0, 1000);
+        // create mHistograms
+        mHistograms["nMcTracks"] = new TH1I("nMcTracks", ";# MC Tracks/Event", 1000, 0, 1000);
+        mHistograms["nMcTracksFwd"] = new TH1I("nMcTracksFwd", ";# MC Tracks/Event", 1000, 0, 1000);
+        mHistograms["nMcTracksFwdNoThreshold"] = new TH1I("nMcTracksFwdNoThreshold", ";# MC Tracks/Event", 1000, 0, 1000);
 
-        histograms["nHitsSTGC"] = new TH1I("nHitsSTGC", ";# STGC Hits/Event", 1000, 0, 1000);
-        histograms["nHitsFSI"] = new TH1I("nHitsFSI", ";# FSIT Hits/Event", 1000, 0, 1000);
+        mHistograms["nHitsSTGC"] = new TH1I("nHitsSTGC", ";# STGC Hits/Event", 1000, 0, 1000);
+        mHistograms["nHitsFSI"] = new TH1I("nHitsFSI", ";# FSIT Hits/Event", 1000, 0, 1000);
 
-        histograms["stgc_volume_id"] = new TH1I("stgc_volume_id", ";stgc_volume_id", 50, 0, 50);
-        histograms["fsi_volume_id"] = new TH1I("fsi_volume_id", ";fsi_volume_id", 50, 0, 50);
+        mHistograms["stgc_volume_id"] = new TH1I("stgc_volume_id", ";stgc_volume_id", 50, 0, 50);
+        mHistograms["fsi_volume_id"] = new TH1I("fsi_volume_id", ";fsi_volume_id", 50, 0, 50);
 
-        histograms["fsiHitDeltaR"] = new TH1F("fsiHitDeltaR", "FSI; delta r (cm); ", 500, -5, 5);
-        histograms["fsiHitDeltaPhi"] = new TH1F("fsiHitDeltaPhi", "FSI; delta phi; ", 500, -5, 5);
+        mHistograms["fsiHitDeltaR"] = new TH1F("fsiHitDeltaR", "FSI; delta r (cm); ", 500, -5, 5);
+        mHistograms["fsiHitDeltaPhi"] = new TH1F("fsiHitDeltaPhi", "FSI; delta phi; ", 500, -5, 5);
 
         // there are 4 stgc stations
         for (int i = 0; i < 4; i++) {
-            histograms[TString::Format("stgc%dHitMap", i).Data()] = new TH2F(TString::Format("stgc%dHitMap", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+            mHistograms[TString::Format("stgc%dHitMap", i).Data()] = new TH2F(TString::Format("stgc%dHitMap", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
 
-            histograms[TString::Format("stgc%dHitMapPrim", i).Data()] = new TH2F(TString::Format("stgc%dHitMapPrim", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
-            histograms[TString::Format("stgc%dHitMapSec", i).Data()] = new TH2F(TString::Format("stgc%dHitMapSec", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+            mHistograms[TString::Format("stgc%dHitMapPrim", i).Data()] = new TH2F(TString::Format("stgc%dHitMapPrim", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+            mHistograms[TString::Format("stgc%dHitMapSec", i).Data()] = new TH2F(TString::Format("stgc%dHitMapSec", i), TString::Format("STGC Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
         }
 
         // There are 3 silicon stations
         for (int i = 0; i < 3; i++) {
-            histograms[TString::Format("fsi%dHitMap", i).Data()] = new TH2F(TString::Format("fsi%dHitMap", i), TString::Format("FSI Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
-            histograms[TString::Format("fsi%dHitMapR", i).Data()] = new TH1F(TString::Format("fsi%dHitMapR", i), TString::Format("FSI Layer %d; r (cm); ", i), 500, 0, 50);
-            histograms[TString::Format("fsi%dHitMapPhi", i).Data()] = new TH1F(TString::Format("fsi%dHitMapPhi", i), TString::Format("FSI Layer %d; phi; ", i), 320, 0, TMath::Pi() * 2 + 0.1);
+            mHistograms[TString::Format("fsi%dHitMap", i).Data()] = new TH2F(TString::Format("fsi%dHitMap", i), TString::Format("FSI Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+            mHistograms[TString::Format("fsi%dHitMapR", i).Data()] = new TH1F(TString::Format("fsi%dHitMapR", i), TString::Format("FSI Layer %d; r (cm); ", i), 500, 0, 50);
+            mHistograms[TString::Format("fsi%dHitMapPhi", i).Data()] = new TH1F(TString::Format("fsi%dHitMapPhi", i), TString::Format("FSI Layer %d; phi; ", i), 320, 0, TMath::Pi() * 2 + 0.1);
         }
 
     } // mGenHistograms
@@ -378,8 +370,8 @@ int StFwdTrackMaker::Init() {
 TMatrixDSym makeSiCovMat(TVector3 hit, FwdTrackerConfig &xfg) {
     // we can calculate the CovMat since we know the det info, but in future we should probably keep this info in the hit itself
 
-    float r_size = xfg.get<float>("SiRasterizer:r", 3.0);
-    float phi_size = xfg.get<float>("SiRasterizer:phi", 0.004);
+    float rSize = xfg.get<float>("SiRasterizer:r", 3.0);
+    float phiSize = xfg.get<float>("SiRasterizer:phi", 0.004);
 
     // measurements on a plane only need 2x2
     // for Si geom we need to convert from cylindrical to cartesian coords
@@ -393,8 +385,8 @@ TMatrixDSym makeSiCovMat(TVector3 hit, FwdTrackerConfig &xfg) {
     const float sinphi = y / R;
     const float sqrt12 = sqrt(12.);
 
-    const float dr = r_size / sqrt12;
-    const float dphi = (phi_size) / sqrt12;
+    const float dr = rSize / sqrt12;
+    const float dphi = (phiSize) / sqrt12;
 
     // Setup the Transposed and normal Jacobian transform matrix;
     // note, the si fast sim did this wrong
@@ -442,7 +434,7 @@ void StFwdTrackMaker::loadStgcHits( std::map<int, shared_ptr<McTrack>> &mcTrackM
         rndCollection = event->rndHitCollection();
     }
 
-    string fttFromGEANT = fwdcfg.get<string>( "Source:ftt", "" );
+    string fttFromGEANT = mFwdConfig.get<string>( "Source:ftt", "" );
     LOG_F( INFO, "load sTGC from StEvent: %d", (int)( rndCollection != nullptr ) );
     if ( rndCollection == nullptr || "GEANT" == fttFromGEANT ){
         LOG_F( INFO, "Loading sTGC hits directly from GEANT hits" );
@@ -475,10 +467,10 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
         LOG_SCOPE_F(INFO, "Loading sTGC hits");
 
         LOG_INFO << "# stg hits= " << nstg << endm;
-        if ( mGenHistograms ) this->histograms["nHitsSTGC"]->Fill(nstg);
-        this->mlt_n = 0;
+        if ( mGenHistograms ) this->mHistograms["nHitsSTGC"]->Fill(nstg);
+        this->mTreeN = 0;
 
-        bool filterGEANT = fwdcfg.get<bool>( "Source:fttFilter", false );
+        bool filterGEANT = mFwdConfig.get<bool>( "Source:fttFilter", false );
         LOG_F( INFO, "Filter FTT GEANT hits? = %d", (int)filterGEANT );
         for (int i = 0; i < nstg; i++) {
 
@@ -493,23 +485,23 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
             float z = git->x[2];
 
             if (mGenTree) {
-                mlt_x[mlt_n] = x;
-                mlt_y[mlt_n] = y;
-                mlt_z[mlt_n] = z;
-                mlt_tid[mlt_n] = track_id;
-                mlt_vid[mlt_n] = plane_id;
-                mlt_hpt[mlt_n] = mcTrackMap[track_id]->_pt;
-                mlt_hsv[mlt_n] = mcTrackMap[track_id]->_start_vertex;
-                mlt_n++;
+                mTreeX[mTreeN] = x;
+                mTreeY[mTreeN] = y;
+                mTreeZ[mTreeN] = z;
+                mTreeTID[mTreeN] = track_id;
+                mTreeVID[mTreeN] = plane_id;
+                mTreeHPt[mTreeN] = mcTrackMap[track_id]->_pt;
+                mTreeHSV[mTreeN] = mcTrackMap[track_id]->_start_vertex;
+                mTreeN++;
             }
 
             LOG_F(INFO, "STGC Hit: volume_id=%d, plane_id=%d, (%f, %f, %f), track_id=%d", volume_id, plane_id, x, y, z, track_id);
             if ( mGenHistograms )
-                this->histograms["stgc_volume_id"]->Fill(volume_id);
+                this->mHistograms["stgc_volume_id"]->Fill(volume_id);
 
             if (plane_id < 4 && plane_id >= 0) {
                 if ( mGenHistograms ){
-                    this->histograms[TString::Format("stgc%dHitMap", plane_id).Data()]->Fill(x, y);
+                    this->mHistograms[TString::Format("stgc%dHitMap", plane_id).Data()]->Fill(x, y);
                 }
             } else {
                 LOG_F(ERROR, "Out of bounds STGC plane_id!");
@@ -521,10 +513,10 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
             if ( filterGEANT ) {
                 if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->_eta) > 5.0 ){
                     
-                    if ( mGenHistograms ) this->histograms[TString::Format("stgc%dHitMapSec", plane_id).Data()]->Fill(x, y);
+                    if ( mGenHistograms ) this->mHistograms[TString::Format("stgc%dHitMapSec", plane_id).Data()]->Fill(x, y);
                     continue;
                 } else if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->_eta) < 5.0 ){
-                    if ( mGenHistograms ) this->histograms[TString::Format("stgc%dHitMapPrim", plane_id).Data()]->Fill(x, y);
+                    if ( mGenHistograms ) this->mHistograms[TString::Format("stgc%dHitMapPrim", plane_id).Data()]->Fill(x, y);
                 }
             }
 
@@ -609,8 +601,8 @@ void StFwdTrackMaker::loadFstHits( std::map<int, shared_ptr<McTrack>> &mcTrackMa
     if (nullptr != event) {
         rndCollection = event->rndHitCollection();
     }
-    bool siRasterizer = fwdcfg.get<bool>( "SiRasterizer:active", false );
-    LOG_F( INFO, "siRasterizer active=%d, r=%f", (int)(siRasterizer), fwdcfg.get<float>( "SiRasterizer:r", 2.85f) );
+    bool siRasterizer = mFwdConfig.get<bool>( "SiRasterizer:active", false );
+    LOG_F( INFO, "siRasterizer active=%d, r=%f", (int)(siRasterizer), mFwdConfig.get<float>( "SiRasterizer:r", 2.85f) );
     if ( siRasterizer || rndCollection == nullptr ){
         LOG_F( INFO, "Loading hits from GEANT with SiRasterizer" );
         loadFstHitsFromGEANT( mcTrackMap, hitMap, count );
@@ -672,7 +664,6 @@ void StFwdTrackMaker::loadFstHitsFromStEvent( std::map<int, shared_ptr<McTrack>>
 } //loadFstHitsFromStEvent
 
 void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count ){
-    LOG_SCOPE_FUNCTION(INFO);
     /************************************************************/
     // FSI Hits
     int nfsi = 0;
@@ -687,7 +678,7 @@ void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &
     // reuse this to store cov mat
     TMatrixDSym hitCov3(3);
     
-    if ( mGenHistograms ) this->histograms["nHitsFSI"]->Fill(nfsi);
+    if ( mGenHistograms ) this->mHistograms["nHitsFSI"]->Fill(nfsi);
     LOG_INFO << "# fsi hits = " << nfsi << endm;
 
     for (int i = 0; i < nfsi; i++) {
@@ -712,29 +703,29 @@ void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &
             TVector3 rastered = mSiRasterizer->raster(TVector3(git->x[0], git->x[1], git->x[2]));
             
             if ( mGenHistograms ) {
-                this->histograms["fsiHitDeltaR"]->Fill(sqrt(x * x + y * y) - rastered.Perp());
-                this->histograms["fsiHitDeltaPhi"]->Fill(atan2(y, x) - rastered.Phi());
+                this->mHistograms["fsiHitDeltaR"]->Fill(sqrt(x * x + y * y) - rastered.Perp());
+                this->mHistograms["fsiHitDeltaPhi"]->Fill(atan2(y, x) - rastered.Phi());
             }
             x = rastered.X();
             y = rastered.Y();
         }
 
         LOG_F(INFO, "FSI Hit: volume_id=%d, plane_id=%d, (%f, %f, %f), track_id=%d", volume_id, plane_id, x, y, z, track_id);
-        if ( mGenHistograms ) this->histograms["fsi_volume_id"]->Fill(d);
+        if ( mGenHistograms ) this->mHistograms["fsi_volume_id"]->Fill(d);
 
         if (plane_id < 3 && plane_id >= 0) {
 
             if ( mGenHistograms ) {
-                this->histograms[TString::Format("fsi%dHitMap", plane_id).Data()]->Fill(x, y);
-                this->histograms[TString::Format("fsi%dHitMapR", plane_id).Data()]->Fill(sqrt(x * x + y * y));
-                this->histograms[TString::Format("fsi%dHitMapPhi", plane_id).Data()]->Fill(atan2(y, x) + TMath::Pi());
+                this->mHistograms[TString::Format("fsi%dHitMap", plane_id).Data()]->Fill(x, y);
+                this->mHistograms[TString::Format("fsi%dHitMapR", plane_id).Data()]->Fill(sqrt(x * x + y * y));
+                this->mHistograms[TString::Format("fsi%dHitMapPhi", plane_id).Data()]->Fill(atan2(y, x) + TMath::Pi());
             }
         } else {
             LOG_F(ERROR, "Out of bounds FSI plane_id!");
             continue;
         }
 
-        hitCov3 = makeSiCovMat( TVector3( x, y, z ), fwdcfg );
+        hitCov3 = makeSiCovMat( TVector3( x, y, z ), mFwdConfig );
         FwdHit *hit = new FwdHit(count++, x, y, z, d, track_id, hitCov3, mcTrackMap[track_id]);
 
         // Add the hit to the hit map
@@ -750,9 +741,9 @@ void StFwdTrackMaker::loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcT
     if (!g2t_track)
         return;
 
-    mlt_nt = 1;
+    mTreeNTracks = 1;
     LOG_INFO << "# mc tracks = " << g2t_track->GetNRows() << endm;
-    if ( mGenHistograms ) this->histograms["nMcTracks"]->Fill(g2t_track->GetNRows());
+    if ( mGenHistograms ) this->mHistograms["nMcTracks"]->Fill(g2t_track->GetNRows());
 
     if (g2t_track) {
         LOG_SCOPE_F(INFO, "MC Tracks");
@@ -778,11 +769,11 @@ void StFwdTrackMaker::loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcT
                 mcTrackMap[track_id] = shared_ptr<McTrack>(new McTrack(pt, eta, phi, q, track->start_vertex_p));
             
             if (mGenTree) {
-                LOG_F(INFO, "mlt_nt = %d == track_id = %d, is_shower = %d, start_vtx = %d", mlt_nt, track_id, track->is_shower, track->start_vertex_p);
-                mlt_pt[mlt_nt] = pt;
-                mlt_eta[mlt_nt] = eta;
-                mlt_phi[mlt_nt] = phi;
-                mlt_nt++;
+                LOG_F(INFO, "mTreeNTracks = %d == track_id = %d, is_shower = %d, start_vtx = %d", mTreeNTracks, track_id, track->is_shower, track->start_vertex_p);
+                mTreePt[mTreeNTracks] = pt;
+                mTreeEta[mTreeNTracks] = eta;
+                mTreePhi[mTreeNTracks] = phi;
+                mTreeNTracks++;
             }
 
         } // loop on track (irow)
@@ -802,43 +793,43 @@ int StFwdTrackMaker::Make() {
 
     loadMcTracks( mcTrackMap );
 
-    {
-        LOG_SCOPE_F( INFO, "McEvent" );
-        // now check the Mc tracks against the McEvent filter
-        size_t nForwardTracks = 0;
-        size_t nForwardTracksNoThreshold = 0;
-        for (auto mctm : mcTrackMap ){
-            if ( mctm.second == nullptr ) continue;
+    
+    // now check the Mc tracks against the McEvent filter
+    size_t nForwardTracks = 0;
+    size_t nForwardTracksNoThreshold = 0;
+    for (auto mctm : mcTrackMap ){
+        if ( mctm.second == nullptr ) continue;
 
-            // LOG_F( INFO, "Filling track (%f, %f, %f)", mctm.second->_pt, mctm.second->_eta, mctm.second->_phi );
-            // histograms[ "McEventPt" ] ->Fill( mctm.second->_pt );
-            // histograms[ "McEventEta" ] ->Fill( mctm.second->_eta );
-            // histograms[ "McEventPhi" ] ->Fill( mctm.second->_phi );
+        if ( mGenHistograms ){
+            mHistograms[ "McEventPt" ] ->Fill( mctm.second->_pt );
+            mHistograms[ "McEventEta" ] ->Fill( mctm.second->_eta );
+            mHistograms[ "McEventPhi" ] ->Fill( mctm.second->_phi );
+        }
 
-            if ( mctm.second->_eta > 2.5 && mctm.second->_eta < 4.0 ){
-                // histograms[ "McEventFwdPt" ] ->Fill( mctm.second->_pt );
-                // histograms[ "McEventFwdEta" ] ->Fill( mctm.second->_eta );
-                // histograms[ "McEventFwdPhi" ] ->Fill( mctm.second->_phi );
-
-                nForwardTracksNoThreshold++;
-                if ( mctm.second->_pt > 0.05  )
-                    nForwardTracks++;
+        if ( mctm.second->_eta > 2.5 && mctm.second->_eta < 4.0 ){
+            
+            if ( mGenHistograms ){
+                mHistograms[ "McEventFwdPt" ] ->Fill( mctm.second->_pt );
+                mHistograms[ "McEventFwdEta" ] ->Fill( mctm.second->_eta );
+                mHistograms[ "McEventFwdPhi" ] ->Fill( mctm.second->_phi );
             }
-        }
 
-        if ( mGenHistograms ) {
-            histograms[ "nMcTracksFwd" ]->Fill( nForwardTracks );
-            histograms[ "nMcTracksFwdNoThreshold" ]->Fill( nForwardTracksNoThreshold );
+            nForwardTracksNoThreshold++;
+            if ( mctm.second->_pt > 0.05  )
+                nForwardTracks++;
         }
+    } // loop on mcTrackMap
 
-        LOG_F( INFO, "There are %lu tracks in forward region", nForwardTracks );
-        size_t maxForwardTracks = fwdcfg.get<size_t>( "McEvent.Mult:max", 10000 );
-        if ( nForwardTracks > maxForwardTracks ){
-            LOG_F( INFO, "Skipping event with more than %lu forward tracks", maxForwardTracks );
-            return kStOk;
-        }
+    if ( mGenHistograms ) {
+        mHistograms[ "nMcTracksFwd" ]->Fill( nForwardTracks );
+        mHistograms[ "nMcTracksFwdNoThreshold" ]->Fill( nForwardTracksNoThreshold );
     }
 
+    size_t maxForwardTracks = mFwdConfig.get<size_t>( "McEvent.Mult:max", 10000 );
+    if ( nForwardTracks > maxForwardTracks ){
+        LOG_INFO << "Skipping event with more than " << maxForwardTracks << " forward tracks" << endm;
+        return kStOk;
+    }
 
     if ( IAttr("useFtt") ) 
         loadStgcHits( mcTrackMap, hitMap );
@@ -858,33 +849,33 @@ int StFwdTrackMaker::Make() {
         if (mForwardTracker->getSaveCriteriaValues()) {
             for (auto crit : mForwardTracker->getTwoHitCriteria()) {
                 string name = crit->getName();
-                mlt_crits[name].clear();
-                mlt_crit_track_ids[name].clear();
+                mTreeCrits[name].clear();
+                mTreeCritTrackIds[name].clear();
                 // copy by value so ROOT doesnt get lost (uses pointer to vector)
                 for (float v : mForwardTracker->getCriteriaValues(name)) {
-                    mlt_crits[name].push_back(v);
+                    mTreeCrits[name].push_back(v);
                 }
                 for (int v : mForwardTracker->getCriteriaTrackIds(name)) {
-                    mlt_crit_track_ids[name].push_back(v);
+                    mTreeCritTrackIds[name].push_back(v);
                 }
             }
 
             // three hit criteria
             for (auto crit : mForwardTracker->getThreeHitCriteria()) {
                 string name = crit->getName();
-                mlt_crits[name].clear();
-                mlt_crit_track_ids[name].clear();
+                mTreeCrits[name].clear();
+                mTreeCritTrackIds[name].clear();
                 // copy by value so ROOT doesnt get lost (uses pointer to vector)
                 for (float v : mForwardTracker->getCriteriaValues(name)) {
-                    mlt_crits[name].push_back(v);
+                    mTreeCrits[name].push_back(v);
                 }
                 for (int v : mForwardTracker->getCriteriaTrackIds(name)) {
-                    mlt_crit_track_ids[name].push_back(v);
+                    mTreeCritTrackIds[name].push_back(v);
                 }
             }
         }
 
-        mlTree->Fill();
+        mTree->Fill();
     } // if mGenTree
 
     LOG_INFO << "Event took " << (loguru::now_ns() - itStart) * 1e-6 << " ms" << endm;
