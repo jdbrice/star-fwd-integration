@@ -111,7 +111,7 @@ using Seed_t = std::vector<KiTrack::IHit *>;
 class FwdConnector : public KiTrack::ISectorConnector {
   public:
     FwdConnector(unsigned int distance)
-        : _system(*FwdSystem::sInstance), _distance(distance) {}
+        : _distance(distance) {}
     ~FwdConnector(){/**/};
 
     // Return the possible sectors (layers) given current
@@ -136,17 +136,15 @@ class FwdConnector : public KiTrack::ISectorConnector {
 
   private:
   protected:
-    const FwdSystem _system; // numbering system
+    // const FwdSystem _system; // numbering system
     unsigned int _distance;  // number of layers forward to search
 };                           // FwdConnector
 
-class SeedQual {
-  public:
+struct SeedQual {
     inline double operator()(Seed_t s) { return double(s.size()) / FwdSystem::sNFttLayers ; } // seeds only use the 4 hits from Ftt
 };
 
-class SeedCompare {
-  public:
+struct SeedCompare {
     inline bool operator()(Seed_t trackA, Seed_t trackB) {
         std::map<unsigned int, unsigned int> hit_counts;
         // we are assuming that the same hit can never be used twice on a single
