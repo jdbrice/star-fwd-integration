@@ -188,7 +188,7 @@ class ForwardTracker : public ForwardTrackMaker {
 
         // initialize the track fitter
         trackFitter = new TrackFitter(cfg);
-        trackFitter->setup(cfg.get<bool>("TrackFitter:display", false));
+        trackFitter->setup();
 
         ForwardTrackMaker::initialize();
     }

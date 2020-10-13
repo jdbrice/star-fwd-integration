@@ -22,6 +22,8 @@ void fast_track(   int n = 100,
     // StarMagField::setConstBz(true);
 
     gSystem->Load("libMathMore.so");
+    gSystem->Load("libXMLIO.so");
+    gSystem->Load("libStarGeneratorUtil.so"); // StarRandom
     gSystem->Load("libStFstSimMaker.so");
     gSystem->Load("libStFttSimMaker.so");
 

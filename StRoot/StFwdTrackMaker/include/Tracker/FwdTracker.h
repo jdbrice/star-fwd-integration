@@ -94,9 +94,15 @@ class ForwardTrackMaker {
     virtual void initialize() {
         setupHistograms();
 
+        LOG_INFO << "CFG:" << endm << endm;
+        LOG_INFO << cfg.dump() << endm;
+
         doTrackFitting = !(cfg.get<bool>("TrackFitter:off", false));
-        if (cfg.exists("TrackFitter") == false)
+        LOG_INFO << "doTrackFitting = " << doTrackFitting << endm;
+        if (!cfg.exists("TrackFitter"))
             doTrackFitting = false;
+        LOG_INFO << "doTrackFitting = " << doTrackFitting << endm;
+
     }
 
 
@@ -292,7 +298,6 @@ class ForwardTrackMaker {
             doEvent(iEvent);
         }
 
-        trackFitter->showEvents();
         qPlotter->finish();
         writeEventHistograms();
     }
@@ -902,9 +907,9 @@ class ForwardTrackMaker {
             std::vector<KiTrack::IHit *> hits_near_disk1;
             std::vector<KiTrack::IHit *> hits_near_disk2;
             try {
-                auto msp2 = trackFitter->projectTo(2, _globalTracks[i]);
-                auto msp1 = trackFitter->projectTo(1, _globalTracks[i]);
-                auto msp0 = trackFitter->projectTo(0, _globalTracks[i]);
+                auto msp2 = trackFitter->projectToFst(2, _globalTracks[i]);
+                auto msp1 = trackFitter->projectToFst(1, _globalTracks[i]);
+                auto msp0 = trackFitter->projectToFst(0, _globalTracks[i]);
 
                 // now look for Si hits near these
                 hits_near_disk2 = findSiHitsNearMe(hitmap[2], msp2);

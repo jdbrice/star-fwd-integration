@@ -75,7 +75,8 @@ class TrackFitter {
             LOG_INFO << "StFwdTrackMaker: Tracking with StarFieldAdapter" << endl;
         }
         // we must have one of the two available fields at this point
-        genfit::FieldManager::getInstance()->init(mBField); 
+        // note, the pointer is still bound to the lifetime of the TackFitter
+        genfit::FieldManager::getInstance()->init(mBField.get()); 
 
         // initialize the main mFitter using a KalmanFitter with reference tracks
         mFitter = std::unique_ptr<genfit::AbsKalmanFitter>(new genfit::KalmanFitterRefTrack());
@@ -103,7 +104,7 @@ class TrackFitter {
             mFSTZLocations.push_back( fwdGeoUtils.siZ( 1 ) );
             mFSTZLocations.push_back( fwdGeoUtils.siZ( 2 ) );
         } else {
-            LOG_WARNING << "Using FST z-locations from config or defautl, may not match hits" << endm;
+            LOG_WARN << "Using FST z-locations from config or defautl, may not match hits" << endm;
         }
 
         // Now add the Si detector planes at the desired location
@@ -128,7 +129,7 @@ class TrackFitter {
             mFTTZLocations.push_back( fwdGeoUtils.stgcZ( 2 ) );
             mFTTZLocations.push_back( fwdGeoUtils.stgcZ( 3 ) );
         } else {
-            LOG_WARNING << "Using FTT z-locations from config or default, may not match hits" << endm;
+            LOG_WARN << "Using FTT z-locations from config or default, may not match hits" << endm;
         }
 
         if ( mFTTZLocations.size() != 4 ){
@@ -339,6 +340,23 @@ class TrackFitter {
     }
 
 
+    genfit::MeasuredStateOnPlane projectToFst(size_t si_plane, genfit::Track *fitTrack) {
+        LOG_SCOPE_FUNCTION(INFO);
+        if (si_plane > 2) {
+            genfit::MeasuredStateOnPlane nil;
+            return nil;
+        }
+
+        auto detSi = mFSTPlanes[si_plane];
+        genfit::MeasuredStateOnPlane tst = fitTrack->getFittedState(1);
+        auto TCM = fitTrack->getCardinalRep()->get6DCov(tst);
+        double len = fitTrack->getCardinalRep()->extrapolateToPlane(tst, detSi, false, true);
+
+        TCM = fitTrack->getCardinalRep()->get6DCov(tst);
+        return tst;
+    }
+
+
     /* RefitTracksWithSiHits
      * Takes a previously fit track re-fits it with the newly added silicon hits 
      * 
@@ -406,7 +424,7 @@ class TrackFitter {
             planeId = h->getSector();
 
             if (mFSTPlanes.size() <= planeId) {
-                LOG_WARNING << "invalid VolumId -> out of bounds DetPlane, vid = " << planeId << endm;
+                LOG_WARN << "invalid VolumId -> out of bounds DetPlane, vid = " << planeId << endm;
                 return pOrig;
             }
 
@@ -457,8 +475,8 @@ class TrackFitter {
     TVector3 fitSpacePoints( vector<genfit::SpacepointMeasurement*> spoints, TVector3 &seedPos, TVector3 &seedMom ){
         
         // setup track reps
-        auto trackRepPos = new genfit::RKTrackRep(pdg_mu_plus);
-        auto trackRepNeg = new genfit::RKTrackRep(pdg_mu_minus);
+        auto trackRepPos = new genfit::RKTrackRep(mPdgPiPlus);
+        auto trackRepNeg = new genfit::RKTrackRep(mPdgPiMinus);
 
         // setup track for fit with positive and negative reps
         auto mFitTrack = new genfit::Track(trackRepPos, seedPos, seedMom);
@@ -505,10 +523,11 @@ class TrackFitter {
         // The PV information, if we want to use it
         TVectorD pv(3);
 
+        StarRandom rand = StarRandom::Instance();
         if (0 == Vertex) { // randomized from simulation
-            pv[0] = mVertexPos[0] + StarRandom::Instance()->gauss(mVertexSigmaXY);
-            pv[1] = mVertexPos[1] + StarRandom::Instance()->gauss(mVertexSigmaXY);
-            pv[2] = mVertexPos[2] + StarRandom::Instance()->gauss(mVertexSigmaZ);
+            pv[0] = mVertexPos[0] + rand.gauss(mVertexSigmaXY);
+            pv[1] = mVertexPos[1] + rand.gauss(mVertexSigmaXY);
+            pv[2] = mVertexPos[2] + rand.gauss(mVertexSigmaZ);
         } else {
             pv[0] = Vertex[0];
             pv[1] = Vertex[1];
@@ -582,7 +601,7 @@ class TrackFitter {
             planeId = h->getSector();
 
             if (mFTTPlanes.size() <= planeId) {
-                LOG_WARNING << "invalid VolumId -> out of bounds DetPlane, vid = " << planeId << endm;
+                LOG_WARN << "invalid VolumId -> out of bounds DetPlane, vid = " << planeId << endm;
                 return TVector3(0, 0, 0);
             }
 
@@ -591,7 +610,7 @@ class TrackFitter {
             fitTrack.insertPoint(new genfit::TrackPoint(measurement, &fitTrack));
 
             if (abs(h->getZ() - plane->getO().Z()) > 0.05) {
-                LOG_WARNING << "Z Mismatch h->z = " << h->getZ() << ", plane->z = "<< plane->getO().Z() <<", diff = " << abs(h->getZ() - plane->getO().Z()) << endm;
+                LOG_WARN << "Z Mismatch h->z = " << h->getZ() << ", plane->z = "<< plane->getO().Z() <<", diff = " << abs(h->getZ() - plane->getO().Z()) << endm;
             }
         }
 
@@ -643,7 +662,7 @@ class TrackFitter {
             mP = p;
 
         } catch (genfit::Exception &e) {
-            LOG_WARNING << "Exception on track fit: " << e.what() << endm;
+            LOG_WARN << "Exception on track fit: " << e.what() << endm;
             p.SetXYZ(0, 0, 0);
 
             long long duration = (loguru::now_ns() - itStart) * 1e-6; // milliseconds
