@@ -552,8 +552,9 @@ Agree, moved out of `genfit` namespace
 
 
 ## In StRoot/StFwdTrackMaker/include/Tracker/STARField.h:
-```
-> +    };
+```diff
+> 
++    };
 +};
 +
 +namespace genfit
