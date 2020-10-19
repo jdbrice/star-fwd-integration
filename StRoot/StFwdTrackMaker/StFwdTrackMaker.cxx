@@ -45,6 +45,8 @@
 #include "TROOT.h"
 #include "TLorentzVector.h"
 
+FwdSystem* FwdSystem::sInstance = nullptr;
+
 //_______________________________________________________________________________________
 // For now, accept anything we are passed, no matter what it is or how bad it is
 template<typename T> bool accept( T ) { return true; }
