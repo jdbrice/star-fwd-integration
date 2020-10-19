@@ -37,6 +37,7 @@ class FwdGeomUtils {
             double z0 = fttZ(0);
             if ( z0 > 1.0 ) { // returns 0 on faiure
                 vector<double> z = {z0, fttZ(1), fttZ(2), fttZ(3)};
+                return z;
             }
             return defaultZ;
         }
@@ -62,6 +63,7 @@ class FwdGeomUtils {
             double z0 = fstZ(0);
             if ( z0 > 1.0 ) { // returns 0 on faiure
                 vector<double> z = {z0, fstZ(1), fstZ(2)};
+                return z;
             }
             return defaultZ;
         }
