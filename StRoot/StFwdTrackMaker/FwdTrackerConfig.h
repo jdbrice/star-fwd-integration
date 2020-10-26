@@ -114,17 +114,23 @@ public:
         return rv;
     }
 
+    
+
 
     // template function for getting any type that can be converted from string via stringstream
     template <typename T>
     T get( std::string path, T dv ) const {
+    
         // return default value if path DNE
         if ( !exists( path ) )
             return dv;
+
         FwdTrackerConfig::canonize( path );
         // convrt from string to type T and return
         return convert<T>( this->mNodes.at( path ) );
     }
+
+    
 
     template <typename T>
     std::vector<T> getVector( std::string path, std::vector<T> dv ) const {
@@ -216,5 +222,15 @@ public:
         xml.FreeDoc(xmldoc);
     }
 };
+
+// Forward declare the templates, otherwise undefined behavior in Release builds
+template <>
+std::string FwdTrackerConfig::convert( std::string str ) const;
+template <>
+bool FwdTrackerConfig::convert( std::string str ) const;
+template <>
+TString FwdTrackerConfig::convert(std::string str) const;
+template <>
+std::string FwdTrackerConfig::get( std::string path, std::string dv ) const;
 
 #endif
