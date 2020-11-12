@@ -9,7 +9,8 @@
 #include "tables/St_g2t_fts_hit_Table.h"
 #include "tables/St_g2t_track_Table.h"
 
-#include "StThreeVectorF.hh"
+#include "StarClassLibrary/StThreeVectorF.hh"
+#include "StarGenerator/UTIL/StarRandom.h"
 
 #include "TCanvas.h"
 #include "TCernLib.h"
@@ -21,16 +22,19 @@
 #include "TVector3.h"
 
 #include <array>
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <map>
+#include <algorithm>
 
 
 // lets not polute the global scope
 namespace FstGlobal{
+	// converts the position error to a cov mat
     StMatrixF Hack1to6(const StHit *stHit);
-
-    constexpr float PI = atan2(0.0, -1.0);
+	// used to convert between uniform and 1 sigma error
     constexpr float SQRT12 = sqrt(12.0);
 
-    //
     // Disk segmentation
     //
     float RMIN[] = {0.95 * 4.3, 0.95 * 4.3, 0.95 * 4.3, 0.95 * 5.0, 0.95 * 5.0, 0.95 * 5.0};
@@ -41,6 +45,11 @@ namespace FstGlobal{
 
     // controls some extra output
     const bool verbose = true;
+
+	// key type for lookup tables on disk r-phi strip
+	typedef std::tuple<int, int, int> FstKeyTriple;
+
+
 }
 
 StFstFastSimMaker::StFstFastSimMaker(const Char_t *name)
@@ -95,13 +104,14 @@ int StFstFastSimMaker::Init() {
 	return StMaker::Init();
 }
 
-void StFstFastSimMaker::setDisk(const int i, const float rmn, const float rmx) {
+void StFstFastSimMaker::SetDisk(const int i, const float rmn, const float rmx) {
     FstGlobal::RMIN[i] = rmn;
     FstGlobal::RMAX[i] = rmx;
 }
 
 Int_t StFstFastSimMaker::Make() {
 	LOG_DEBUG << "StFstFastSimMaker::Make" << endm;
+
 	// Get the existing StEvent, or add one if it doesn't exist.
 	StEvent *event = static_cast<StEvent *>(GetDataSet("StEvent"));
 	if (!event) {
@@ -116,7 +126,7 @@ Int_t StFstFastSimMaker::Make() {
 	}
 
 	// Digitize GEANT FTS hits
-	fillSilicon(event);
+	FillSilicon(event);
 
 	return kStOk;
 }
@@ -125,7 +135,7 @@ Int_t StFstFastSimMaker::Make() {
 /* This should fill StFtsStrip for realistic simulator and let clustering fill StFtsHit */
 /* For now skipping StFtsStrip and clustering, and fill StFtsHits directly here*/
 
-void StFstFastSimMaker::fillSilicon(StEvent *event) {
+void StFstFastSimMaker::FillSilicon(StEvent *event) {
 
 	StRnDHitCollection *fsicollection = event->rndHitCollection();
 
@@ -133,44 +143,27 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 	const int MAXR = mNumR;
 	const int MAXPHI = mNumPHI * mNumSEC;
 
-	static float X0[] = {0, 0, 0, 0, 0, 0};
-	static float Y0[] = {0, 0, 0, 0, 0, 0};
+	float X0[] = {0, 0, 0, 0, 0, 0};
+	float Y0[] = {0, 0, 0, 0, 0, 0};
+	
 	if (mRaster > 0)
 		for (int i = 0; i < 6; i++) {
 			X0[i] = mRaster * TMath::Cos(i * 60 * TMath::DegToRad());
 			Y0[i] = mRaster * TMath::Sin(i * 60 * TMath::DegToRad());
 		}
 
-	//table to keep pointer to hit for each disc, r & phi strips
-	StRnDHit *_map[NDISC][MAXR][MAXPHI];
-	double ***enrsum = (double ***)malloc(NDISC * sizeof(double **));
-	double ***enrmax = (double ***)malloc(NDISC * sizeof(double **));
 	
-	for (int id = 0; id < NDISC; id++) {
-		enrsum[id] = (double **)malloc(MAXR * sizeof(double *));
-		enrmax[id] = (double **)malloc(MAXR * sizeof(double *));
-		for (int ir = 0; ir < MAXR; ir++) {
-			enrsum[id][ir] = (double *)malloc(MAXPHI * sizeof(double));
-			enrmax[id][ir] = (double *)malloc(MAXPHI * sizeof(double));
-		}
-	}
-
-	for (int id = 0; id < NDISC; id++) {
-		for (int ir = 0; ir < MAXR; ir++) {
-			for (int ip = 0; ip < MAXPHI; ip++) {
-				_map[id][ir][ip] = 0;
-				enrsum[id][ir][ip] = 0;
-				enrmax[id][ir][ip] = 0;
-			}
-		}
-	}
+	// maps for hit and energy for each disk's r-phi strip
+	std::map< FstGlobal::FstKeyTriple, StRnDHit* > hitMap;
+	std::map< FstGlobal::FstKeyTriple, double > energySum;
+	std::map< FstGlobal::FstKeyTriple, double > energyMax;
 
 	// Read the g2t table
 	St_g2t_fts_hit *hitTable = static_cast<St_g2t_fts_hit *>(GetDataSet("g2t_fsi_hit"));
 	if (!hitTable) {
 		LOG_INFO << "g2t_fsi_hit table is empty" << endm;
 		return; // Nothing to do
-	}           // if
+	}
 
 	const Int_t nHits = hitTable->GetNRows();
 	LOG_DEBUG << "g2t_fsi_hit table has " << nHits << " hits" << endm;
@@ -183,205 +176,226 @@ void StFstFastSimMaker::fillSilicon(StEvent *event) {
 	if (!trkTable) {
 		LOG_INFO << "g2t_track table is empty" << endm;
 		return; // Nothing to do
-	}           // if
+	}
 
 	const Int_t nTrks = trkTable->GetNRows();
+	
 	LOG_DEBUG << "g2t_track table has " << nTrks << " tracks" << endm;
+	
 	const g2t_track_st *trk = trkTable->GetTable();
 
-	gRandom->SetSeed(0);
+	
 	int count = 0;
 	for (Int_t i = 0; i < nHits; ++i) {
+		
 		hit = (g2t_fts_hit_st *)hitTable->At(i);
-		if (hit) {
-			int volume_id = hit->volume_id;
-			LOG_INFO << "volume_id = " << volume_id << endm;
-			int d = volume_id / 1000;        // disk id
-			int w = (volume_id % 1000) / 10; // wedge id
-			int s = volume_id % 10;          // sensor id
-			LOG_INFO << "d = " << d << ", w = " << w << ", s = " << s << endm;
+		
+		// skip bad hits
+		if (!hit) 
+			continue;
 
-			float e = hit->de;
-			int t = hit->track_p;
 
-			trk = (g2t_track_st *)trkTable->At(t);
-			int isShower = false;
-			if (trk)
-				isShower = trk->is_shower;
+		int volume_id = hit->volume_id;
+		LOG_DEBUG << "volume_id = " << volume_id << endm;
+		int disk = volume_id / 1000;         // disk id
+		int wedge = (volume_id % 1000) / 10; // wedge id
+		int sensor = volume_id % 10;         // sensor id
+		
+		// used as an index for various arrays
+		size_t disk_index = disk - 1;
 
-			float xc = X0[d - 1];
-			float yc = Y0[d - 1];
+		LOG_DEBUG << "disk = " << disk << ", wedge = " << wedge << ", sensor = " << sensor << endm;
 
-			float x = hit->x[0];
-			float y = hit->x[1];
-			float z = hit->x[2];
+		// skip non-FST hits
+		if ( disk > 6 ) continue;
 
-			if (z > 200)
-				continue; // skip large disks
 
-			// rastered
-			float xx = x - xc;
-			float yy = y - yc;
+		double energy = hit->de;
+		int track = hit->track_p;
 
-			float r = sqrt(x * x + y * y);
-			float p = atan2(y, x);
+		trk = (g2t_track_st *)trkTable->At(track);
+		int isShower = false;
+		if (trk)
+			isShower = trk->is_shower;
 
-			// rastered
-			float rr = sqrt(xx * xx + yy * yy);
-			float pp = atan2(yy, xx);
+		// raster coordinate offsets
+		double xc = X0[disk_index];
+		double yc = Y0[disk_index];
 
-			while (p < 0.0)
-				p += 2.0 * FstGlobal::PI;
-			while (p >= 2.0 * FstGlobal::PI)
-				p -= 2.0 * FstGlobal::PI;
-			while (pp < 0.0)
-				pp += 2.0 * FstGlobal::PI;
-			while (pp >= 2.0 * FstGlobal::PI)
-				pp -= 2.0 * FstGlobal::PI;
+		// hit coordinates
+		double x = hit->x[0];
+		double y = hit->x[1];
+		double z = hit->x[2];
 
-			LOG_INFO << "rr = " << rr << " pp=" << pp << endm;
-			LOG_INFO << "RMIN = " << FstGlobal::RMIN[d - 1] << " RMAX= " << FstGlobal::RMAX[d - 1] << endm;
+		if (z > 200)
+			continue; // skip large disks
 
-			// Cuts made on rastered value
-			if (rr < FstGlobal::RMIN[d - 1] || rr > FstGlobal::RMAX[d - 1])
-				continue;
-			LOG_INFO << "rr = " << rr << endm;
+		// rastered
+		double rastered_x = x - xc;
+		double rastered_y = y - yc;
 
-			// Strip numbers on rastered value
-			int ir = int(MAXR * (rr - FstGlobal::RMIN[d - 1]) / (FstGlobal::RMAX[d - 1] - FstGlobal::RMIN[d - 1]));
-			
-			for (int ii = 0; ii < MAXR; ii++)
-				if (rr > FstGlobal::RSegment[ii] && rr <= FstGlobal::RSegment[ii + 1])
-					ir = ii;
-			
-			// Phi number
-			int ip = int(MAXPHI * pp / 2.0 / FstGlobal::PI);
+		double r = sqrt(x * x + y * y);
+		double p = atan2(y, x);
 
-			if (ir >= 8)
-				continue;
+		// rastered
+		double rr = sqrt(rastered_x * rastered_x + rastered_y * rastered_y);
+		double pp = atan2(rastered_y, rastered_x);
 
-			if (MAXR)
-				assert(ir < MAXR);
-			if (MAXPHI)
-				assert(ip < MAXPHI);
 
-			StRnDHit *fsihit = 0;
-			if (_map[d - 1][ir][ip] == 0) // New hit
-			{
+		// wrap an angle between 0 and 2pi
+		auto wrapAngle = [&]( double angle ) {
+			angle = fmod( angle, 2.0 * M_PI );
+			if ( angle < 0 )
+				angle += 2.0 * M_PI;
+			return angle;
+		};
 
-				if (FstGlobal::verbose)
-					LOG_INFO << Form("NEW d=%1d xyz=%8.4f %8.4f %8.4f r=%8.4f phi=%8.4f iR=%2d iPhi=%4d dE=%8.4f[MeV] truth=%d",
-							d, x, y, z, r, p, ir, ip, e * 1000.0, t)
-						<< endm;
+		p = wrapAngle( p );
+		pp = wrapAngle( pp );
 
-					count++;
-				fsihit = new StRnDHit();
-				fsihit->setDetectorId(kFtsId);
-				fsihit->setLayer(d);
+		LOG_DEBUG << "rr = " << rr << " pp=" << pp << endm;
+		LOG_DEBUG << "RMIN = " << FstGlobal::RMIN[disk_index] << " RMAX= " << FstGlobal::RMAX[disk_index] << endm;
 
-				//
-				// Set position and position error based on radius-constant bins
-				//
-				float p0 = (ip + 0.5) * 2.0 * FstGlobal::PI / float(MAXPHI);
-				float dp = 2.0 * FstGlobal::PI / float(MAXPHI) / FstGlobal::SQRT12;
-				
-				// ONLY valid for the disk array 456, no difference for each disk
-				float r0 = (FstGlobal::RSegment[ir] + FstGlobal::RSegment[ir + 1]) * 0.5;
-				float dr = FstGlobal::RSegment[ir + 1] - FstGlobal::RSegment[ir];
-				
-				float x0 = r0 * cos(p0) + xc;
-				float y0 = r0 * sin(p0) + yc;
-				assert(TMath::Abs(x0) + TMath::Abs(y0) > 0);
-				float dz = 0.03 / FstGlobal::SQRT12;
-				float er = dr / FstGlobal::SQRT12;
-				fsihit->setPosition(StThreeVectorF(x0, y0, z));
-				
-				fsihit->setPositionError(StThreeVectorF(er, dp, dz));
-                // set covariance matrix
-				fsihit->setErrorMatrix(&FstGlobal::Hack1to6(fsihit)[0][0]);
+		// Cuts made on rastered value to require the r value is within limits
+		if (rr < FstGlobal::RMIN[disk_index] || rr > FstGlobal::RMAX[disk_index])
+			continue;
 
-				fsihit->setCharge(e);
-				fsihit->setIdTruth(t, 100);
-				hits.push_back(fsihit);
-				_map[d - 1][ir][ip] = fsihit;
-				enrsum[d - 1][ir][ip] += e; // Add energy to running sum
-				enrmax[d - 1][ir][ip] = e;  // Set maximum energy
+		LOG_DEBUG << "rr = " << rr << endm;
 
-				LOG_INFO << Form("NEW d=%1d xyz=%8.4f %8.4f %8.4f ", d, x, y, z) << endm;
-				LOG_INFO << Form("smeared xyz=%8.4f %8.4f %8.4f ", fsihit->position().x(), fsihit->position().y(), fsihit->position().z()) << endm;
+		// Strip numbers on rastered value
+		int r_index = floor(MAXR * (rr - FstGlobal::RMIN[disk_index]) / (FstGlobal::RMAX[disk_index] - FstGlobal::RMIN[disk_index]));
+		
+		// this gives a different conflicting answer for r_index and does not handle r outside of range
+		for (int ii = 0; ii < MAXR; ii++)
+			if (rr > FstGlobal::RSegment[ii] && rr <= FstGlobal::RSegment[ii + 1])
+				r_index = ii;
+		
+		// Phi number
+		int phi_index = int(MAXPHI * pp / 2.0 / M_PI);
 
-				if(mHist){
-					TVector2 hitpos_mc(x, y);
-					TVector2 hitpos_rc(fsihit->position().x(), fsihit->position().y());
+		if (r_index >= 8)
+			continue;
 
-					hTrutHitYXDisk->Fill(x, y, d);
-					hTrutHitRDisk->Fill(hitpos_mc.Mod(), d);
-					if (d == 4)
-						hTrutHitRShower[0]->Fill(hitpos_mc.Mod(), isShower);
-					if (d == 5)
-						hTrutHitRShower[1]->Fill(hitpos_mc.Mod(), isShower);
-					if (d == 6)
-						hTrutHitRShower[2]->Fill(hitpos_mc.Mod(), isShower);
-					hTrutHitPhiDisk->Fill(hitpos_mc.Phi() * 180.0 / TMath::Pi(), d);
-					hTrutHitPhiZ->Fill(hitpos_mc.Phi() * 180.0 / TMath::Pi(), z);
-					hRecoHitYXDisk->Fill(fsihit->position().x(), fsihit->position().y(), d);
-					hRecoHitRDisk->Fill(hitpos_rc.Mod(), d);
-					hRecoHitPhiDisk->Fill(hitpos_rc.Phi() * 180.0 / TMath::Pi(), d);
-					hRecoHitPhiZ->Fill(hitpos_rc.Phi() * 180.0 / TMath::Pi(), z);
-					hGlobalDRDisk->Fill(hitpos_rc.Mod() - hitpos_mc.Mod(), d);
-					hGlobalZ->Fill(fsihit->position().z());
+		if (MAXR)
+			assert(r_index < MAXR);
+		if (MAXPHI)
+			assert(phi_index < MAXPHI);
 
-					// cout << "CHECK : " << fsihit->position().x()-x << " |||  "<<  fsihit->position().y()-y << endl;
-					h2GlobalXY->Fill(x, y);
-					h2GlobalSmearedXY->Fill(fsihit->position().x(), fsihit->position().y());
-					h2GlobalDeltaXY->Fill(fsihit->position().x() - x, fsihit->position().y() - y);
-					h3GlobalDeltaXYDisk->Fill(fsihit->position().x() - x, fsihit->position().y() - y, d);
+		StRnDHit *fsihit = nullptr;
 
-					h3GlobalDeltaXYR->Fill(fsihit->position().x() - x, fsihit->position().y() - y, sqrt(pow(fsihit->position().x(), 2) + pow(fsihit->position().y(), 2)));
-				}
+		// key of this disk's r & phi strip
+		auto threeKey = std::tie( disk_index, r_index, phi_index );
+		
+		if (hitMap.count( threeKey ) == 0) { // New hit
+
+			if (FstGlobal::verbose){
+				LOG_INFO << Form("NEW d=%1d xyz=%8.4f %8.4f %8.4f r=%8.4f phi=%8.4f iR=%2d iPhi=%4d dE=%8.4f[MeV] truth=%d",
+						disk, x, y, z, r, p, r_index, phi_index, energy * 1000.0, track)
+					<< endm;
 			}
-			else // Adding energy to old hit
-			{
-				fsihit = _map[d - 1][ir][ip];
-				fsihit->setCharge(fsihit->charge() + e);
 
-				// Add energy to running sum
-				enrsum[d - 1][ir][ip] += e;
-				double &E = enrmax[d - 1][ir][ip];
-				if (e > E)
-					E = e;
+			count++;
+			fsihit = new StRnDHit();
+			fsihit->setDetectorId(kFtsId);
+			fsihit->setLayer(disk);
 
-				// keep idtruth but dilute it...
-				t = fsihit->idTruth();
+			//
+			// Set position and position error based on radius-constant bins
+			//
+			double p0 = (phi_index + 0.5) * 2.0 * M_PI / double(MAXPHI);
+			double dp = 2.0 * M_PI / double(MAXPHI) / FstGlobal::SQRT12;
+			
+			// ONLY valid for the disk array 456, no difference for each disk
+			double r0 = (FstGlobal::RSegment[r_index] + FstGlobal::RSegment[r_index + 1]) * 0.5;
+			double dr = FstGlobal::RSegment[r_index + 1] - FstGlobal::RSegment[r_index];
+			
+			double x0 = r0 * cos(p0) + xc;
+			double y0 = r0 * sin(p0) + yc;
+			assert(TMath::Abs(x0) + TMath::Abs(y0) > 0);
+			double dz = 0.03 / FstGlobal::SQRT12;
+			double er = dr / FstGlobal::SQRT12;
+			fsihit->setPosition(StThreeVectorF(x0, y0, z));
+			
+			fsihit->setPositionError(StThreeVectorF(er, dp, dz));
+			// set covariance matrix
+			fsihit->setErrorMatrix(&FstGlobal::Hack1to6(fsihit)[0][0]);
 
-				fsihit->setIdTruth(t, 100 * E / enrsum[d - 1][ir][ip]);
+			fsihit->setCharge(energy);
+			fsihit->setIdTruth(track, 100);
+			hits.push_back(fsihit);
+			
+			hitMap[ threeKey ] = fsihit;
+			energySum[ threeKey ] = energy;
+			energyMax[ threeKey ] = energy;
+
+			if (FstGlobal::verbose){
+				LOG_INFO << Form("NEW d=%1d xyz=%8.4f %8.4f %8.4f ", disk, x, y, z) << endm;
+				LOG_INFO << Form("smeared xyz=%8.4f %8.4f %8.4f ", fsihit->position().x(), fsihit->position().y(), fsihit->position().z()) << endm;
+			}
+
+			if(mHist){
+				TVector2 hitpos_mc(x, y);
+				TVector2 hitpos_rc(fsihit->position().x(), fsihit->position().y());
+
+				hTrutHitYXDisk->Fill(x, y, disk);
+				hTrutHitRDisk->Fill(hitpos_mc.Mod(), disk);
+				
+				if (disk == 4)
+					hTrutHitRShower[0]->Fill(hitpos_mc.Mod(), isShower);
+				if (disk == 5)
+					hTrutHitRShower[1]->Fill(hitpos_mc.Mod(), isShower);
+				if (disk == 6)
+					hTrutHitRShower[2]->Fill(hitpos_mc.Mod(), isShower);
+
+				hTrutHitPhiDisk->Fill(hitpos_mc.Phi() * 180.0 / TMath::Pi(), disk);
+				hTrutHitPhiZ->Fill(hitpos_mc.Phi() * 180.0 / TMath::Pi(), z);
+				hRecoHitYXDisk->Fill(fsihit->position().x(), fsihit->position().y(), disk);
+				hRecoHitRDisk->Fill(hitpos_rc.Mod(), disk);
+				hRecoHitPhiDisk->Fill(hitpos_rc.Phi() * 180.0 / TMath::Pi(), disk);
+				hRecoHitPhiZ->Fill(hitpos_rc.Phi() * 180.0 / TMath::Pi(), z);
+				hGlobalDRDisk->Fill(hitpos_rc.Mod() - hitpos_mc.Mod(), disk);
+				hGlobalZ->Fill(fsihit->position().z());
+
+				// cout << "CHECK : " << fsihit->position().x()-x << " |||  "<<  fsihit->position().y()-y << endl;
+				h2GlobalXY->Fill(x, y);
+				h2GlobalSmearedXY->Fill(fsihit->position().x(), fsihit->position().y());
+				h2GlobalDeltaXY->Fill(fsihit->position().x() - x, fsihit->position().y() - y);
+				h3GlobalDeltaXYDisk->Fill(fsihit->position().x() - x, fsihit->position().y() - y, disk);
+
+				h3GlobalDeltaXYR->Fill(fsihit->position().x() - x, fsihit->position().y() - y, sqrt(pow(fsihit->position().x(), 2) + pow(fsihit->position().y(), 2)));
 			}
 		}
-	}
+		else { // Hit on this strip already exists, adding energy to old hit
+			// get hit from the map
+			fsihit = hitMap[ threeKey ] ;
+			fsihit->setCharge(fsihit->charge() + energy);
+
+			// Add energy to running sum
+			energySum[ threeKey ] = energySum[ threeKey ] + energy;
+
+			if (energy> energyMax[ threeKey ])
+				energyMax[ threeKey ] = energy;
+
+			// keep idtruth but dilute it...
+			track = fsihit->idTruth();
+
+			fsihit->setIdTruth(track, 100 * (energyMax[ threeKey ] / energySum[ threeKey ]));
+		}
+	} // loop on hits
 	int nfsihit = hits.size();
 
-	for (int i = 0; i < nfsihit; i++) {
-		double rnd_save = gRandom->Rndm();
+	StarRandom &rand = StarRandom::Instance();
 
-		 cout <<"to be saved : " << rnd_save << " , discard prob : "<< mInEff << endl;
-		if (rnd_save > mInEff)
+	// NOW run back through the hits and add them if they pass an efficiency roll
+	for (int i = 0; i < nfsihit; i++) {
+		double rnd_save = rand.flat();
+		if (rnd_save > mInEff){
 			fsicollection->addHit(hits[i]);
-	}
-	if (FstGlobal::verbose)
-		LOG_INFO << Form("Found %d/%d g2t hits in %d cells, created %d hits with ADC>0", count, nHits, nfsihit, fsicollection->numberOfHits()) << endm;
-		
-		for (int id = 0; id < NDISC; id++) {
-			for (int ir = 0; ir < MAXR; ir++) {
-				free(enrsum[id][ir]);
-				free(enrmax[id][ir]);
-			}
 		}
-	for (int id = 0; id < NDISC; id++) {
-		free(enrmax[id]);
-		free(enrsum[id]);
 	}
-	free(enrsum);
-	free(enrmax);
+	if (FstGlobal::verbose) {
+		LOG_DEBUG << Form("Found %d/%d g2t hits in %d cells, created %d hits with ADC>0", count, nHits, nfsihit, fsicollection->numberOfHits()) << endm;
+	}
 
 }
 //

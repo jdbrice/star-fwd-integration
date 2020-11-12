@@ -3,8 +3,8 @@
 
 TFile *output = 0;
 
-void fast_track(   int n = 100,
-                  const char *inFile = "tests/sim.fzd",
+void fast_track(   int n = 1000,
+                  const char *inFile = "tests/sim.FSTM1.12.fzd",
                   std::string configFile = "tests/fast_track.xml",
                   const char *geom = "dev2021") {
     TString _geom = geom;
@@ -43,9 +43,9 @@ void fast_track(   int n = 100,
     StFstFastSimMaker *fstFastSim = new StFstFastSimMaker();
 
     if (SiIneff)
-        fstFastSim->setInEfficiency(0.1); // inefficiency of Si 
+        fstFastSim->SetInEfficiency(0.1); // inefficiency of Si 
 
-    fstFastSim->setQAFileName(qaoutname);
+    fstFastSim->SetQAFileName(qaoutname);
 
     cout << "Adding StFstFastSimMaker to chain" << endl;
     chain->AddMaker(fstFastSim);

@@ -18,23 +18,23 @@ class StFstFastSimMaker : public StMaker {
 	public:
 		explicit StFstFastSimMaker(const Char_t *name = "fstFastSim");
 		virtual ~StFstFastSimMaker() {}
-		Int_t Make();
+		int Make();
 		int Init();
 		int Finish();
 		virtual const char *GetCVS() const;
 		
 		/// Set offset for each disk ( x=R*cos(idisk*60 degrees), y=R*sin(...) )
-		void setRaster(float R = 1.0) { mRaster = R; }
+		void SetRaster(float R = 1.0) { mRaster = R; }
 
 		/// Set min/max active radii for each disk
-		void setDisk(const int i, const float rmn, const float rmx);
-		void setInEfficiency(float ineff = 0.1) { mInEff = ineff; }
-		void setQAFileName(TString filename = 0.1) { mQAFileName = filename; }
-		void setFillHist(const bool hist = false) { mHist = hist; }
+		void SetDisk(const int i, const float rmn, const float rmx);
+		void SetInEfficiency(float ineff = 0.1) { mInEff = ineff; }
+		void SetQAFileName(TString filename = 0.1) { mQAFileName = filename; }
+		void SetFillHist(const bool hist = false) { mHist = hist; }
 		
 
 	private:
-		void fillSilicon(StEvent *event);
+		void FillSilicon(StEvent *event);
 		StRnDHitCollection *hitCollection = nullptr;
 
 		int mNumR;
