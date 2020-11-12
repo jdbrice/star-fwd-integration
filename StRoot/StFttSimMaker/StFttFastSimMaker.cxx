@@ -7,8 +7,7 @@
 #include "StEvent/StRnDHit.h"
 #include "StEvent/StRnDHitCollection.h"
 #include "StThreeVectorF.hh"
-// TODO resolve StarRandom
-// #include "StarGenerator/UTIL/StarRandom.h"
+
 #include "TCanvas.h"
 #include "TCernLib.h"
 #include "TH2F.h"
@@ -323,7 +322,7 @@ void StFttFastSimMaker::FillThinGapChambers(StEvent *event) {
         ahit->setErrorMatrix(Ematrix);
         hits.push_back(ahit);
 
-        if (false == STGC_MAKE_GHOST_HITS) {
+        if (!STGC_MAKE_GHOST_HITS) {
             // Make this "REAL" hit.
             if (FttGlobal::verbose){
                 ahit->Print();
@@ -333,7 +332,7 @@ void StFttFastSimMaker::FillThinGapChambers(StEvent *event) {
         }
     }
 
-    if (true == STGC_MAKE_GHOST_HITS) {
+    if (STGC_MAKE_GHOST_HITS) {
         for (auto &hit0 : hits) { // first loop on hits
             float hit0_x = hit0->double2();
             float hit0_y = hit0->double3();
