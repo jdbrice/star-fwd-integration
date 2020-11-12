@@ -1,0 +1,31 @@
+cd /tmp/star-build
+
+
+full_build=${1:-0}
+
+if [ $full_build -eq 1 ]; then
+    echo "Running CMAKE before build (needed first time)"
+
+STAR_PATCH=""
+STAR_BUILD_TYPE=Release
+cmake /tmp/star-sw -DSTAR_SRC=/tmp/star-cvs \
+    -DSTAR_PATCH=${STAR_PATCH} -DCMAKE_INSTALL_PREFIX=/tmp/star-install \
+    -DCERNLIB_ROOT=/cern/2006 -DCMAKE_BUILD_TYPE=${STAR_BUILD_TYPE}
+
+    make StarGenBase/fast -j2 && /tmp/work/install_target.sh StarGenBase StarGeneratorBase
+    make StarGenUtil/fast -j2 && /tmp/work/install_target.sh StarGenUtil StarGeneratorUtil
+fi
+
+# Fast build and install (only updates .so! Be careful)
+
+make StFwdTrackMaker -j2 && /tmp/work/install_target.sh StFwdTrackMaker
+make StFttSimMaker/fast -j2 && /tmp/work/install_target.sh StFttSimMaker
+make StFstSimMaker/fast -j2 && /tmp/work/install_target.sh StFstSimMaker
+
+# If we are doing a "full" build, also do a "full" install
+if [ $full_build -eq 1 ]; then
+    make install
+fi
+
+
+cd /tmp/work
