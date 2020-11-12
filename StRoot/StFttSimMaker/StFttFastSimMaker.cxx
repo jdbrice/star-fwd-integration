@@ -256,10 +256,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
     const int nhits = hitTable->GetNRows();
     const g2t_fts_hit_st *hit = hitTable->GetTable();
 
-    // TODO resolve StarRandom, not built in DOCKER env
-    // StarRandom &rand = StarRandom::Instance();
-    TRandom3 *rand = new TRandom3();
-    rand->SetSeed(0);
+    StarRandom &rand = StarRandom::Instance();
 
     float dx = STGC_SIGMA_X;
     float dy = STGC_SIGMA_Y;
@@ -280,14 +277,14 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         int volume_id = hit->volume_id;
         int disk = (volume_id - 1) / 4 + 9 ; // add 7 to differentiat from FST - dedicated collection will not need 
 
-        LOG_INFO << "sTGC hit: volume_id = " << volume_id << " disk = " << disk << endm;
+        LOG_DEBUG << "sTGC hit: volume_id = " << volume_id << " disk = " << disk << endm;
         if (disk < 9)
             continue;
 
         float theta = diskRotation(disk);
 
-        float x_blurred = xhit + rand->Gaus(0.0f, STGC_SIGMA_X);
-        float y_blurred = yhit + rand->Gaus(0.0f, STGC_SIGMA_Y);
+        float x_blurred = xhit + rand->gauss( STGC_SIGMA_X);
+        float y_blurred = yhit + rand->gauss( STGC_SIGMA_Y);
 
         float x_rot = -999, y_rot = -999;
         this->rot(-theta, x_blurred, y_blurred, x_rot, y_rot);
@@ -322,27 +319,29 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
             dx * dx, 0.f, 0.f,
             0.f, dy * dy, 0.f,
             0.f, 0, 0.f, dz * dz};
+
         ahit->setErrorMatrix(Ematrix);
         hits.push_back(ahit);
 
         if (false == STGC_MAKE_GHOST_HITS) {
             // Make this "REAL" hit.
-            if (FttGlobal::verbose)
+            if (FttGlobal::verbose){
                 ahit->Print();
+            }
             ftscollection->addHit(ahit);
             sTGCNRealPoints++;
         }
     }
 
     if (true == STGC_MAKE_GHOST_HITS) {
-        for (auto &hit0 : hits) {
+        for (auto &hit0 : hits) { // first loop on hits
             float hit0_x = hit0->double2();
             float hit0_y = hit0->double3();
             int disk0 = hit0->layer();
             int quad0 = hit0->wafer();
             float theta = diskRotation(disk0);
 
-            for (auto &hit1 : hits) {
+            for (auto &hit1 : hits) { // second loop on hits
                 float hit1_x = hit1->double2();
                 float hit1_y = hit1->double3();
                 int disk1 = hit1->layer();
@@ -402,7 +401,15 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
                 ahit->setErrorMatrix(Ematrix);
                 ftscollection->addHit(ahit);
 
-            }
+            } // loop hit1
+        } // loop hit0
+
+
+        // in this case the hits used in the original array were not saved, but copied so we need to delete them
+
+        for ( size_t i = 0; i < hits.size(); i++ ){
+            delete hits[i];
+            hits[i] = nullptr;
         }
     } // make Ghost Hits
 
