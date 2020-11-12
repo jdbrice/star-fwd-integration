@@ -19,7 +19,7 @@
 #include "tables/St_g2t_track_Table.h"
 #include <array>
 
-#include "TRandom3.h"
+#include "StarGenerator/UTIL/StarRandom.h"
 
 namespace FttGlobal {
     const bool verbose = true;
@@ -64,7 +64,7 @@ Int_t StFttFastSimMaker::Make() {
         LOG_DEBUG << "Creating StRnDHitCollection for FTS" << endm;
     }
 
-    fillThinGapChambers(event);
+    FillThinGapChambers(event);
     iEvent++;
 
     return kStOk;
@@ -78,14 +78,14 @@ Int_t StFttFastSimMaker::Make() {
  * Does NOT support rotations. Maybe added later if we need to
  * The coordinate system is x positive to the right and y positive up (top coords are greater than bottom coords)
  */
-void StFttFastSimMaker::sTGCGlobalToLocal(float x, float y, int disk, int &quad, float &localX, float &localY) {
+void StFttFastSimMaker::GlobalToLocal(float x, float y, int disk, int &quad, float &localX, float &localY) {
     // quad RECT
     float qr = -1;
     float ql = -1;
     float qb = -1;
     float qt = -1;
 
-    sTGCQuadBottomLeft(disk, 0, qb, ql);
+    QuadBottomLeft(disk, 0, qb, ql);
     qr = ql + STGC_QUAD_WIDTH;
     qt = qb + STGC_QUAD_HEIGHT;
     if (x >= ql && x < qr && y >= qb && y < qt) {
@@ -94,7 +94,7 @@ void StFttFastSimMaker::sTGCGlobalToLocal(float x, float y, int disk, int &quad,
         localY = y - qb;
     }
 
-    sTGCQuadBottomLeft(disk, 1, qb, ql);
+    QuadBottomLeft(disk, 1, qb, ql);
     qr = ql + STGC_QUAD_WIDTH;
     qt = qb + STGC_QUAD_HEIGHT;
     if (x >= ql && x < qr && y >= qb && y < qt) {
@@ -102,7 +102,7 @@ void StFttFastSimMaker::sTGCGlobalToLocal(float x, float y, int disk, int &quad,
         localX = x - ql;
         localY = y - qb;
     }
-    sTGCQuadBottomLeft(disk, 2, qb, ql);
+    QuadBottomLeft(disk, 2, qb, ql);
     qr = ql + STGC_QUAD_WIDTH;
     qt = qb + STGC_QUAD_HEIGHT;
     if (x >= ql && x < qr && y >= qb && y < qt) {
@@ -110,7 +110,7 @@ void StFttFastSimMaker::sTGCGlobalToLocal(float x, float y, int disk, int &quad,
         localX = x - ql;
         localY = y - qb;
     }
-    sTGCQuadBottomLeft(disk, 3, qb, ql);
+    QuadBottomLeft(disk, 3, qb, ql);
     qr = ql + STGC_QUAD_WIDTH;
     qt = qb + STGC_QUAD_HEIGHT;
     if (x >= ql && x < qr && y >= qb && y < qt) {
@@ -122,7 +122,7 @@ void StFttFastSimMaker::sTGCGlobalToLocal(float x, float y, int disk, int &quad,
     return;
 }
 
-float StFttFastSimMaker::diskOffset(int disk) {
+float StFttFastSimMaker::DiskOffset(int disk) {
     assert(disk >= 9 && disk <= 12);
     if (disk == 9)
         return 10;
@@ -135,7 +135,7 @@ float StFttFastSimMaker::diskOffset(int disk) {
     return 10;
 }
 
-float StFttFastSimMaker::diskRotation(int disk) {
+float StFttFastSimMaker::DiskRotation(int disk) {
     assert(disk >= 9 && disk <= 12);
     // these are
     if (disk == 9)
@@ -149,8 +149,8 @@ float StFttFastSimMaker::diskRotation(int disk) {
     return 0;
 }
 
-void StFttFastSimMaker::sTGCQuadBottomLeft(int disk, int quad, float &bottom, float &left) {
-    float hbp = diskOffset(disk);
+void StFttFastSimMaker::QuadBottomLeft(int disk, int quad, float &bottom, float &left) {
+    float hbp = DiskOffset(disk);
     if ( FttGlobal::verbose )   {LOG_INFO << "disk: " << disk << ", offset = " << hbp << endm;}
 
     // quad 0 RECT
@@ -188,11 +188,11 @@ void StFttFastSimMaker::sTGCQuadBottomLeft(int disk, int quad, float &bottom, fl
 /**
  * Map a local coordinate back to global coords
  */
-void StFttFastSimMaker::sTGCLocalToGlobal(float localX, float localY, int disk, int quad, float &globalX, float &globalY) {
+void StFttFastSimMaker::LocalToGlobal(float localX, float localY, int disk, int quad, float &globalX, float &globalY) {
     // quad RECT
     float qb = -1;
     float ql = -1;
-    sTGCQuadBottomLeft(disk, quad, qb, ql);
+    QuadBottomLeft(disk, quad, qb, ql);
 
     globalX = localX + ql;
     globalY = localY + qb;
@@ -204,7 +204,7 @@ void StFttFastSimMaker::sTGCLocalToGlobal(float localX, float localY, int disk, 
  * used for determining if ghost hits can be created from the overlapped wires
  * 
  */
-bool StFttFastSimMaker::sTGCOverlaps(StRnDHit *hitA, StRnDHit *hitB) {
+bool StFttFastSimMaker::Overlaps(StRnDHit *hitA, StRnDHit *hitB) {
     // require that they are in the same disk!
     if (hitA->layer() != hitB->layer())
         return false;
@@ -220,7 +220,7 @@ bool StFttFastSimMaker::sTGCOverlaps(StRnDHit *hitA, StRnDHit *hitB) {
     float y2 = hitB->double3();
 
     float b = -1, l = -1;
-    sTGCQuadBottomLeft(disk, quad, b, l);
+    QuadBottomLeft(disk, quad, b, l);
 
     float lx1 = x1 - l;
     float ly1 = y1 - b;
@@ -240,7 +240,7 @@ bool StFttFastSimMaker::sTGCOverlaps(StRnDHit *hitA, StRnDHit *hitB) {
     return true;
 }
 
-void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
+void StFttFastSimMaker::FillThinGapChambers(StEvent *event) {
     // Read the g2t table
     St_g2t_fts_hit *hitTable = static_cast<St_g2t_fts_hit *>(GetDataSet("g2t_stg_hit"));
     if (!hitTable) {
@@ -281,17 +281,17 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
         if (disk < 9)
             continue;
 
-        float theta = diskRotation(disk);
+        float theta = DiskRotation(disk);
 
-        float x_blurred = xhit + rand->gauss( STGC_SIGMA_X);
-        float y_blurred = yhit + rand->gauss( STGC_SIGMA_Y);
+        float x_blurred = xhit + rand.gauss( STGC_SIGMA_X);
+        float y_blurred = yhit + rand.gauss( STGC_SIGMA_Y);
 
         float x_rot = -999, y_rot = -999;
         this->rot(-theta, x_blurred, y_blurred, x_rot, y_rot);
 
         int quad = -1;
         float localX = -999, localY = -999;
-        sTGCGlobalToLocal(x_rot, y_rot, disk, quad, localX, localY);
+        GlobalToLocal(x_rot, y_rot, disk, quad, localX, localY);
 
         // not in the active region
         if (quad < 0 || quad > 3)
@@ -339,7 +339,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
             float hit0_y = hit0->double3();
             int disk0 = hit0->layer();
             int quad0 = hit0->wafer();
-            float theta = diskRotation(disk0);
+            float theta = DiskRotation(disk0);
 
             for (auto &hit1 : hits) { // second loop on hits
                 float hit1_x = hit1->double2();
@@ -353,7 +353,7 @@ void StFttFastSimMaker::fillThinGapChambers(StEvent *event) {
                     continue;
 
                 // check on overlapping segments
-                if (false == sTGCOverlaps(hit0, hit1))
+                if (false == Overlaps(hit0, hit1))
                     continue;
 
                 float x = hit0_x;

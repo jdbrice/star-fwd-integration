@@ -27,7 +27,7 @@ class StFttFastSimMaker : public StMaker {
     }
     virtual const char *GetCVS() const;
 
-    void setDiskRotation(int disk, float degrees) {
+    void SetDiskRotation(int disk, float degrees) {
 
         const float deg_to_radians = 0.017453292f; // = 3.1415926 / 180.0;
         if (9 == disk)
@@ -42,7 +42,7 @@ class StFttFastSimMaker : public StMaker {
     }
 
   private:
-    void fillThinGapChambers(StEvent *event);
+    void FillThinGapChambers(StEvent *event);
 
     int iEvent;
 
@@ -71,12 +71,12 @@ class StFttFastSimMaker : public StMaker {
     // quadrants are
     // 0 1
     // 3 2
-    void sTGCGlobalToLocal(float x, float y, int disk, int &quad, float &localX, float &localY);
-    void sTGCLocalToGlobal(float localX, float localY, int disk, int quad, float &globalX, float &globalY);
-    bool sTGCOverlaps(StRnDHit *hitA, StRnDHit *hitB);
-    void sTGCQuadBottomLeft(int disk, int quad, float &bottom, float &left);
-    float diskOffset(int disk);
-    float diskRotation(int disk);
+    void GlobalToLocal(float x, float y, int disk, int &quad, float &localX, float &localY);
+    void LocalToGlobal(float localX, float localY, int disk, int quad, float &globalX, float &globalY);
+    bool Overlaps(StRnDHit *hitA, StRnDHit *hitB);
+    void QuadBottomLeft(int disk, int quad, float &bottom, float &left);
+    float DiskOffset(int disk);
+    float DiskRotation(int disk);
 
     void rot(float theta, float x, float y, float &xp, float &yp) {
         xp = x * cos(theta) - y * sin(theta);
