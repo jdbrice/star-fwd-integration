@@ -2,11 +2,7 @@
 #define genfit_STARField_h
 
 #include "TVector3.h"
-#include "TFile.h"
-#include "TH3.h"
-
 #include "StarMagField/StarMagField.h"
-
 #include "GenFit/AbsBField.h"
 
 //_______________________________________________________________________________________

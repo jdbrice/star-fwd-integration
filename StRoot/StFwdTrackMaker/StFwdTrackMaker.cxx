@@ -62,7 +62,7 @@ template<> bool accept( genfit::Track *track )
 
     // Check that the track fit converged
     auto status = track->getFitStatus( cardinal );
-    if ( 0 == status->isFitConverged() ) {
+    if ( !status->isFitConverged() ) {
       return false;
     }
 
@@ -88,7 +88,7 @@ template<> bool accept( genfit::Track *track )
     // the first point on the fit doesn't have forward/backward fit
     // information.  So we want the first point with fit info...
  
-    genfit::TrackPoint* first = 0;
+    genfit::TrackPoint* first = nullptr;
     unsigned int ipoint = 0;
     for ( ipoint = 0; ipoint < track->getNumPoints(); ipoint++ ) {
       first = track->getPointWithFitterInfo( ipoint );
@@ -96,7 +96,7 @@ template<> bool accept( genfit::Track *track )
     } 
   
     // No points on the track have fit information
-    if ( 0 == first ) {
+    if ( !first ) {
       LOG_INFO << "No fit information on track" << endm;
       return false;
     }
@@ -112,33 +112,7 @@ template<> bool accept( genfit::Track *track )
  
 };
 
-//_______________________________________________________________________________________
-// // Truth handlers
-int TheTruth ( const Seed_t& seed, int &qa ) {
-
-  int count = 0;
-  std::map<int,int> truth;
-  for ( auto hit : seed ) {
-    count++; // add another hit
-    FwdHit* fhit = dynamic_cast<FwdHit*>(hit);
-    if ( 0 == fhit ) continue;
-    truth[ fhit->_tid ]++;
-  }
-
-  int id = -1;
-  int nmax = -1;
-  for (auto const& it : truth ) {
-    if ( it.second > nmax ) {
-      nmax = it.second;
-      id   = it.first;
-    }
-  }
-  // QA is stored as an integer representing the percentage of hits which
-  // vote the same way on the track
-  qa = int( 100.0 * double(nmax) / double(count) );
-  return id;
-
-};
+//______________________________________________________________________________________
 
 class SiRasterizer {
   public:
@@ -161,8 +135,8 @@ class SiRasterizer {
         double phi = p.Phi();
         const double minR = 5.0;
         // 5.0 is the r minimum of the Si
-        p.SetPerp(minR + (floor((r - minR) / mRasterR) * mRasterR + mRasterR / 2.0));
-        p.SetPhi(-TMath::Pi() + (floor((phi + TMath::Pi()) / mRasterPhi) * mRasterPhi + mRasterPhi / 2.0));
+        p.SetPerp(minR + (std::floor((r - minR) / mRasterR) * mRasterR + mRasterR / 2.0));
+        p.SetPhi(-TMath::Pi() + (std::floor((phi + TMath::Pi()) / mRasterPhi) * mRasterPhi + mRasterPhi / 2.0));
         return p;
     }
 
@@ -444,13 +418,13 @@ void StFwdTrackMaker::loadStgcHits( std::map<int, shared_ptr<McTrack>> &mcTrackM
     // Get the StEvent handle to see if the rndCollection is available
     StEvent *event = (StEvent *)this->GetDataSet("StEvent");
     StRnDHitCollection *rndCollection = nullptr;
-    if (nullptr != event) {
+    if ( event) {
         rndCollection = event->rndHitCollection();
     }
 
     string fttFromGEANT = mFwdConfig.get<string>( "Source:ftt", "" );
 
-    if ( rndCollection == nullptr || "GEANT" == fttFromGEANT ){
+    if ( !rndCollection || "GEANT" == fttFromGEANT ){
         LOG_INFO << "Loading sTGC hits directly from GEANT hits" << endm;
         loadStgcHitsFromGEANT( mcTrackMap, hitMap, count );
     } else {
@@ -573,10 +547,8 @@ void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, std::shared_ptr<McT
 
         StMatrixF covmat = hit->covariantMatrix();
 
-        // copy covariance matrix element by element from StMatrixF
-        hitCov3(0,0) = covmat[0][0]; hitCov3(0,1) = covmat[0][1]; hitCov3(0,2) = covmat[0][2];
-        hitCov3(1,0) = covmat[1][0]; hitCov3(1,1) = covmat[1][1]; hitCov3(1,2) = covmat[1][2];
-        hitCov3(2,0) = covmat[2][0]; hitCov3(2,1) = covmat[2][1]; hitCov3(2,2) = covmat[2][2];
+        // copy covariance matrix from StMatrixF
+        std::copy(&covmat(0,0), &covmat(0,0) + 9, hitCov3.GetMatrixArray());
 
         shared_ptr<McTrack> mct = nullptr;
         if ( hit->idTruth() > 0 && mcTrackMap.count( hit->idTruth() ) ){
@@ -691,8 +663,8 @@ void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &
             TVector3 rastered = mSiRasterizer->raster(TVector3(git->x[0], git->x[1], git->x[2]));
             
             if ( mGenHistograms ) {
-                this->mHistograms["fsiHitDeltaR"]->Fill(sqrt(x * x + y * y) - rastered.Perp());
-                this->mHistograms["fsiHitDeltaPhi"]->Fill(atan2(y, x) - rastered.Phi());
+                this->mHistograms["fsiHitDeltaR"]->Fill(std::sqrt(x * x + y * y) - rastered.Perp());
+                this->mHistograms["fsiHitDeltaPhi"]->Fill(std::atan2(y, x) - rastered.Phi());
             }
             x = rastered.X();
             y = rastered.Y();
@@ -705,8 +677,8 @@ void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &
 
             if ( mGenHistograms ) {
                 this->mHistograms[TString::Format("fsi%dHitMap", plane_id).Data()]->Fill(x, y);
-                this->mHistograms[TString::Format("fsi%dHitMapR", plane_id).Data()]->Fill(sqrt(x * x + y * y));
-                this->mHistograms[TString::Format("fsi%dHitMapPhi", plane_id).Data()]->Fill(atan2(y, x) + TMath::Pi());
+                this->mHistograms[TString::Format("fsi%dHitMapR", plane_id).Data()]->Fill(std::sqrt(x * x + y * y));
+                this->mHistograms[TString::Format("fsi%dHitMapPhi", plane_id).Data()]->Fill(std::atan2(y, x) + TMath::Pi());
             }
         } else {
             continue;
@@ -739,12 +711,12 @@ void StFwdTrackMaker::loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcT
 
         int track_id = track->id;
         float pt2 = track->p[0] * track->p[0] + track->p[1] * track->p[1];
-        float pt = sqrt(pt2);
+        float pt = std::sqrt(pt2);
         float eta = track->eta;
-        float phi = atan2(track->p[1], track->p[0]); //track->phi;
+        float phi = std::atan2(track->p[1], track->p[0]); //track->phi;
         int q = track->charge;
 
-        if (0 == mcTrackMap[track_id] ) 
+        if (!mcTrackMap[track_id] ) 
             mcTrackMap[track_id] = shared_ptr<McTrack>(new McTrack(pt, eta, phi, q, track->start_vertex_p));
         
         if (mGenTree) {
@@ -953,7 +925,7 @@ void StFwdTrackMaker::FillEvent()
         track_count_total++;
 
         // Check to see if the track passes cuts (it should, for now)
-        if ( 0 == accept(genfitTrack) ) continue;
+        if ( !accept(genfitTrack) ) continue;
 
         track_count_accept++;
 
@@ -996,13 +968,9 @@ void StFwdTrackMaker::FillEvent()
 
 void StFwdTrackMaker::FillTrack( StTrack *otrack, const genfit::Track *itrack, const Seed_t &iseed, StTrackDetectorInfo *info )
 {
-    vector<double> fttZ;
-    if ( gGeoManager ){
-        FwdGeomUtils fwdGeoUtils( gGeoManager );
-        fttZ = fwdGeoUtils.fttZ( {0.0, 0.0, 0.0, 0.0} );
-    } else {
-        fttZ = {0.0, 0.0, 0.0, 0.0};
-        LOG_WARN << "Could not load Ftt geometry, tracks will be invalid" << endm;
+    vector<double> fttZ = FwdGeomUtils( gGeoManager ).fttZ( {0.0, 0.0, 0.0, 0.0} );
+    if ( fttZ.size() < 4 || fttZ[0] < 200.0 ) { // check that valid z-locations were found
+        LOG_ERROR << "Could not load Ftt geometry, tracks will be invalid" << endm;
     }
 
     // otrack == output track
@@ -1033,7 +1001,9 @@ void StFwdTrackMaker::FillTrack( StTrack *otrack, const genfit::Track *itrack, c
 
     // Apply dominant contributor model to the track seed
     int idtruth, qatruth;
-    idtruth = TheTruth( iseed, qatruth );
+    double fqatruth = 0;
+    idtruth = MCTruthUtils::dominantContribution( iseed, fqatruth );
+    qatruth = std::floor( fqatruth * 100 );
 
     otrack->setIdTruth( idtruth, qatruth ); // StTrack is dominant contributor model
 
@@ -1154,7 +1124,7 @@ void StFwdTrackMaker::FillTrackFitTraits( StTrack *otrack, const genfit::Track *
     float chi2[] = {0, -999};
     const auto *fit_status = itrack->getFitStatus();
 
-    if ( 0 == fit_status ) {
+    if ( !fit_status ) {
         LOG_WARN << "genfit track with no fit status" << endm;
         return;
     }
@@ -1211,7 +1181,7 @@ void StFwdTrackMaker::FillTrackFitTraits( StTrack *otrack, const genfit::Track *
     }
 
     for ( int i = 0; i < kMaxDetectorId; i++ ) {
-        if ( 0 == nhits[i] ) continue; // not sure why, but Sti skips setting zero hits
+        // if ( 0 == nhits[i] ) continue; // not sure why, but Sti skips setting zero hits
 
         fit_traits.setNumberOfFitPoints( (unsigned char)nhits[i], (StDetectorId)i );
     }

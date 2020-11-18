@@ -37,33 +37,29 @@
 // Utility class for evaluating ID and QA truth
 struct MCTruthUtils {
 
-    static int dominantContribution(std::vector<KiTrack::IHit *> hits, float &qual) {
-        std::map<int, int> count;
+    static int dominantContribution(std::vector<KiTrack::IHit *> seed, double &qa) {
+        
         int total = 0;
-
-        for (auto *h : hits) {
-            auto *hit = dynamic_cast<FwdHit *>(h);
-            if (0 == hit)
-                continue;
-            int idtruth = hit->_tid;
-            count[idtruth]++;
-            total++;
+        // track_id, hits on track
+        std::map<int,int> truth;
+        for ( auto hit : seed ) {
+            total++; // add another hit
+            FwdHit* fhit = dynamic_cast<FwdHit*>(hit);
+            truth[ fhit->_tid ]++;
         }
 
-        int cmx = 0; // count max
-        int idtruth = 0;
+        using namespace std;
+        using P = decltype(truth)::value_type;
+        auto dom = max_element(begin(truth), end(truth), [](P a, P b){ return a.second < b.second; });
 
-        for (auto &iter : count) {
-            if (iter.second > cmx) {
-                cmx = iter.second;
-                idtruth = iter.first;
-            }
-        }
+        // QA represents the percentage of hits which
+        // vote the same way on the track
+        if ( total > 0 )
+            qa = double(dom->second) / double(total) ;
+        else 
+            qa = 0;
 
-        if (total > 0)
-            qual = float(cmx) / float(total);
-
-        return idtruth;
+        return dom->first;
     };
 };
 
@@ -117,8 +113,6 @@ class ForwardTrackMaker {
         TNamed n("mConfig", mConfig.dump());
         n.Write();
 
-        // fOutput->mkdir( "Input/" );
-        // fOutput->cd("Input/");
         writeHistograms();
 
         fOutput->mkdir("Fit/");
@@ -296,39 +290,21 @@ class ForwardTrackMaker {
         }
     }
 
-    Seed_t::iterator findHitById(Seed_t &track, unsigned int _id) {
-        for (Seed_t::iterator it = track.begin(); it != track.end(); ++it) {
-            KiTrack::IHit *h = (*it);
-
-            if (static_cast<FwdHit *>(h)->_id == _id)
-                return it;
-        }
-
-        return track.end();
-    }
-
     void removeHits(std::map<int, std::vector<KiTrack::IHit *>> &hitmap, std::vector<Seed_t> &tracks) {
 
         for (auto track : tracks) {
-            if (track.size() > 0) {
-                for (auto hit : track) {
-                    int sector = hit->getSector();
+            for (auto hit : track) {
+                int sector = hit->getSector();
 
-                    // auto hitit = findHitById( hitmap[sector], static_cast<FwdHit*>(hit)->_id );
-                    auto hitit = std::find(hitmap[sector].begin(), hitmap[sector].end(), hit);
+                auto hitit = std::find(hitmap[sector].begin(), hitmap[sector].end(), hit);
 
-                    if (hitit == hitmap[sector].end()) {
+                if (hitit != hitmap[sector].end()) {
+                    hitmap[sector].erase(hitit);
+                    mTotalHitsRemoved++;
+                }
 
-                    } else {
-                        hitmap[sector].erase(hitit);
-                        mTotalHitsRemoved++;
-                    }
-
-                } // loop on hits in track
-            }     // if track has 7 hits
+            } // loop on hits in track
         }         // loop on track
-
-        return;
     } // removeHits
 
     void doEvent(unsigned long long int iEvent = 0) {
@@ -423,7 +399,7 @@ class ForwardTrackMaker {
 
         // Calculate the MC info first and check filters
         int idt = 0;
-        float qual = 0;
+        double qual = 0;
         idt = MCTruthUtils::dominantContribution(track, qual);
         mRecoTrackQuality.push_back(qual);
         mRecoTrackIdTruth.push_back(idt);
@@ -485,7 +461,7 @@ class ForwardTrackMaker {
             // Clone the track rep
             mGlobalTrackReps.push_back(mTrackFitter->getTrackRep()->clone());
             genfit::Track *mytrack = new genfit::Track(*mTrackFitter->getTrack());
-            float qatruth;
+            double qatruth;
             int idtruth = MCTruthUtils::dominantContribution(track, qatruth);
             mytrack->setMcTrackId(idtruth);
             mGlobalTracks.push_back(mytrack);
@@ -519,7 +495,7 @@ class ForwardTrackMaker {
             if (uvid.size() == track.size()) { // only add tracks that have one hit per volume
                 mRecoTracks.push_back(track);
                 int idt = 0;
-                float qual = 0;
+                double qual = 0;
                 idt = MCTruthUtils::dominantContribution(track, qual);
                 mRecoTrackQuality.push_back(qual);
                 mRecoTrackIdTruth.push_back(idt);

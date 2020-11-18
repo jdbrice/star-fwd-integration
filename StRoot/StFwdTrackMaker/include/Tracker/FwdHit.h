@@ -35,13 +35,14 @@ class FwdSystem : public KiTrack::ISectorSystem {
 class McTrack {
   public:
     McTrack() {
-        mPt = -999;
-        mEta = -999;
-        mPhi = -999;
-        mQ = 0;
+        set( -999, -999, -999, 0, -1 );
     }
     McTrack(double pt, double eta = -999, double phi = -999, int q = 0,
             int start_vertex = -1) {
+        set( pt, eta, phi, q, start_vertex );
+    }
+
+    void set(double pt, double eta = -999, double phi = -999, int q = 0, int start_vertex = -1){
         mPt = pt;
         mEta = eta;
         mPhi = phi;
