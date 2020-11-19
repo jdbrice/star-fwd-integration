@@ -466,15 +466,13 @@ class ForwardTrackMaker {
         }
     }
 
-    void doMcTrackFinding(std::map<int, shared_ptr<McTrack>> mcTrackMap) {
+    void doMcTrackFinding(FwdDataSource::McTrackMap_t mcTrackMap) {
 
         mQualityPlotter->startIteration();
 
         // we will build reco tracks from each McTrack
         for (auto kv : mcTrackMap) {
             auto mc_track = kv.second;
-
-
 
             if (mc_track->mHits.size() < 4){ // require min 4 hits on track
                 continue;
@@ -527,7 +525,7 @@ class ForwardTrackMaker {
     * 
     * @returns The number of hits in the outputMap
     */
-    size_t sliceHitMapInPhi( std::map<int, std::vector<KiTrack::IHit*> > &inputMap, std::map<int, std::vector<KiTrack::IHit*> > &outputMap, float phi_min, float phi_max ){
+    size_t sliceHitMapInPhi( FwdDataSource::HitMap_t &inputMap, FwdDataSource::HitMap_t &outputMap, float phi_min, float phi_max ){
         size_t n_hits_kept = 0;
 
         outputMap.clear(); // child STL containers will get cleared too
@@ -550,7 +548,7 @@ class ForwardTrackMaker {
      * @param hitmap: the hitmap to use, should already be subset of original
      * @returns a list of track seeds
      */
-    vector<Seed_t> doTrackingOnHitmapSubset( size_t iIteration, std::map<int, std::vector<KiTrack::IHit*> > &hitmap  ) {
+    vector<Seed_t> doTrackingOnHitmapSubset( size_t iIteration, FwdDataSource::HitMap_t &hitmap  ) {
         /*************************************************************/
         // Step 2
         // build 2-hit segments (setup parent child relationships)
@@ -696,7 +694,7 @@ class ForwardTrackMaker {
             mRecoTracksThisItertion.insert( mRecoTracksThisItertion.end(), acceptedTracks.begin(), acceptedTracks.end() );
         } else {
 
-            std::map<int, std::vector<KiTrack::IHit*> > slicedHitMap;
+            FwdDataSource::HitMap_t slicedHitMap;
             std::string pslPath = "TrackFinder.Iteration["+ std::to_string(iIteration) + "]:nPhiSlices";
             if ( false == mConfig.exists( pslPath ) ) pslPath = "TrackFinder:nPhiSlices";
             size_t phi_slice_count = mConfig.get<size_t>( pslPath, 1 );

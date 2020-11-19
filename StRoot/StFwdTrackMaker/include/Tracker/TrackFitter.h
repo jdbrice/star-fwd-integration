@@ -230,7 +230,7 @@ class TrackFitter {
      * Takes a list of space points KiTrack::IHit *
      * Takes three indecise used to lookup three of the possible hits within the list
      */ 
-    float fitSimpleCircle(vector<KiTrack::IHit *> trackCand, size_t i0, size_t i1, size_t i2) {
+    float fitSimpleCircle(Seed_t trackCand, size_t i0, size_t i1, size_t i2) {
         float curv = 0;
 
         // ensure that no index is outside of range for FST or FTT volumes
@@ -254,7 +254,7 @@ class TrackFitter {
     /* seedState
      * Determines the seed position and momentum for a list of space points
      */
-    float seedState(vector<KiTrack::IHit *> trackCand, TVector3 &seedPos, TVector3 &seedMom) {
+    float seedState(Seed_t trackCand, TVector3 &seedPos, TVector3 &seedMom) {
         // we require at least 4 hits,  so this should be gauranteed
         if(trackCand.size() < 3){
             // failure
@@ -363,7 +363,7 @@ class TrackFitter {
      * Takes a previously fit track re-fits it with the newly added silicon hits 
      * 
      */
-    TVector3 refitTrackWithSiHits(genfit::Track *originalTrack, std::vector<KiTrack::IHit *> si_hits) {
+    TVector3 refitTrackWithSiHits(genfit::Track *originalTrack, Seed_t si_hits) {
 
         TVector3 pOrig = originalTrack->getCardinalRep()->getMom(originalTrack->getFittedState(1, originalTrack->getCardinalRep()));
         auto cardinalStatus = originalTrack->getFitStatus(originalTrack->getCardinalRep());
@@ -518,7 +518,7 @@ class TrackFitter {
      *
      * 
      */
-    TVector3 fitTrack(vector<KiTrack::IHit *> trackCand, double *Vertex = 0, TVector3 *McSeedMom = 0) {
+    TVector3 fitTrack(Seed_t trackCand, double *Vertex = 0, TVector3 *McSeedMom = 0) {
         long long itStart = FwdTrackerUtils::nowNanoSecond();
         if (mGenHistograms) this->mHist["FitStatus"]->Fill("Total", 1);
 

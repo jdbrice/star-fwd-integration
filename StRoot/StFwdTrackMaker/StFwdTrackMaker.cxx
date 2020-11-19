@@ -508,17 +508,17 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
     }
 } // loadStgcHits
 
-void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, FwdDataSource::HitMap_t &hitMap, int count ){
+void StFwdTrackMaker::loadStgcHitsFromStEvent( FwdDataSource::McTrackMap_t &mcTrackMap, FwdDataSource::HitMap_t &hitMap, int count ){
 
     // Get the StEvent handle
     StEvent *event = (StEvent *)this->GetDataSet("StEvent");
-    if (0 == event) {
+    if (!event)
         return;
-    }
 
     StRnDHitCollection *rndCollection = event->rndHitCollection();
-    if (0 == rndCollection) {
+    if (!rndCollection) {
         LOG_INFO << "No StRnDHitCollection found" << endm;
+        return;
     }
 
     const StSPtrVecRnDHit &hits = rndCollection->hits();
@@ -580,9 +580,8 @@ void StFwdTrackMaker::loadFstHitsFromStEvent( FwdDataSource::McTrackMap_t &mcTra
 
     // Get the StEvent handle
     StEvent *event = (StEvent *)this->GetDataSet("StEvent");
-    if (0 == event) {
+    if (!event) 
         return;
-    }
 
     StRnDHitCollection *rndCollection = event->rndHitCollection();
 
@@ -684,7 +683,7 @@ void StFwdTrackMaker::loadFstHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrack
     }
 } // loadFstHitsFromGEANT
 
-void StFwdTrackMaker::loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap ){
+void StFwdTrackMaker::loadMcTracks( FwdDataSource::McTrackMap_t &mcTrackMap ){
     // Get geant tracks
     St_g2t_track *g2t_track = (St_g2t_track *)GetDataSet("geant/g2t_track");
 
@@ -863,6 +862,8 @@ int StFwdTrackMaker::Make() {
 
     } // IAttr FillEvent
     
+    // delete and clear hits + tracks for this event
+    mForwardData->clear();
 
     return kStOK;
 } // Make
