@@ -48,11 +48,18 @@
 FwdSystem* FwdSystem::sInstance = nullptr;
 
 //_______________________________________________________________________________________
-// For now, accept anything we are passed, no matter what it is or how bad it is
-template<typename T> bool accept( T ) { return true; }
+class GenfitUtils{
+    public:
+
+    // For now, accept anything we are passed, no matter what it is or how bad it is
+    template<typename T> static bool accept( T ) { return true; }
+
+    
+}; // GenfitUtils
+
 
 // Basic sanity cuts on genfit tracks
-template<> bool accept( genfit::Track *track )
+template<> bool GenfitUtils::accept( genfit::Track *track )
 {
     // This also gets rid of failed fits (but may need to explicitly
     // for fit failure...)
@@ -63,16 +70,16 @@ template<> bool accept( genfit::Track *track )
     // Check that the track fit converged
     auto status = track->getFitStatus( cardinal );
     if ( !status->isFitConverged() ) {
-      return false;
+    return false;
     }
 
 
     // Next, check that all points on the track have fitter info
     // (may be another indication of a failed fit?)
     for ( auto point : track->getPoints() ) {
-      if ( !point->hasFitterInfo(cardinal) ) {
-	return false;
-      }
+    if ( !point->hasFitterInfo(cardinal) ) {
+    return false;
+    }
     }
 
     // Following line fails with an exception, because some tracks lack 
@@ -80,25 +87,25 @@ template<> bool accept( genfit::Track *track )
     //
     // genfit::KalmanFitterInfo::getFittedState(bool) const of 
     //                         GenFit/fitters/src/KalmanFitterInfo.cc:250
-  
+
     // Fitted state at the first point
     // const auto &atFirstPoint = track->getFittedState();
 
     // Getting the fitted state from a track occasionally fails, because
     // the first point on the fit doesn't have forward/backward fit
     // information.  So we want the first point with fit info...
- 
+
     genfit::TrackPoint* first = nullptr;
     unsigned int ipoint = 0;
     for ( ipoint = 0; ipoint < track->getNumPoints(); ipoint++ ) {
-      first = track->getPointWithFitterInfo( ipoint );
-      if ( first ) break;
+    first = track->getPointWithFitterInfo( ipoint );
+    if ( first ) break;
     } 
-  
+
     // No points on the track have fit information
     if ( !first ) {
-      LOG_INFO << "No fit information on track" << endm;
-      return false;
+    LOG_INFO << "No fit information on track" << endm;
+    return false;
     }
 
     auto& fittedState= track->getFittedState(ipoint);
@@ -109,8 +116,9 @@ template<> bool accept( genfit::Track *track )
     if (pt < 0.10 ) return false; // below this
 
     return true;
- 
+
 };
+
 
 //______________________________________________________________________________________
 
@@ -189,35 +197,10 @@ class ForwardTracker : public ForwardTrackMaker {
     }
 };
 
-// Wrapper around the hit load.
-class ForwardHitLoader : public IHitLoader {
-  public:
-    unsigned long long nEvents() { return 1; }
-    std::map<int, std::vector<KiTrack::IHit *>> &load(unsigned long long) {
-        return _hits;
-    };
-    std::map<int, std::vector<KiTrack::IHit *>> &loadSi(unsigned long long) {
-        return _fsi_hits;
-    };
-    std::map<int, shared_ptr<McTrack>> &getMcTrackMap() {
-        return _mctracks;
-    };
 
-    // Cleanup
-    void clear() {
-        _hits.clear();
-        _fsi_hits.clear();
-        _mctracks.clear();
-    }
-
-    // TODO, protect and add interaface for pushing hits / tracks
-    std::map<int, std::vector<KiTrack::IHit *>> _hits;
-    std::map<int, std::vector<KiTrack::IHit *>> _fsi_hits;
-    std::map<int, shared_ptr<McTrack>> _mctracks;
-};
 
 //________________________________________________________________________
-StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(nullptr), mForwardHitLoader(nullptr), mGenHistograms(false), mGenTree(false){
+StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(nullptr), mForwardData(nullptr), mGenHistograms(false), mGenTree(false){
     SetAttr("useFtt",1);                 // Default Ftt on 
     SetAttr("useFst",1);                 // Default Fst on
     SetAttr("config", "config.xml");     // Default configuration file (user may override before Init())
@@ -308,8 +291,8 @@ int StFwdTrackMaker::Init() {
     // only save criteria values if we are generating a tree.
     mForwardTracker->setSaveCriteriaValues(mGenTree);
 
-    mForwardHitLoader = std::shared_ptr<ForwardHitLoader>(new ForwardHitLoader());
-    mForwardTracker->setLoader(mForwardHitLoader);
+    mForwardData = std::shared_ptr<FwdDataSource>(new FwdDataSource());
+    mForwardTracker->setData(mForwardData);
     mForwardTracker->initialize();
 
     if ( mGenHistograms ){
@@ -737,9 +720,9 @@ int StFwdTrackMaker::Make() {
 
     long long itStart = FwdTrackerUtils::nowNanoSecond();
     
-    std::map<int, shared_ptr<McTrack>> &mcTrackMap = mForwardHitLoader->_mctracks;
-    std::map<int, std::vector<KiTrack::IHit *>> &hitMap = mForwardHitLoader->_hits;
-    std::map<int, std::vector<KiTrack::IHit *>> &fsiHitMap = mForwardHitLoader->_fsi_hits;
+    std::map<int, shared_ptr<McTrack>> mcTrackMap = mForwardData->getMcTracks();
+    std::map<int, std::vector<KiTrack::IHit *>> hitMap = mForwardData->getFttHits();
+    std::map<int, std::vector<KiTrack::IHit *>> fsiHitMap = mForwardData->getFstHits();
 
     loadMcTracks( mcTrackMap );
 
@@ -870,28 +853,14 @@ int StFwdTrackMaker::Make() {
         } // loop on nnodes
 
     } // IAttr FillEvent
-
-    // delete the hits from the hitmap
-    for ( auto kv : hitMap ){
-        for ( auto h : kv.second ){
-            delete h;
-        }
-        kv.second.clear();
-    }
-
-    for ( auto kv : fsiHitMap ){
-        for ( auto h : kv.second ){
-            delete h;
-        }
-        kv.second.clear();
-    }
     
 
     return kStOK;
 } // Make
 //________________________________________________________________________
 void StFwdTrackMaker::Clear(const Option_t *opts) {
-    mForwardHitLoader->clear();
+    LOG_INFO << "StFwdTrackMaker::CLEAR" << endm;
+    mForwardData->clear();
 }
 //________________________________________________________________________
 
@@ -925,7 +894,7 @@ void StFwdTrackMaker::FillEvent()
         track_count_total++;
 
         // Check to see if the track passes cuts (it should, for now)
-        if ( !accept(genfitTrack) ) continue;
+        if ( !GenfitUtils::accept(genfitTrack) ) continue;
 
         track_count_accept++;
 

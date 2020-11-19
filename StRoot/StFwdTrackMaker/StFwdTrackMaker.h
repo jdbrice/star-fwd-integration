@@ -18,7 +18,7 @@ namespace genfit {
 }
 
 class ForwardTracker;
-class ForwardHitLoader;
+class FwdDataSource;
 class StarFieldAdaptor;
 
 class StGlobalTrack;
@@ -87,7 +87,7 @@ class StFwdTrackMaker : public StMaker {
         std::shared_ptr<SiRasterizer> mSiRasterizer;
         FwdTrackerConfig mFwdConfig;
         std::shared_ptr<ForwardTracker> mForwardTracker;
-        std::shared_ptr<ForwardHitLoader> mForwardHitLoader;
+        std::shared_ptr<FwdDataSource> mForwardData;
         void loadMcTracks( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap );
         void loadStgcHits( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count = 0 );
         void loadStgcHitsFromGEANT( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count = 0 );

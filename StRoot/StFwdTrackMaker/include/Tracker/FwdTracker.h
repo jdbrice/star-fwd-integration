@@ -15,9 +15,10 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
-#include "StFwdTrackMaker/include/Tracker/HitLoader.h"
+#include "StFwdTrackMaker/include/Tracker/FwdDataSource.h"
 #include "StFwdTrackMaker/include/Tracker/QualityPlotter.h"
 #include "StFwdTrackMaker/include/Tracker/TrackFitter.h"
 
@@ -37,13 +38,11 @@
 // Utility class for evaluating ID and QA truth
 struct MCTruthUtils {
 
-    static int dominantContribution(std::vector<KiTrack::IHit *> seed, double &qa) {
+    static int dominantContribution(std::vector<KiTrack::IHit *> hits, double &qa) {
         
-        int total = 0;
         // track_id, hits on track
-        std::map<int,int> truth;
-        for ( auto hit : seed ) {
-            total++; // add another hit
+        std::unordered_map<int,int> truth;
+        for ( auto hit : hits ) {
             FwdHit* fhit = dynamic_cast<FwdHit*>(hit);
             truth[ fhit->_tid ]++;
         }
@@ -54,8 +53,8 @@ struct MCTruthUtils {
 
         // QA represents the percentage of hits which
         // vote the same way on the track
-        if ( total > 0 )
-            qa = double(dom->second) / double(total) ;
+        if ( hits.size() > 0 )
+            qa = double(dom->second) / double(hits.size()) ;
         else 
             qa = 0;
 
@@ -86,7 +85,7 @@ class ForwardTrackMaker {
     // Adopt external configuration file
     void setConfig(FwdTrackerConfig cfg) { mConfig = cfg; }
     // Adopt external hit loader
-    void setLoader(std::shared_ptr<IHitLoader>loader) { mHitLoader = loader; }
+    void setData(std::shared_ptr<FwdDataSource>data) { mDataSource = data; }
 
     virtual void initialize() {
         if (mGenHistograms) setupHistograms();
@@ -240,8 +239,8 @@ class ForwardTrackMaker {
 
     void fillHistograms() {
 
-        if (mGenHistograms && mHitLoader != nullptr) {
-            auto hm = mHitLoader->load(1);
+        if (mGenHistograms && mDataSource != nullptr) {
+            auto hm = mDataSource->getFttHits();
             for (auto hp : hm)
                 mHist["input_nhits"]->Fill(hp.second.size());
         }
@@ -344,8 +343,8 @@ class ForwardTrackMaker {
 
         fillHistograms();
 
-        hitmap = mHitLoader->load(iEvent);
-        std::map<int, shared_ptr<McTrack>> &mcTrackMap = mHitLoader->getMcTrackMap();
+        hitmap = mDataSource->getFttHits();
+        std::map<int, shared_ptr<McTrack>> &mcTrackMap = mDataSource->getMcTracks();
 
         bool mcTrackFinding = true;
 
@@ -405,7 +404,7 @@ class ForwardTrackMaker {
         mRecoTrackIdTruth.push_back(idt);
         TVector3 mcSeedMom;
 
-        auto mctm = mHitLoader->getMcTrackMap();
+        auto mctm = mDataSource->getMcTracks();
 
         if (qual < mConfig.get<float>("TrackFitter.McFilter:quality-min", 0.0)) {
             return;
@@ -765,7 +764,7 @@ class ForwardTrackMaker {
     } // doTrackIteration
 
     void addSiHitsMc() {
-        std::map<int, std::vector<KiTrack::IHit *>> hitmap = mHitLoader->loadSi(0);
+        std::map<int, std::vector<KiTrack::IHit *>> hitmap = mDataSource->getFstHits();
 
         for (size_t i = 0; i < mGlobalTracks.size(); i++) {
 
@@ -825,7 +824,7 @@ class ForwardTrackMaker {
     }         // ad Si hits via MC associations
 
     void addSiHits() {
-        std::map<int, std::vector<KiTrack::IHit *>> hitmap = mHitLoader->loadSi(0);
+        std::map<int, std::vector<KiTrack::IHit *>> hitmap = mDataSource->getFstHits();
 
         // loop on global tracks
         for (size_t i = 0; i < mGlobalTracks.size(); i++) {
@@ -967,7 +966,7 @@ class ForwardTrackMaker {
     std::vector<genfit::Track *> mGlobalTracks;
 
     QualityPlotter *mQualityPlotter;
-    std::shared_ptr<IHitLoader> mHitLoader;
+    std::shared_ptr<FwdDataSource> mDataSource;
 
     TrackFitter *mTrackFitter = nullptr;
 
