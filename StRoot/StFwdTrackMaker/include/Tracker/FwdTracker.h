@@ -38,7 +38,7 @@
 // Utility class for evaluating ID and QA truth
 struct MCTruthUtils {
 
-    static int dominantContribution(std::vector<KiTrack::IHit *> hits, double &qa) {
+    static int dominantContribution(Seed_t hits, double &qa) {
         
         // track_id, hits on track
         std::unordered_map<int,int> truth;
@@ -87,7 +87,8 @@ class ForwardTrackMaker {
     // Adopt external hit loader
     void setData(std::shared_ptr<FwdDataSource>data) { mDataSource = data; }
 
-    virtual void initialize() {
+    virtual void initialize( bool genHistograms) {
+        mGenHistograms = genHistograms;
         if (mGenHistograms) setupHistograms();
 
         mDoTrackFitting = !(mConfig.get<bool>("TrackFitter:off", false));
@@ -98,26 +99,22 @@ class ForwardTrackMaker {
 
 
     void writeEventHistograms() {
-        // build the name
-        string name = "results.root";
+        
+        // no file, dont write anything
+        if ( !gDirectory )
+            return;
 
-        if (mConfig.exists("Output:url")) {
-            name = mConfig.get<string>("Output:url", "fwdTrackerOutput.root");
-        }
-
-
-        TFile *fOutput = new TFile(name.c_str(), "RECREATE");
-        fOutput->cd();
+        gDirectory->cd();
         // write out the config we use (do before histos):
         TNamed n("mConfig", mConfig.dump());
         n.Write();
 
         writeHistograms();
 
-        fOutput->mkdir("Fit/");
-        fOutput->cd("Fit/");
+        gDirectory->mkdir("Fit/");
+        gDirectory->cd("Fit/");
         mTrackFitter->writeHistograms();
-        fOutput->cd("");
+        gDirectory->cd("");
         mQualityPlotter->writeHistograms();
     }
 
@@ -199,7 +196,7 @@ class ForwardTrackMaker {
         return em;
     };
 
-    size_t nHitsInHitMap(std::map<int, std::vector<KiTrack::IHit *>> &hitmap) {
+    size_t nHitsInHitMap(FwdDataSource::HitMap_t &hitmap) {
         size_t n = 0;
 
         for (auto kv : hitmap) {
@@ -289,7 +286,7 @@ class ForwardTrackMaker {
         }
     }
 
-    void removeHits(std::map<int, std::vector<KiTrack::IHit *>> &hitmap, std::vector<Seed_t> &tracks) {
+    void removeHits(FwdDataSource::HitMap_t &hitmap, std::vector<Seed_t> &tracks) {
 
         for (auto track : tracks) {
             for (auto hit : track) {
@@ -339,12 +336,12 @@ class ForwardTrackMaker {
         // Step 1
         // Load and sort the hits
         /*************************************************************/
-        std::map<int, std::vector<KiTrack::IHit *>> hitmap;
+        FwdDataSource::HitMap_t hitmap;
 
         fillHistograms();
 
         hitmap = mDataSource->getFttHits();
-        std::map<int, shared_ptr<McTrack>> &mcTrackMap = mDataSource->getMcTracks();
+        std::map<int, std::shared_ptr<McTrack>> &mcTrackMap = mDataSource->getMcTracks();
 
         bool mcTrackFinding = true;
 
@@ -672,7 +669,7 @@ class ForwardTrackMaker {
         return acceptedTracks;
     } // doTrackingOnHitmapSubset
 
-    void doTrackIteration(size_t iIteration, std::map<int, std::vector<KiTrack::IHit *>> &hitmap) {
+    void doTrackIteration(size_t iIteration, FwdDataSource::HitMap_t &hitmap) {
 
         // empty the list of reco tracks for the iteration
         mRecoTracksThisItertion.clear();
@@ -764,7 +761,7 @@ class ForwardTrackMaker {
     } // doTrackIteration
 
     void addSiHitsMc() {
-        std::map<int, std::vector<KiTrack::IHit *>> hitmap = mDataSource->getFstHits();
+        FwdDataSource::HitMap_t hitmap = mDataSource->getFstHits();
 
         for (size_t i = 0; i < mGlobalTracks.size(); i++) {
 
@@ -776,7 +773,7 @@ class ForwardTrackMaker {
                 mHist["FitStatus"]->Fill("PossibleReFit", 1);
             }
 
-            std::vector<KiTrack::IHit *> si_hits_for_this_track(3, nullptr);
+            Seed_t si_hits_for_this_track(3, nullptr);
 
             for (size_t j = 0; j < 3; j++) {
                 for (auto h0 : hitmap[j]) {
@@ -824,7 +821,7 @@ class ForwardTrackMaker {
     }         // ad Si hits via MC associations
 
     void addSiHits() {
-        std::map<int, std::vector<KiTrack::IHit *>> hitmap = mDataSource->getFstHits();
+        FwdDataSource::HitMap_t hitmap = mDataSource->getFstHits();
 
         // loop on global tracks
         for (size_t i = 0; i < mGlobalTracks.size(); i++) {
@@ -838,9 +835,9 @@ class ForwardTrackMaker {
                 mHist["FitStatus"]->Fill("PossibleReFit", 1);
             }
 
-            std::vector<KiTrack::IHit *> hits_near_disk0;
-            std::vector<KiTrack::IHit *> hits_near_disk1;
-            std::vector<KiTrack::IHit *> hits_near_disk2;
+            Seed_t hits_near_disk0;
+            Seed_t hits_near_disk1;
+            Seed_t hits_near_disk2;
             try {
                 auto msp2 = mTrackFitter->projectToFst(2, mGlobalTracks[i]);
                 auto msp1 = mTrackFitter->projectToFst(1, mGlobalTracks[i]);
@@ -913,11 +910,11 @@ class ForwardTrackMaker {
         } // loop on globals
     }     // addSiHits
 
-    std::vector<KiTrack::IHit *> findSiHitsNearMe(std::vector<KiTrack::IHit *> &available_hits, genfit::MeasuredStateOnPlane &msp, double dphi = 0.004 * 15.5, double dr = 0.75) {
+    Seed_t findSiHitsNearMe(Seed_t &available_hits, genfit::MeasuredStateOnPlane &msp, double dphi = 0.004 * 15.5, double dr = 0.75) {
         double probe_phi = TMath::ATan2(msp.getPos().Y(), msp.getPos().X());
         double probe_r = sqrt(pow(msp.getPos().X(), 2) + pow(msp.getPos().Y(), 2));
 
-        std::vector<KiTrack::IHit *> found_hits;
+        Seed_t found_hits;
 
         for (auto h : available_hits) {
             double h_phi = TMath::ATan2(h->getY(), h->getX());

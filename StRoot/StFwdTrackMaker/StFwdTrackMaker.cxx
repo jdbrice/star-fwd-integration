@@ -157,7 +157,7 @@ class ForwardTracker : public ForwardTrackMaker {
   public:
     // Replaces original initialization.  Config file and hitloader
     // will be provided by the maker.
-    void initialize() {
+    void initialize( bool genHistograms ) {
         LOG_INFO << "ForwardTracker::initialize()" << endm;
         nEvents = 1; // only process single event
 
@@ -172,7 +172,7 @@ class ForwardTracker : public ForwardTrackMaker {
         mTrackFitter = new TrackFitter(mConfig);
         mTrackFitter->setup();
 
-        ForwardTrackMaker::initialize();
+        ForwardTrackMaker::initialize( genHistograms );
     }
 
     void finish() {
@@ -208,16 +208,27 @@ StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(nullpt
 };
 
 int StFwdTrackMaker::Finish() {
-    mForwardTracker->finish();
     
+    auto prevDir = gDirectory;
     if ( mGenHistograms ) {
-        gDirectory->mkdir("StFwdTrackMaker");
-        gDirectory->cd("StFwdTrackMaker");
+        
+        // output file name
+        string name = mFwdConfig.get<string>("Output:url", "fwdTrackerOutput.root");
+        TFile *fOutput = new TFile(name.c_str(), "RECREATE");
+        fOutput->cd();
+
+        fOutput->mkdir("StFwdTrackMaker");
+        fOutput->cd("StFwdTrackMaker");
         for (auto nh : mHistograms) {
             nh.second->SetDirectory(gDirectory);
             nh.second->Write();
         }
+        fOutput->cd("");
     }
+
+    mForwardTracker->finish();
+
+    gDirectory = prevDir;
 
     if (mGenTree) {
         mTree->Print();
@@ -293,7 +304,7 @@ int StFwdTrackMaker::Init() {
 
     mForwardData = std::shared_ptr<FwdDataSource>(new FwdDataSource());
     mForwardTracker->setData(mForwardData);
-    mForwardTracker->initialize();
+    mForwardTracker->initialize( mGenHistograms );
 
     if ( mGenHistograms ){
         mHistograms["McEventEta"] = new TH1D("McEventEta", ";MC Track Eta", 1000, -5, 5);
@@ -396,7 +407,7 @@ TMatrixDSym makeSiCovMat(TVector3 hit, FwdTrackerConfig &xfg) {
     return tamvoc;
 }
 
-void StFwdTrackMaker::loadStgcHits( std::map<int, shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count ){
+void StFwdTrackMaker::loadStgcHits( FwdDataSource::McTrackMap_t &mcTrackMap, FwdDataSource::HitMap_t &hitMap, int count ){
 
     // Get the StEvent handle to see if the rndCollection is available
     StEvent *event = (StEvent *)this->GetDataSet("StEvent");
@@ -416,10 +427,13 @@ void StFwdTrackMaker::loadStgcHits( std::map<int, shared_ptr<McTrack>> &mcTrackM
     }
 } // loadStgcHits
 
-void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count ){
+void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrackMap, FwdDataSource::HitMap_t &hitMap, int count ){
     /************************************************************/
     // STGC Hits
     St_g2t_fts_hit *g2t_stg_hits = (St_g2t_fts_hit *)GetDataSet("geant/g2t_stg_hit");
+
+    if (!g2t_stg_hits)
+        return;
 
     // make the Covariance Matrix once and then reuse
     TMatrixDSym hitCov3(3);
@@ -428,11 +442,7 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
     hitCov3(1, 1) = sigXY * sigXY;
     hitCov3(2, 2) = 0.0; // unused since they are loaded as points on plane
 
-    int nstg = 0;
-    if (g2t_stg_hits == nullptr) {
-    } else {
-        nstg = g2t_stg_hits->GetNRows();
-    }
+    int nstg = g2t_stg_hits->GetNRows();
 
     LOG_INFO << "This event has " << nstg << " stg hits in geant/g2t_stg_hit " << endm;
     if ( mGenHistograms ) {
@@ -498,7 +508,7 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( std::map<int, shared_ptr<McTrack>> 
     }
 } // loadStgcHits
 
-void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count ){
+void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, FwdDataSource::HitMap_t &hitMap, int count ){
 
     // Get the StEvent handle
     StEvent *event = (StEvent *)this->GetDataSet("StEvent");
@@ -548,7 +558,7 @@ void StFwdTrackMaker::loadStgcHitsFromStEvent( std::map<int, std::shared_ptr<McT
     }
 } //loadStgcHitsFromStEvent
 
-void StFwdTrackMaker::loadFstHits( std::map<int, shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count ){
+void StFwdTrackMaker::loadFstHits( FwdDataSource::McTrackMap_t &mcTrackMap, FwdDataSource::HitMap_t &hitMap, int count ){
 
     // Get the StEvent handle to see if the rndCollection is available
     StEvent *event = (StEvent *)this->GetDataSet("StEvent");
@@ -566,7 +576,7 @@ void StFwdTrackMaker::loadFstHits( std::map<int, shared_ptr<McTrack>> &mcTrackMa
     }
 } // loadFstHits
 
-void StFwdTrackMaker::loadFstHitsFromStEvent( std::map<int, shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count ){
+void StFwdTrackMaker::loadFstHitsFromStEvent( FwdDataSource::McTrackMap_t &mcTrackMap, FwdDataSource::HitMap_t &hitMap, int count ){
 
     // Get the StEvent handle
     StEvent *event = (StEvent *)this->GetDataSet("StEvent");
@@ -606,17 +616,16 @@ void StFwdTrackMaker::loadFstHitsFromStEvent( std::map<int, shared_ptr<McTrack>>
     }
 } //loadFstHitsFromStEvent
 
-void StFwdTrackMaker::loadFstHitsFromGEANT( std::map<int, shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count ){
+void StFwdTrackMaker::loadFstHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrackMap, FwdDataSource::HitMap_t &hitMap, int count ){
     /************************************************************/
-    // FSI Hits
-    int nfsi = 0;
+    // Load FSI Hits from GEANT
     St_g2t_fts_hit *g2t_fsi_hits = (St_g2t_fts_hit *)GetDataSet("geant/g2t_fsi_hit");
 
-    if (g2t_fsi_hits == nullptr) {
-        LOG_INFO << "g2t_fsi_hits is null" << endm;
-    } else {
-        nfsi = g2t_fsi_hits->GetNRows();
-    }
+    if ( !g2t_fsi_hits )
+        return;
+
+    int nfsi = g2t_fsi_hits->GetNRows();
+    
 
     // reuse this to store cov mat
     TMatrixDSym hitCov3(3);
@@ -720,9 +729,9 @@ int StFwdTrackMaker::Make() {
 
     long long itStart = FwdTrackerUtils::nowNanoSecond();
     
-    std::map<int, shared_ptr<McTrack>> mcTrackMap = mForwardData->getMcTracks();
-    std::map<int, std::vector<KiTrack::IHit *>> hitMap = mForwardData->getFttHits();
-    std::map<int, std::vector<KiTrack::IHit *>> fsiHitMap = mForwardData->getFstHits();
+    FwdDataSource::McTrackMap_t mcTrackMap = mForwardData->getMcTracks();
+    FwdDataSource::HitMap_t hitMap = mForwardData->getFttHits();
+    FwdDataSource::HitMap_t fsiHitMap = mForwardData->getFstHits();
 
     loadMcTracks( mcTrackMap );
 

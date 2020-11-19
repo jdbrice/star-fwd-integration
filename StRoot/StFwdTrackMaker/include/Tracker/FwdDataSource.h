@@ -16,13 +16,17 @@
  */
 class FwdDataSource {
   public:
-    std::map<int, std::vector<KiTrack::IHit *>> &getFttHits( ) {
+
+    using HitMap_t = std::map<int, std::vector<KiTrack::IHit*>>;
+    using McTrackMap_t = std::map<int, shared_ptr<McTrack>>;
+
+    HitMap_t &getFttHits( ) {
         return mFttHits;
     };
-    std::map<int, std::vector<KiTrack::IHit *>> &getFstHits() {
+    HitMap_t &getFstHits() {
         return mFstHits;
     };
-    std::map<int, shared_ptr<McTrack>> &getMcTracks() {
+    McTrackMap_t &getMcTracks() {
         return mMcTracks;
     };
 
@@ -52,9 +56,9 @@ class FwdDataSource {
     }
 
     // TODO, protect and add interaface for pushing hits / tracks
-    std::map<int, std::vector<KiTrack::IHit *>> mFttHits;
-    std::map<int, std::vector<KiTrack::IHit *>> mFstHits;
-    std::map<int, shared_ptr<McTrack>> mMcTracks;
+    HitMap_t mFttHits;
+    HitMap_t mFstHits;
+    McTrackMap_t mMcTracks;
 };
 
 
