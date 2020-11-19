@@ -70,7 +70,7 @@ public:
     // sanitizes a path to its canonical form 
     static void canonize( std::string &path ) {
         // remove whitespace
-        path.erase(std::remove_if(path.begin(), path.end(), ::isspace), path.end());
+        path.erase(std::remove_if(path.begin(), path.end(), static_cast<int(*) (int)>(std::isspace)), path.end());
 
         // removes "[0]" found in paths, so that the first element in a list can be accessed by index 0 or bare path
         size_t pos = path.find( "[0]" );
@@ -140,7 +140,7 @@ public:
         FwdTrackerConfig::canonize( path );
         std::string val = mNodes.at( path );
         // remove whitespace
-        val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
+        val.erase(std::remove_if(val.begin(), val.end(), static_cast<int(*) (int)>(std::isspace) ), val.end());
         std::vector<std::string> elems;
 
         // split the string by commas

@@ -69,8 +69,8 @@ class StFwdTrackMaker : public StMaker {
 
     bool mGenHistograms = false;
     std::map<std::string, TH1 *> mHistograms;
-    TFile *mTreeFile = 0;
-    TTree *mTree = 0;
+    TFile *mTreeFile = nullptr;
+    TTree *mTree     = nullptr;
     bool mGenTree = false;
     std::string mConfigFile;
 
