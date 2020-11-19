@@ -39,10 +39,10 @@ protected:
 
         // be careful about repeated nodes
         if ( mNodes.count( path ) == 0 ) {
-            this->mNodes[ path ] = node_content;
+            mNodes[ path ] = node_content;
         } else { // add an array index if more than one
             path += TString::Format( "[%zu]", mNodes.count( path ) ).Data();
-            this->mNodes[ path ] = node_content;
+            mNodes[ path ] = node_content;
         }
 
         // loop through attributes of this node
@@ -54,7 +54,7 @@ protected:
             const string attr_val = xml.GetAttrValue(attr) != nullptr ? xml.GetAttrValue(attr) : FwdTrackerConfig::valDNE;
             
             // save attributes with the attribute delim ":" 
-            this->mNodes[ (path + FwdTrackerConfig::attrDelim + attr_name) ] = attr_val;
+            mNodes[ (path + FwdTrackerConfig::attrDelim + attr_name) ] = attr_val;
             attr = xml.GetNextAttr(attr);
         }
 
@@ -87,7 +87,7 @@ public:
         using namespace std;
         FwdTrackerConfig::sstr.str("");
         FwdTrackerConfig::sstr.clear();
-        for ( auto kv : this->mNodes ){
+        for ( auto kv : mNodes ){
             FwdTrackerConfig::sstr << "[" << kv.first << "] = " << kv.second << endl;
         }
         return FwdTrackerConfig::sstr.str();
@@ -97,7 +97,7 @@ public:
     // Either node or attribute - used to determine if default value is used
     bool exists( std::string path ) const {
         FwdTrackerConfig::canonize( path );
-        if ( 0 == this->mNodes.count( path ) )
+        if ( 0 == mNodes.count( path ) )
             return false;
         return true;
     }
@@ -127,7 +127,7 @@ public:
 
         FwdTrackerConfig::canonize( path );
         // convrt from string to type T and return
-        return convert<T>( this->mNodes.at( path ) );
+        return convert<T>( mNodes.at( path ) );
     }
 
     
@@ -138,7 +138,7 @@ public:
             return dv;
         
         FwdTrackerConfig::canonize( path );
-        std::string val = this->mNodes.at( path );
+        std::string val = mNodes.at( path );
         // remove whitespace
         val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
         std::vector<std::string> elems;
@@ -170,7 +170,7 @@ public:
             return ( str.find( FwdTrackerConfig::attrDelim ) != string::npos );
         };
 
-        for ( auto kv : this->mNodes ){
+        for ( auto kv : mNodes ){
 
             // get the first n characters of this path
             string parent = (kv.first).substr( 0, path.length() );
@@ -209,7 +209,7 @@ public:
         // Now try to parse xml file
         XMLDocPointer_t xmldoc = xml.ParseFile(filename.c_str());
         if (!xmldoc) { // parse failed, TODO inform of error
-            this->mErrorParsing = true;
+            mErrorParsing = true;
             return;
         }
 

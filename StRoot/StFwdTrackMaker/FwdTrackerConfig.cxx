@@ -17,7 +17,7 @@ std::string FwdTrackerConfig::get( std::string path, std::string dv ) const {
         return dv;
     FwdTrackerConfig::canonize( path );
     // directly return string
-    return ( this->mNodes.at( path ) );
+    return ( mNodes.at( path ) );
 }
 
 // conversion to string is a noop
