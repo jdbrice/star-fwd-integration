@@ -106,3 +106,24 @@ built in 32-bit release mode.
 
 ## NOTES:
 As of this writing, the code builds on RCF but I do not have a setup for running the forward tracking yet - since I need to build Genfit and KiTrack in RCF (32bit).
+
+
+### TTree output format
+
+```cpp
+mTree->Branch("n", &mTreeN, "n/I"); // number of hits
+mTree->Branch("x", mTreeX, "x[n]/F"); // hit position x
+mTree->Branch("y", mTreeY, "y[n]/F"); // y
+mTree->Branch("z", mTreeZ, "z[n]/F"); // z
+mTree->Branch("tid", &mTreeTID, "tid[n]/I"); // track id producing this hit
+mTree->Branch("vid", &mTreeVID, "vid[n]/I"); // volume id for this hit
+mTree->Branch("hpt", &mTreeHPt, "hpt[n]/F"); // Mc track pt
+mTree->Branch("hsv", &mTreeHSV, "hsv[n]/I"); // Mc track start vertex
+
+// mc tracks
+mTree->Branch("nt", &mTreeNTracks, "nt/I"); // # of mc tracks
+mTree->Branch("pt", &mTreePt, "pt[nt]/F"); // track pt
+mTree->Branch("eta", &mTreeEta, "eta[nt]/F"); // eta
+mTree->Branch("phi", &mTreePhi, "phi[nt]/F"); // phi
+mTree->Branch("tid", &mTreeTID, "tid/I"); // track id
+```
