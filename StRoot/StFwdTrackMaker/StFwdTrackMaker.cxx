@@ -728,9 +728,9 @@ int StFwdTrackMaker::Make() {
 
     long long itStart = FwdTrackerUtils::nowNanoSecond();
     
-    FwdDataSource::McTrackMap_t mcTrackMap = mForwardData->getMcTracks();
-    FwdDataSource::HitMap_t hitMap = mForwardData->getFttHits();
-    FwdDataSource::HitMap_t fsiHitMap = mForwardData->getFstHits();
+    FwdDataSource::McTrackMap_t &mcTrackMap = mForwardData->getMcTracks();
+    FwdDataSource::HitMap_t &hitMap = mForwardData->getFttHits();
+    FwdDataSource::HitMap_t &fsiHitMap = mForwardData->getFstHits();
 
     loadMcTracks( mcTrackMap );
 
@@ -861,9 +861,6 @@ int StFwdTrackMaker::Make() {
         } // loop on nnodes
 
     } // IAttr FillEvent
-    
-    // delete and clear hits + tracks for this event
-    mForwardData->clear();
 
     return kStOK;
 } // Make

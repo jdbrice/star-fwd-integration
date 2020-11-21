@@ -336,12 +336,11 @@ class ForwardTrackMaker {
         // Step 1
         // Load and sort the hits
         /*************************************************************/
-        FwdDataSource::HitMap_t hitmap;
+        FwdDataSource::HitMap_t &hitmap = mDataSource->getFttHits();;
+        FwdDataSource::McTrackMap_t &mcTrackMap = mDataSource->getMcTracks();
 
         fillHistograms();
 
-        hitmap = mDataSource->getFttHits();
-        std::map<int, std::shared_ptr<McTrack>> &mcTrackMap = mDataSource->getMcTracks();
 
         bool mcTrackFinding = true;
 
@@ -466,7 +465,7 @@ class ForwardTrackMaker {
         }
     }
 
-    void doMcTrackFinding(FwdDataSource::McTrackMap_t mcTrackMap) {
+    void doMcTrackFinding(FwdDataSource::McTrackMap_t &mcTrackMap) {
 
         mQualityPlotter->startIteration();
 
