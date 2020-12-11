@@ -165,6 +165,8 @@ public:
         using namespace std;
         vector<string> result;
 
+        canonize(path);
+
         // test a path to see if it is an attribute
         auto is_attribute = [&](string str){
             return ( str.find( FwdTrackerConfig::attrDelim ) != string::npos );
