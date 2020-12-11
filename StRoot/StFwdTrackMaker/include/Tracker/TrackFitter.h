@@ -98,6 +98,7 @@ class TrackFitter {
         mFSTZLocations = fwdGeoUtils.fstZ(
             mConfig.getVector<double>("TrackFitter.Geometry:fst", 
                 {140.286011, 154.286011, 168.286011 }
+                // 144.633,158.204,171.271
             )
         );
 
@@ -106,7 +107,8 @@ class TrackFitter {
         }
 
         // Now add the Si detector planes at the desired location
-        LOG_INFO << "Adding FST Planes at: ";
+        std::stringstream sstr;
+        sstr << "Adding FST Planes at: ";
         string delim = "";
         for (auto z : mFSTZLocations) {
             mFSTPlanes.push_back(
@@ -115,10 +117,10 @@ class TrackFitter {
                     new genfit::DetPlane(TVector3(0, 0, z), TVector3(1, 0, 0), TVector3(0, 1, 0) )
                 )
             );
-            LOG_INFO << delim << z;
+            sstr << delim << z;
             delim = ", ";
         }
-        LOG_INFO << endm;
+        LOG_INFO  << sstr.str() << endm;
 
         // Now load FTT
         // mConfig.getVector<>(...) requires a default, hence the 
@@ -134,7 +136,9 @@ class TrackFitter {
             LOG_ERROR << "Wrong number of FTT layers, got " << mFTTZLocations.size() << " but expected 4" << endm;
         }
 
-        LOG_INFO << "Adding FTT Planes at: ";
+        sstr.str("");
+        sstr.clear();
+        sstr << "Adding FTT Planes at: ";
         delim = "";
         for (auto z : mFTTZLocations) {
             mFTTPlanes.push_back(
@@ -143,10 +147,10 @@ class TrackFitter {
                     new genfit::DetPlane(TVector3(0, 0, z), TVector3(1, 0, 0), TVector3(0, 1, 0))
                 )
             );
-            LOG_INFO << delim << z;
+            sstr << delim << z;
             delim = ", ";
         }
-        LOG_INFO << endm;
+        LOG_INFO << sstr.str() << endm;
 
         // get default vertex values used in simulation from the config
         mVertexSigmaXY = mConfig.get<double>("TrackFitter.Vertex:sigmaXY", 1.0);
