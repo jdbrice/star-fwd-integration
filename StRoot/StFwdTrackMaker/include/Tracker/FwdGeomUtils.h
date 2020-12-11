@@ -69,8 +69,13 @@ class FwdGeomUtils {
         }
 
         double fstZ( int index ) {
+            // starting in FtsmGeom v1.16? or 1.17
+            // the index are now 4,5,6
+            // hence +4 below
+            // also fixed typo, previously was incorrectly FTSD_
+
             stringstream spath;
-            spath << "/HALL_1/CAVE_1/FTSM_1/FTSD_" << (index + 1) << "/"; 
+            spath << "/HALL_1/CAVE_1/FSTM_1/FSTD_" << (index + 4) << "/"; 
             bool can = cd( spath.str().c_str() );
             if ( can && _matrix != nullptr ){
                 return _matrix->GetTranslation()[2];
