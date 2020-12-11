@@ -907,7 +907,7 @@ class ForwardTrackMaker {
         } // loop on globals
     }     // addSiHits
 
-    Seed_t findSiHitsNearMe(Seed_t &available_hits, genfit::MeasuredStateOnPlane &msp, double dphi = 0.004 * 15.5, double dr = 0.75) {
+    Seed_t findSiHitsNearMe(Seed_t &available_hits, genfit::MeasuredStateOnPlane &msp, double dphi = 0.004 * 15.5, double dr = 2.75) {
         double probe_phi = TMath::ATan2(msp.getPos().Y(), msp.getPos().X());
         double probe_r = sqrt(pow(msp.getPos().X(), 2) + pow(msp.getPos().Y(), 2));
 
@@ -918,7 +918,7 @@ class ForwardTrackMaker {
             double h_r = sqrt(pow(h->getX(), 2) + pow(h->getY(), 2));
             double mdphi = fabs(h_phi - probe_phi);
             
-            if ( mdphi < dphi || fabs( h_r - probe_r ) < dr) { // handle 2pi edge
+            if ( mdphi < dphi && fabs( h_r - probe_r ) < dr) { // handle 2pi edge
                 found_hits.push_back(h);
             }
         }
@@ -936,7 +936,7 @@ class ForwardTrackMaker {
     unsigned long long int nEvents;
 
     bool mDoTrackFitting = true;
-    bool mSaveCriteriaValues = false;
+    bool mSaveCriteriaValues = true;
 
     /* TTree data members */
     int tree_n;

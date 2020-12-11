@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-    <Output url="test-FSTFastSim-PV-FTT-FST.root" />
-	<Geometry>tests/fGeom_dev2021_FSTM1.12.root</Geometry>
+    <Output url="test.root" />
+	<Geometry>tests/fGeom.root</Geometry>
     <Source ftt="GEANT" />
     
 	<TrackFitter refitSi="true" mcSeed="true" >
-        <Vertex sigmaXY="0.02" sigmaZ="5.0" includeInFit="true" />
+        <Vertex sigmaXY="0.05" sigmaZ="5.0" includeInFit="true" />
         
         <!-- for MC only -->
         <Hits sigmaXY="0.01" useFCM="true" />

@@ -3,9 +3,9 @@
 
 TFile *output = 0;
 
-void fast_track(   int n = 10,
-                  const char *inFile = "tests/sim.FSTM1.12.fzd",
-                  std::string configFile = "tests/fast_track.xml",
+void fast_track(   int n = 50,
+                  const char *inFile = "tests/sim.fzd",
+                  std::string configFile = "tests/full_track.xml",
                   const char *geom = "dev2021") {
     TString _geom = geom;
 
@@ -53,7 +53,7 @@ void fast_track(   int n = 10,
     StFwdTrackMaker *gmk = new StFwdTrackMaker();
     // config file set here overides chain opt
     gmk->SetConfigFile( configFile );
-    gmk->SetGenerateTree( false );
+    gmk->SetGenerateTree( true );
     gmk->SetGenerateHistograms( true );
     // chain->AddAfter( "fsiSim", gmk );
     chain->AddMaker(gmk);
