@@ -1,6 +1,8 @@
 #ifndef FWD_TRACKER_CONFIG_H
 #define FWD_TRACKER_CONFIG_H
 
+#include "St_base/StMessMgr.h"
+
 #include "TXMLEngine.h"
 #include "TString.h"
 
@@ -24,6 +26,19 @@ protected:
     std::map<std::string, std::string> mNodes;
     static std::stringstream sstr; // reused for string to numeric conversion
 
+    // assumes bare path and adds [i] until DNE
+    // reports lowest non-existant index
+    // starts at 1 since 0 is checked on existance
+    size_t pathCount( const std::string path ){
+        size_t index = 1;
+        std::string p = path + TString::Format( "[%zu]", index ).Data();
+        while ( mNodes.count( p ) ){
+            index ++;
+            p = path + TString::Format( "[%zu]", index ).Data();
+        }
+        return index;
+    }
+
     void mapFile(TXMLEngine &xml, XMLNodePointer_t node, Int_t level, std::string path = "") {
         using namespace std;
         // add the path delimeter above top level
@@ -41,7 +56,8 @@ protected:
         if ( mNodes.count( path ) == 0 ) {
             mNodes[ path ] = node_content;
         } else { // add an array index if more than one
-            path += TString::Format( "[%zu]", mNodes.count( path ) ).Data();
+            size_t index = pathCount( path );
+            path += TString::Format( "[%zu]", index ).Data();
             mNodes[ path ] = node_content;
         }
 
@@ -173,7 +189,6 @@ public:
         };
 
         for ( auto kv : mNodes ){
-
             // get the first n characters of this path
             string parent = (kv.first).substr( 0, path.length() );
 
