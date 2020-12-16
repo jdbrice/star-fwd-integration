@@ -76,8 +76,11 @@ class StFwdTrackMaker : public StMaker {
 
     // elements used only if the mGenTree = true
     float mTreeX[MAX_TREE_ELEMENTS], mTreeY[MAX_TREE_ELEMENTS], mTreeZ[MAX_TREE_ELEMENTS];
-    int mTreeN, mTreeNTracks, mTreeTID[MAX_TREE_ELEMENTS], mTreeVID[MAX_TREE_ELEMENTS], mTreeHPt[MAX_TREE_ELEMENTS], mTreeHSV[MAX_TREE_ELEMENTS];
+    int mTreeN, mTreeTID[MAX_TREE_ELEMENTS], mTreeVID[MAX_TREE_ELEMENTS], mTreeHPt[MAX_TREE_ELEMENTS], mTreeHSV[MAX_TREE_ELEMENTS];
+
+    int mTreeNTracks, mTreeRNTracks, mTreeRTID[MAX_TREE_ELEMENTS];
     float mTreePt[MAX_TREE_ELEMENTS], mTreeEta[MAX_TREE_ELEMENTS], mTreePhi[MAX_TREE_ELEMENTS];
+    float mTreeRPt[MAX_TREE_ELEMENTS], mTreeREta[MAX_TREE_ELEMENTS], mTreeRPhi[MAX_TREE_ELEMENTS], mTreeRQual[MAX_TREE_ELEMENTS];
     std::map<string, std::vector<float>> mTreeCrits;
     std::map<string, std::vector<int>> mTreeCritTrackIds;
 

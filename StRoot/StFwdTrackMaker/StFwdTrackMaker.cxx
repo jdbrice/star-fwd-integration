@@ -267,7 +267,14 @@ int StFwdTrackMaker::Init() {
         mTree->Branch("pt", &mTreePt, "pt[nt]/F");
         mTree->Branch("eta", &mTreeEta, "eta[nt]/F");
         mTree->Branch("phi", &mTreePhi, "phi[nt]/F");
-        mTree->Branch("tid", &mTreeTID, "tid/I");
+        // mTree->Branch("tid", &mTreeTID, "tid/I");
+
+        // rc tracks
+        mTree->Branch("rnt", &mTreeRNTracks, "rnt/I");
+        mTree->Branch("rpt", &mTreeRPt, "rpt[rnt]/F");
+        mTree->Branch("reta", &mTreeREta, "reta[rnt]/F");
+        mTree->Branch("rphi", &mTreeRPhi, "rphi[rnt]/F");
+        mTree->Branch("rtid", &mTreeRTID, "rtid[rnt]/I");
 
         std::string path = "TrackFinder.Iteration[0].SegmentBuilder";
         std::vector<string> paths = mFwdConfig.childrenOf(path);
@@ -437,7 +444,7 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
 
     // make the Covariance Matrix once and then reuse
     TMatrixDSym hitCov3(3);
-    double sigXY = 0.01;
+    const double sigXY = 0.01;
     hitCov3(0, 0) = sigXY * sigXY;
     hitCov3(1, 1) = sigXY * sigXY;
     hitCov3(2, 2) = 0.0; // unused since they are loaded as points on plane
@@ -459,8 +466,8 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
         int track_id = git->track_p;
         int volume_id = git->volume_id;
         int plane_id = (volume_id - 1) / 4;           // from 1 - 16. four chambers per station
-        float x = git->x[0] + gRandom->Gaus(0, 0.01); // 100 micron blur according to approx sTGC reso
-        float y = git->x[1] + gRandom->Gaus(0, 0.01); // 100 micron blur according to approx sTGC reso
+        float x = git->x[0] + gRandom->Gaus(0, sigXY); // 100 micron blur according to approx sTGC reso
+        float y = git->x[1] + gRandom->Gaus(0, sigXY); // 100 micron blur according to approx sTGC reso
         float z = git->x[2];
 
         if (mGenTree) {
@@ -815,6 +822,32 @@ int StFwdTrackMaker::Make() {
             }
         }
 
+        // SAVE RECO tracks
+
+        mTreeRNTracks = 0;
+        // Track seeds
+        const auto &seedTracks = mForwardTracker -> getRecoTracks();
+        const auto &fitMomenta = mForwardTracker -> getFitMomenta();
+
+        for ( size_t i = 0; i < seedTracks.size(); i++ ){
+
+            int idt = 0;
+            double qual = 0;
+            idt = MCTruthUtils::dominantContribution(seedTracks[i], qual);
+
+            
+            mTreeRQual[i] = qual;
+            mTreeRTID[i] = idt;
+
+            if ( i < fitMomenta.size() ){
+                mTreeRPt[i]  = fitMomenta[i].Pt();
+                mTreeREta[i] = fitMomenta[i].Eta();
+                mTreeRPhi[i] = fitMomenta[i].Phi();
+            }
+
+            mTreeRNTracks ++;
+        }
+
         mTree->Fill();
     } // if mGenTree
 
@@ -957,7 +990,12 @@ void StFwdTrackMaker::FillTrack( StTrack *otrack, const genfit::Track *itrack, c
 
     // Track length and TOF between first and last point on the track
     // TODO: is this same definition used in StEvent?
-    double track_len = itrack->getTrackLen();
+    double track_len = 0;
+    try {
+        itrack->getTrackLen();
+    } catch ( genfit::Exception &e ){
+        LOG_ERROR << "Exception getting track length: " << e.what() << endm;
+    }
 
 
     //  double track_tof = itrack->getTrackTOF();
@@ -1123,7 +1161,12 @@ void StFwdTrackMaker::FillTrackFitTraits( StTrack *otrack, const genfit::Track *
     float covM[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     // Obtain fitted state so we can grab the covariance matrix
-    genfit::MeasuredStateOnPlane state = itrack->getFittedState(0);
+    genfit::MeasuredStateOnPlane state;
+    try {
+        state = itrack->getFittedState(0);
+    } catch (genfit::Exception &e) {
+        LOG_ERROR << "GenFit failed to get measured state on plane: " << e.what() << endm;
+    }
 
     // For global tracks, we are evaluating the fit at the first silicon plane.
     // Extrapolate the fit to this point so we can extract the covariance matrix
@@ -1264,7 +1307,13 @@ void StFwdTrackMaker::FillTrackDcaGeometry( StGlobalTrack *otrack, const genfit:
     const StPrimaryVertex* primaryVertex = stEvent->primaryVertex(0);
 
     // Obtain fitted state from genfit track
-    genfit::MeasuredStateOnPlane measuredState = itrack->getFittedState(1);
+    genfit::MeasuredStateOnPlane measuredState;
+    try {
+        measuredState = itrack->getFittedState(1);
+    } catch ( genfit::Exception &e ) {
+        LOG_WARN << "Getting Measured State failed: " << e.what() << endm;
+        return;
+    }
 
     // Obtain the cardinal representation
     genfit::AbsTrackRep *cardinal =  itrack->getCardinalRep();
