@@ -6,8 +6,5 @@
     
 	<TrackFitter refitSi="true" mcSeed="true" >
         <Vertex sigmaXY="0.05" sigmaZ="5.0" includeInFit="true" />
-        
-        <!-- for MC only -->
-        <Hits sigmaXY="0.01" useFCM="true" />
     </TrackFitter>
 </config>
