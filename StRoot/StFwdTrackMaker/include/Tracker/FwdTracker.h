@@ -401,6 +401,12 @@ class ForwardTrackMaker {
         TVector3 mcSeedMom;
 
         auto mctm = mDataSource->getMcTracks();
+        // get the MC track momentum if we can
+        if (mctm.count(idt)) {
+            auto mct = mctm[idt];
+            mcSeedMom.SetPtEtaPhi(mct->mPt, mct->mEta, mct->mPhi);
+        }
+
 
         if (qual < mConfig.get<float>("TrackFitter.McFilter:quality-min", 0.0)) {
             return;
@@ -413,7 +419,7 @@ class ForwardTrackMaker {
                 
                 return;
             }
-            if (mct->mEta < mConfig.get<float>("TrackFitter.McFilter:eta-min", 0.0) ||
+            if (mct->mEta < mConfig.get<float>("TrackFitter.McFilter:eta-min", -1e10) ||
                 mct->mEta > mConfig.get<float>("TrackFitter.McFilter:eta-max", 1e10)) {
                 
                 return;
