@@ -7,17 +7,28 @@
     <TrackFinder nIterations="1">
         <Iteration> <!-- Options for first iteration -->
             <SegmentBuilder>
-                <Criteria name="Crit2_RZRatio" min="0.999" max="1.131" />
+                <!-- <Criteria name="Crit2_RZRatio" min="0.999" max="1.131" />
                 <Criteria name="Crit2_DeltaRho" min="-6.1" max="9.9"/>
                 <Criteria name="Crit2_DeltaPhi" min="0" max="13.4" />
-                <Criteria name="Crit2_StraightTrackRatio" min="0.81" max="1.35"/>
+                <Criteria name="Crit2_StraightTrackRatio" min="0.81" max="1.35"/> -->
+
+
+                <Criteria name="Crit2_RZRatio" min="0.0" max="10.0" />
+                <Criteria name="Crit2_DeltaPhi" min="0" max="180" />	
+                <Criteria name="Crit2_DeltaRho" min="-100" max="100"/>
+                <Criteria name="Crit2_StraightTrackRatio" min="0.9" max="1.1"/>
             </SegmentBuilder>
 
             <ThreeHitSegments>
-                <Criteria name="Crit3_3DAngle" min="0" max="20" />
-                <!-- <Criteria name="Crit3_PT" min="0" max="100" /> -->
+                <!-- <Criteria name="Crit3_3DAngle" min="0" max="20" />
+                <Criteria name="Crit3_PT" min="0" max="100" />
                 <Criteria name="Crit3_ChangeRZRatio" min="0" max="1.11" />
-                <Criteria name="Crit3_2DAngle" min="0" max="15" />
+                <Criteria name="Crit3_2DAngle" min="0" max="15" /> -->
+
+                <Criteria name="Crit3_3DAngle" min="0" max="90" />
+                <Criteria name="Crit3_PT" min="0" max="10000" />
+                <Criteria name="Crit3_ChangeRZRatio" min="0" max="100" />
+                <Criteria name="Crit3_2DAngle" min="0" max="100" />
             </ThreeHitSegments>
         </Iteration>
 
@@ -33,11 +44,8 @@
         <HitRemover active="true" />
     </TrackFinder>
 
-    <TrackFitter refitSi="false" mcSeed="true" >
+    <TrackFitter off="true" refitSi="true" mcSeed="true" >
     <KalmanFitterRefTrack MaxFailedHits="1" MaxIterations="2" />
         <Vertex sigmaXY="0.05" sigmaZ="5.0" includeInFit="true" />
-        
-        <!-- for MC only -->
-        <Hits sigmaXY="0.01" useFCM="true" />
     </TrackFitter>
 </config>
