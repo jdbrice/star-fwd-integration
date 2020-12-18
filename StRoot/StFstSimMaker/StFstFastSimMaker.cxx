@@ -44,7 +44,7 @@ namespace FstGlobal{
     float RSegment[] = {5., 7.875, 10.75, 13.625, 16.5, 19.375, 22.25, 25.125, 28.};
 
     // controls some extra output
-    const bool verbose = true;
+    const bool verbose = false;
 
 	// key type for lookup tables on disk r-phi strip
 	typedef std::tuple<int, int, int> FstKeyTriple;

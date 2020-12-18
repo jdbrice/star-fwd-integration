@@ -19,3 +19,5 @@ tests/xmlreadfile.C
 test.C
 to-remove
 presgeom.txt
+star-sw/
+work/LOG*

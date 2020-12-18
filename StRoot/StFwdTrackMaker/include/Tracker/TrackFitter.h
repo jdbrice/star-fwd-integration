@@ -359,6 +359,11 @@ class TrackFitter {
         double len = fitTrack->getCardinalRep()->extrapolateToPlane(tst, detSi, false, true);
 
         TCM = fitTrack->getCardinalRep()->get6DCov(tst);
+
+        float x = tst.getPos().X();
+        float y = tst.getPos().Y();
+        // LOG_INFO << "Track Uncertainty at FST (plane=" << si_plane << ") @ x= " << x << ", y= " << y << " : " << sqrt(TCM(0, 0)) << ", " << sqrt(TCM(1, 1)) << endm;
+
         return tst;
     }
 
@@ -368,7 +373,7 @@ class TrackFitter {
      * 
      */
     TVector3 refitTrackWithSiHits(genfit::Track *originalTrack, Seed_t si_hits) {
-
+        // mem leak, global track is overwritten without delete.
         TVector3 pOrig = originalTrack->getCardinalRep()->getMom(originalTrack->getFittedState(1, originalTrack->getCardinalRep()));
         auto cardinalStatus = originalTrack->getFitStatus(originalTrack->getCardinalRep());
 
@@ -399,10 +404,10 @@ class TrackFitter {
         TVector3 seedMom = pOrig;
 
         // Create the ref track using the seed state
-        auto refTrack = new genfit::Track(trackRepPos, seedPos, seedMom);
-        refTrack->addTrackRep(trackRepNeg);
+        auto pFitTrack = new genfit::Track(trackRepPos, seedPos, seedMom);
+        pFitTrack->addTrackRep(trackRepNeg);
 
-        genfit::Track &fitTrack = *refTrack;
+        genfit::Track &fitTrack = *pFitTrack;
 
         size_t firstFTTIndex = 0;
         if (mIncludeVertexInFit) {
@@ -459,6 +464,7 @@ class TrackFitter {
 
         } catch (genfit::Exception &e) {
             // will be caught below by converge check
+            LOG_WARN << "Track fit exception : " << e.what() << endm;
         }
 
         if (fitTrack.getFitStatus(fitTrack.getCardinalRep())->isFitConverged() == false) {
@@ -466,9 +472,26 @@ class TrackFitter {
             return pOrig;
         } else { // we did converge, return new momentum
             
+            try {
+                // causes seg fault
+                auto cardinalRep = fitTrack.getCardinalRep();
+                auto cardinalStatus = fitTrack.getFitStatus(cardinalRep);
+                mFitStatus = *cardinalStatus; // save the status of last fit
+            } catch (genfit::Exception &e) {
+            }
+
             TVector3 p = fitTrack.getCardinalRep()->getMom(fitTrack.getFittedState(1, fitTrack.getCardinalRep()));
             // get status if needed later
             // auto newStatus = fitTrack.getFitStatus(fitTrack.getCardinalRep());
+
+            // try {
+            //     LOG_INFO << "Rechecking projected errors" << endm;
+            //     auto amsp2 = projectToFst(2, pFitTrack);
+            //     auto amsp1 = projectToFst(1, pFitTrack);
+            //     auto amsp0 = projectToFst(0, pFitTrack);
+            // }catch (genfit::Exception &e) {
+            // }
+
             return p;
         }
         return pOrig;
@@ -551,6 +574,7 @@ class TrackFitter {
         // If we use the PV, use that as the start pos for the track
         if (mIncludeVertexInFit) {
             seedPos.SetXYZ(pv[0], pv[1], pv[2]);
+            LOG_INFO << "Fitting with PV: (" << pv[0] << ", " << pv[1] << ", " << pv[2] << ") " << endm;
         }
 
         if (mFitTrack){

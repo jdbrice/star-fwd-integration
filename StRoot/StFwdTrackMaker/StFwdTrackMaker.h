@@ -35,7 +35,7 @@ class McTrack;
 #include <vector>
 #include <memory>
 
-const size_t MAX_TREE_ELEMENTS = 10000;
+const size_t MAX_TREE_ELEMENTS = 4000;
 
 class StFwdTrackMaker : public StMaker {
 
@@ -78,9 +78,14 @@ class StFwdTrackMaker : public StMaker {
     float mTreeX[MAX_TREE_ELEMENTS], mTreeY[MAX_TREE_ELEMENTS], mTreeZ[MAX_TREE_ELEMENTS];
     int mTreeN, mTreeTID[MAX_TREE_ELEMENTS], mTreeVID[MAX_TREE_ELEMENTS], mTreeHPt[MAX_TREE_ELEMENTS], mTreeHSV[MAX_TREE_ELEMENTS];
 
-    int mTreeNTracks, mTreeRNTracks, mTreeRTID[MAX_TREE_ELEMENTS];
+    int mTreeNTracks, mTreeRNTracks, mTreeRTID[MAX_TREE_ELEMENTS], mTreeVertID[MAX_TREE_ELEMENTS];
+    unsigned short mTreeRNumFst[MAX_TREE_ELEMENTS];
+    short mTreeQ[MAX_TREE_ELEMENTS], mTreeRQ[MAX_TREE_ELEMENTS];
     float mTreePt[MAX_TREE_ELEMENTS], mTreeEta[MAX_TREE_ELEMENTS], mTreePhi[MAX_TREE_ELEMENTS];
     float mTreeRPt[MAX_TREE_ELEMENTS], mTreeREta[MAX_TREE_ELEMENTS], mTreeRPhi[MAX_TREE_ELEMENTS], mTreeRQual[MAX_TREE_ELEMENTS];
+
+    int mTreeNVert;
+    float mTreeVertX[MAX_TREE_ELEMENTS], mTreeVertY[MAX_TREE_ELEMENTS], mTreeVertZ[MAX_TREE_ELEMENTS];
     std::map<string, std::vector<float>> mTreeCrits;
     std::map<string, std::vector<int>> mTreeCritTrackIds;
 

@@ -32,6 +32,8 @@
 
 #include "tables/St_g2t_fts_hit_Table.h"
 #include "tables/St_g2t_track_Table.h"
+#include "tables/St_g2t_vertex_Table.h"
+#include "tables/St_g2t_event_Table.h"
 
 #include "StarMagField/StarMagField.h"
 
@@ -267,14 +269,24 @@ int StFwdTrackMaker::Init() {
         mTree->Branch("pt", &mTreePt, "pt[nt]/F");
         mTree->Branch("eta", &mTreeEta, "eta[nt]/F");
         mTree->Branch("phi", &mTreePhi, "phi[nt]/F");
-        // mTree->Branch("tid", &mTreeTID, "tid/I");
+        mTree->Branch("q", &mTreeQ, "q[nt]/S");
+        mTree->Branch("vertid", &mTreeVertID, "vertid[nt]/I");
+
+        // mcverts
+        mTree->Branch("nvert", &mTreeNVert, "nvert/I");
+        mTree->Branch("vertx", &mTreeVertX, "vertx[nvert]/F");
+        mTree->Branch("verty", &mTreeVertY, "verty[nvert]/F");
+        mTree->Branch("vertz", &mTreeVertZ, "vertz[nvert]/F");
 
         // rc tracks
         mTree->Branch("rnt", &mTreeRNTracks, "rnt/I");
         mTree->Branch("rpt", &mTreeRPt, "rpt[rnt]/F");
         mTree->Branch("reta", &mTreeREta, "reta[rnt]/F");
         mTree->Branch("rphi", &mTreeRPhi, "rphi[rnt]/F");
+        mTree->Branch("rq", &mTreeRQ, "rq[rnt]/S");
         mTree->Branch("rtid", &mTreeRTID, "rtid[rnt]/I");
+        mTree->Branch("rnfst", &mTreeRNumFst, "rnfst[rnt]/s");
+        mTree->Branch("rqual", &mTreeRQual, "rqual[rnt]/F");
 
         std::string path = "TrackFinder.Iteration[0].SegmentBuilder";
         std::vector<string> paths = mFwdConfig.childrenOf(path);
@@ -497,7 +509,8 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
         if ( filterGEANT ) {
             if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->mEta) > 5.0 ){
                 
-                if ( mGenHistograms ) this->mHistograms[TString::Format("stgc%dHitMapSec", plane_id).Data()]->Fill(x, y);
+                if ( mGenHistograms ) 
+                    this->mHistograms[TString::Format("stgc%dHitMapSec", plane_id).Data()]->Fill(x, y);
                 continue;
             } else if ( mcTrackMap[track_id] && fabs(mcTrackMap[track_id]->mEta) < 5.0 ){
                 if ( mGenHistograms ) this->mHistograms[TString::Format("stgc%dHitMapPrim", plane_id).Data()]->Fill(x, y);
@@ -719,11 +732,11 @@ void StFwdTrackMaker::loadMcTracks( FwdDataSource::McTrackMap_t &mcTrackMap ){
             mcTrackMap[track_id] = shared_ptr<McTrack>(new McTrack(pt, eta, phi, q, track->start_vertex_p));
         
         if (mGenTree) {
-            // this is only turnd on for debug
-            LOG_INFO << "mTreeNTracks = " << mTreeNTracks << " == track_id = " << track_id << " , is_shower = " << track->is_shower << ", start_vtx = " << track->start_vertex_p << endm;
             mTreePt[mTreeNTracks] = pt;
             mTreeEta[mTreeNTracks] = eta;
             mTreePhi[mTreeNTracks] = phi;
+            mTreeQ[mTreeNTracks] = (short)q;
+            mTreeVertID[mTreeNTracks] = track->start_vertex_p;
             mTreeNTracks++;
         }
 
@@ -786,12 +799,39 @@ int StFwdTrackMaker::Make() {
     if ( IAttr("useFst") )
         loadFstHits( mcTrackMap, fsiHitMap );
 
+    // St_g2t_event *g2t_event = (St_g2t_event *)GetDataSet("geant/g2t_event");
+    // int nevent = event->GetNRows();
+    // LOG_INFO << "NEVENT " << nevent << endm;
+
+    // LOG_INFO << "Looking for GEANT sim vertex info" << endm;
+    St_g2t_vertex *g2t_vertex = (St_g2t_vertex *)GetDataSet("geant/g2t_vertex");
+    
+    // int nvert = g2t_vertex->GetNRows();
+    // for ( int i = 0; i < nvert; i++ ){
+    //     g2t_vertex_st *vert = (g2t_vertex_st*)g2t_vertex->At(i);
+    //     LOG_INFO << "Vertex at :" << vert->ge_x[0] << ", " << vert->ge_x[1] << ", " << vert->ge_x[2] <<  ", proc=" << vert->eg_proc << ", nDaught="<< vert->n_daughter << endm;    
+    // }
+    
+
+    // Set the MC Vertex for track fitting
+    g2t_vertex_st *vert = (g2t_vertex_st*)g2t_vertex->At(0);
+    mForwardTracker->setEventVertex( TVector3( vert->ge_x[0], vert->ge_x[1], vert->ge_x[2] ) );
+    
+
     // Process single event
     mForwardTracker->doEvent();
 
 
 
     if (mGenTree) {
+        
+        mTreeNVert = g2t_vertex->GetNRows();
+        for ( int i = 0; i < mTreeNVert; i++ ){
+            g2t_vertex_st *vert = (g2t_vertex_st*)g2t_vertex->At(i);
+            mTreeVertX[i] = vert->ge_x[0];
+            mTreeVertY[i] = vert->ge_x[1];
+            mTreeVertZ[i] = vert->ge_x[2];
+        }
 
         if (mForwardTracker->getSaveCriteriaValues()) {
             for (auto crit : mForwardTracker->getTwoHitCriteria()) {
@@ -828,6 +868,8 @@ int StFwdTrackMaker::Make() {
         // Track seeds
         const auto &seedTracks = mForwardTracker -> getRecoTracks();
         const auto &fitMomenta = mForwardTracker -> getFitMomenta();
+        const auto &numFstHits = mForwardTracker -> getNumFstHits();
+        const auto &fitStatus  = mForwardTracker -> getFitStatus();
 
         for ( size_t i = 0; i < seedTracks.size(); i++ ){
 
@@ -839,10 +881,17 @@ int StFwdTrackMaker::Make() {
             mTreeRQual[i] = qual;
             mTreeRTID[i] = idt;
 
+            if ( i < numFstHits.size() ){
+                mTreeRNumFst[i] = numFstHits[i];
+                mTreeRQ[i] = fitStatus[i].getCharge();
+            }
+
             if ( i < fitMomenta.size() ){
                 mTreeRPt[i]  = fitMomenta[i].Pt();
                 mTreeREta[i] = fitMomenta[i].Eta();
                 mTreeRPhi[i] = fitMomenta[i].Phi();
+            } else {
+                LOG_WARN << "Size mismatch between track seeds and track fits" << endm;
             }
 
             mTreeRNTracks ++;
@@ -856,7 +905,7 @@ int StFwdTrackMaker::Make() {
 
     StEvent *stEvent = static_cast<StEvent *>(GetInputDS("StEvent"));
 
-    if ( IAttr("fillEvent") ) {
+    if ( false && IAttr("fillEvent") ) {
 
         if (!stEvent) {
             LOG_WARN << "No StEvent found. Forward tracks will not be saved" << endm;

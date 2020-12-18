@@ -64,12 +64,13 @@ struct MCTruthUtils {
 
 class ForwardTrackMaker {
   public:
-    ForwardTrackMaker() : mConfigFile("config.xml") {
+    ForwardTrackMaker() : mConfigFile("config.xml"), mEventVertex(-999, -999, -999) {
         // noop
     }
     
     const std::vector<Seed_t> &getRecoTracks() const { return mRecoTracks; }
     const std::vector<TVector3> &getFitMomenta() const { return mFitMoms; }
+    const std::vector<unsigned short> &getNumFstHits() const { return mNumFstHits; }
     const std::vector<genfit::FitStatus> &getFitStatus() const { return mFitStatus; }
     const std::vector<genfit::AbsTrackRep *> &globalTrackReps() const { return mGlobalTrackReps; }
     const std::vector<genfit::Track *> &globalTracks() const { return mGlobalTracks; }
@@ -311,6 +312,7 @@ class ForwardTrackMaker {
         mRecoTrackQuality.clear();
         mRecoTrackIdTruth.clear();
         mFitMoms.clear();
+        mNumFstHits.clear();
         mFitStatus.clear();
 
         // Clear pointers to the track reps from previous event
@@ -396,8 +398,10 @@ class ForwardTrackMaker {
         int idt = 0;
         double qual = 0;
         idt = MCTruthUtils::dominantContribution(track, qual);
-        mRecoTrackQuality.push_back(qual);
-        mRecoTrackIdTruth.push_back(idt);
+        
+        
+
+
         TVector3 mcSeedMom;
 
         auto mctm = mDataSource->getMcTracks();
@@ -408,39 +412,72 @@ class ForwardTrackMaker {
         }
 
 
+        // Mc Filter
+        bool bailout = false;
         if (qual < mConfig.get<float>("TrackFitter.McFilter:quality-min", 0.0)) {
-            return;
+            bailout = true;
+            // LOG_INFO << "BAIL OUT on Fit bc quality = " << qual << endm;
         }
         if (mctm.count(idt)) {
             auto mct = mctm[idt];
             mcSeedMom.SetPtEtaPhi(mct->mPt, mct->mEta, mct->mPhi);
             if (mct->mPt < mConfig.get<float>("TrackFitter.McFilter:pt-min", 0.0) ||
                 mct->mPt > mConfig.get<float>("TrackFitter.McFilter:pt-max", 1e10)) {
-                
-                return;
+                bailout = true;
+                // LOG_INFO << "BAIL OUT on Fit bc Pt = " << mct->mPt << endm;
             }
-            if (mct->mEta < mConfig.get<float>("TrackFitter.McFilter:eta-min", -1e10) ||
+            if (mct->mEta < mConfig.get<float>("TrackFitter.McFilter:eta-min", 0) ||
                 mct->mEta > mConfig.get<float>("TrackFitter.McFilter:eta-max", 1e10)) {
-                
-                return;
+                bailout = true;
+                // LOG_INFO << "BAIL OUT on Fit bc eta = " << mct->mEta << endm;
             }
             
         } else {
             // cannot find the track
         }
 
+        // if ( bailout ){
+
+        //     for ( KiTrack::IHit * h : track ){
+        //         FwdHit *fh = static_cast<FwdHit*>( h );
+        //         LOG_INFO << "Hit on Track from trackId: " << fh->_tid << endm;
+        //     }
+
+        // }
+
+
+        bailout = false;
+        // if (bailout)
+        //     return;
         // Done with Mc Filter
 
-        if (mDoTrackFitting) {
+        TVector3 p;
+        p.SetPtEtaPhi( 0, -999, 0 );
+        genfit::FitStatus fitStatus;
+        
+        genfit::AbsTrackRep *trackRep = nullptr;//new genfit::RKTrackRep(211); // pdg for pi+
+        genfit::Track *genTrack = nullptr;//new genfit::Track( trackRep, TVector3(0, 0, 0), TVector3(0, 0, 0) );
+
+
+        if (mDoTrackFitting && !bailout) {
             if ( mGenHistograms ){
                 mHist["FitStatus"]->Fill("AttemptFit", 1);
             }
 
-            TVector3 p;
+            double vertex[3] = { mEventVertex.X(), mEventVertex.Y(), mEventVertex.Z() };
+
+            double * pVertex = 0;
+            if ( fabs(mEventVertex.X()) < 100 ){
+                pVertex = vertex; // only use it if it has been set from default
+            }
+
+            
             if (true == mConfig.get<bool>("TrackFitter:mcSeed", false)) {
-                p = mTrackFitter->fitTrack(track, 0, &mcSeedMom);
+                // use the MC pt, eta, phi as the seed for fitting
+                p = mTrackFitter->fitTrack(track, pVertex, &mcSeedMom);
             } else {
-                p = mTrackFitter->fitTrack(track);
+                // Normal case, real data
+                p = mTrackFitter->fitTrack(track, pVertex);
             }
 
             if ( mGenHistograms ){
@@ -451,24 +488,31 @@ class ForwardTrackMaker {
                 }
             }
 
-            mFitMoms.push_back(p);
-            mFitStatus.push_back(mTrackFitter->getStatus());
-
-            auto ft = mTrackFitter->getTrack();
-            if ( mGenHistograms && ft->getFitStatus(ft->getCardinalRep())->isFitConverged() && p.Perp() > 1e-3) {
+            // assign the fit results to be saved
+            fitStatus = mTrackFitter->getStatus();
+            genTrack = new genfit::Track(*mTrackFitter->getTrack());
+            trackRep = mTrackFitter->getTrackRep()->clone(); // Clone the track rep
+            genTrack->setMcTrackId(idt);
+            
+            if ( mGenHistograms && genTrack->getFitStatus(genTrack->getCardinalRep())->isFitConverged() && p.Perp() > 1e-3) {
                 mHist["FitStatus"]->Fill("GoodCardinal", 1);
             }
 
-            // Clone the track rep
-            mGlobalTrackReps.push_back(mTrackFitter->getTrackRep()->clone());
-            genfit::Track *mytrack = new genfit::Track(*mTrackFitter->getTrack());
-            double qatruth;
-            int idtruth = MCTruthUtils::dominantContribution(track, qatruth);
-            mytrack->setMcTrackId(idtruth);
-            mGlobalTracks.push_back(mytrack);
-        } else {
-            // Skipping Track Fitting
-        }
+            
+            
+        } // if (mDoTrackFitting && !bailout)
+
+
+        // Save everything
+        mFitMoms.push_back(p);
+        mGlobalTracks.push_back(genTrack);
+        mGlobalTrackReps.push_back(trackRep);
+        mFitStatus.push_back(fitStatus);
+        mRecoTrackQuality.push_back(qual);
+        mRecoTrackIdTruth.push_back(idt);
+        mNumFstHits.push_back(0);
+
+
     }
 
     void doMcTrackFinding(FwdDataSource::McTrackMap_t &mcTrackMap) {
@@ -772,6 +816,7 @@ class ForwardTrackMaker {
                 return;
             }
 
+
             if ( mGenHistograms){
                 mHist["FitStatus"]->Fill("PossibleReFit", 1);
             }
@@ -813,6 +858,7 @@ class ForwardTrackMaker {
                     }
                 }
 
+                mNumFstHits[i] = nSiHitsFound;
                 mFitMoms[i] = p;
             } // we have 3 Si hits to refit with
 
@@ -828,7 +874,6 @@ class ForwardTrackMaker {
 
         // loop on global tracks
         for (size_t i = 0; i < mGlobalTracks.size(); i++) {
-
             if (mGlobalTracks[i]->getFitStatus(mGlobalTracks[i]->getCardinalRep())->isFitConverged() == false) {
                 // Original Track fit did not converge, skipping 
                 return;
@@ -888,18 +933,19 @@ class ForwardTrackMaker {
                 if ( mGenHistograms ){
                     mHist["FitStatus"]->Fill("AttemptReFit", 1);
                 }
+                // LOG_INFO << "Fitting on GlobalTrack : " << mGlobalTracks[i] << " with " << nSiHitsFound << " si hits" << endm;
                 TVector3 p = mTrackFitter->refitTrackWithSiHits(mGlobalTracks[i], hits_to_add);
 
                 if ( mGenHistograms ){
                     if (p.Perp() == mFitMoms[i].Perp()) {
                         mHist["FitStatus"]->Fill("BadReFit", 1);
-
                     } else {
                         mHist["FitStatus"]->Fill("GoodReFit", 1);
-                        
                     }
                 }
 
+                // mGlobalTracks[i] = mTrackFitter->getTrack();
+                mNumFstHits[i] = nSiHitsFound;
                 mFitMoms[i] = p;
 
             } else {
@@ -913,7 +959,7 @@ class ForwardTrackMaker {
         } // loop on globals
     }     // addSiHits
 
-    Seed_t findSiHitsNearMe(Seed_t &available_hits, genfit::MeasuredStateOnPlane &msp, double dphi = 0.004 * 15.5, double dr = 2.75) {
+    Seed_t findSiHitsNearMe(Seed_t &available_hits, genfit::MeasuredStateOnPlane &msp, double dphi = 0.004 * 9.5, double dr = 2.75) {
         double probe_phi = TMath::ATan2(msp.getPos().Y(), msp.getPos().X());
         double probe_r = sqrt(pow(msp.getPos().X(), 2) + pow(msp.getPos().Y(), 2));
 
@@ -937,18 +983,13 @@ class ForwardTrackMaker {
     std::vector<KiTrack::ICriterion *> getThreeHitCriteria() { return mThreeHitCrit; }
 
     TrackFitter *getTrackFitter() { return mTrackFitter; }
+    void setEventVertex( TVector3 v ) { mEventVertex = v; }
 
   protected:
     unsigned long long int nEvents;
 
     bool mDoTrackFitting = true;
     bool mSaveCriteriaValues = true;
-
-    /* TTree data members */
-    int tree_n;
-    const static unsigned int tree_max_n = 5000;
-    int tree_vid[tree_max_n], tree_tid[tree_max_n];
-    float tree_x[tree_max_n], tree_y[tree_max_n], tree_z[tree_max_n], tree_pt[tree_max_n];
 
     FwdTrackerConfig mConfig;
     std::string mConfigFile;
@@ -958,9 +999,15 @@ class ForwardTrackMaker {
     std::vector<Seed_t> mRecoTracks; // the tracks recod from all iterations
     std::vector<Seed_t> mRecoTracksThisItertion;
 
+    // Set to the Primary vertex for the event
+    TVector3 mEventVertex;
+    
+    // These are vectors with info about each track / fit
+    // they should all have the same length
     std::vector<float> mRecoTrackQuality;
     std::vector<int> mRecoTrackIdTruth;
     std::vector<TVector3> mFitMoms;
+    std::vector<unsigned short> mNumFstHits;
     std::vector<genfit::FitStatus> mFitStatus;
     std::vector<genfit::AbsTrackRep *> mGlobalTrackReps;
     std::vector<genfit::Track *> mGlobalTracks;
@@ -976,7 +1023,7 @@ class ForwardTrackMaker {
     // histograms of the raw input data
     bool mGenHistograms = false; // controls these histograms and use of QualityPlotter
     std::map<std::string, TH1 *> mHist;
-    // std::map<std::string, std::vector<float>> criteriaValues;
+    
 
     
 };

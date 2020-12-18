@@ -21,7 +21,7 @@
 #include "StarGenerator/UTIL/StarRandom.h"
 
 namespace FttGlobal {
-    const bool verbose = true;
+    const bool verbose = false;
 }
 
 StFttFastSimMaker::StFttFastSimMaker(const Char_t *name)
