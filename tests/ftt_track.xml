@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-    <Output url="full.root" />
+    <Output url="ftt.root" />
 	<Geometry>tests/fGeom.root</Geometry>
-    <Source ftt="GEANT" fttFilter="true" />
+    <Source ftt="GEANT" />
 
     <TrackFinder nIterations="1">
         <Iteration> <!-- Options for first iteration -->
@@ -24,8 +24,6 @@
         <Connector distance="1"/>
 
         <SubsetNN active="true" min-hits-on-track="4" >
-            <!-- <InitialTemp>2.1</InitialTemp> -->
-            <!-- <InfTemp>0.1</InfTemp> -->
             <Omega>0.99</Omega>
             <StableThreshold>0.001</StableThreshold>
         </SubsetNN> 
@@ -33,8 +31,8 @@
         <HitRemover active="true" />
     </TrackFinder>
 
-    <TrackFitter  refitSi="true" mcSeed="false" >
-    <KalmanFitterRefTrack MaxFailedHits="1" MaxIterations="20" />
+    <TrackFitter refitSi="false" mcSeed="false" >
+        <KalmanFitterRefTrack MaxFailedHits="1" MaxIterations="2" />
         <Vertex sigmaXY="0.05" sigmaZ="5.0" includeInFit="true" />
     </TrackFitter>
 </config>

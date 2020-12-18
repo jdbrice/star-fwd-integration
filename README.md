@@ -8,6 +8,40 @@ This code provides a snapshot of the star-sw development of the STAR forward tra
 4) run the forward tracking test with : `source rcf-env.sh` then `root4star -b -q -l tests/fast_track.C`
 5) Optional: check test.root for the debug output of the forward tracking, e.g. "PtRes" histogram shows average pT resolution.
 
+
+## Running tests
+Each of the below differ only by their config file. Each one assumes a valid FZD file (in the examples below a PYTHIA sim file)
+
+
+Run Tracking using MonteCarlo info wherever possible. This means:
+- Use McTruth to assemble hits into track seeds
+- Use Mc pt, eta, phi as the seed state for GENFIT track fitting
+- Use McTruth to connect sTGC hits to Fst hits
+```
+root4star -b -q -l 'tests/fast_track.C( 50, "tests/pythia8_pp_DrellYan_1234_1000evts.fzd", "tests/fast_track.xml" )' >& LOG_FAST
+```
+
+Run the CA track seed finder ONLY - no track fitting. Useful for studies and optimization
+```
+root4star -b -q -l 'tests/fast_track.C( 50, "tests/pythia8_pp_DrellYan_1234_1000evts.fzd", "tests/seed.xml" )' >& LOG_SEED
+```
+  
+
+Run the CA track seed finder and GENFIT tracking - without FST (FTT only)
+```
+root4star -b -q -l 'tests/fast_track.C( 50, "tests/pythia8_pp_DrellYan_1234_1000evts.fzd", "tests/ftt_track.xml" )' >& LOG_FTT
+```
+
+Run the CA track seed finder and GENFIT tracking - with FST refit step
+```
+root4star -b -q -l 'tests/fast_track.C( 50, "tests/pythia8_pp_DrellYan_1234_1000evts.fzd", "tests/full_track.xml" )' >& LOG_FULL
+```
+
+
+
+
+
+
 ## What is included?
 ```
 StRoot

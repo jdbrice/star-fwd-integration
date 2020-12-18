@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-    <Output url="test.root" />
+    <Output url="fast.root" />
 	<Geometry>tests/fGeom.root</Geometry>
-    <Source ftt="GEANT" />
+    <Source ftt="GEANT" fttFilter="true" />
     
 	<TrackFitter refitSi="true" mcSeed="true" >
         <Vertex sigmaXY="0.05" sigmaZ="5.0" includeInFit="true" />
