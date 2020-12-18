@@ -498,19 +498,19 @@ class ForwardTrackMaker {
                 mHist["FitStatus"]->Fill("GoodCardinal", 1);
             }
 
-            
+            // Save everything
+            mFitMoms.push_back(p);
+            mGlobalTracks.push_back(genTrack);
+            mGlobalTrackReps.push_back(trackRep);
+            mFitStatus.push_back(fitStatus);
+            mRecoTrackQuality.push_back(qual);
+            mRecoTrackIdTruth.push_back(idt);
+            mNumFstHits.push_back(0);
             
         } // if (mDoTrackFitting && !bailout)
 
 
-        // Save everything
-        mFitMoms.push_back(p);
-        mGlobalTracks.push_back(genTrack);
-        mGlobalTrackReps.push_back(trackRep);
-        mFitStatus.push_back(fitStatus);
-        mRecoTrackQuality.push_back(qual);
-        mRecoTrackIdTruth.push_back(idt);
-        mNumFstHits.push_back(0);
+        
 
 
     }
