@@ -233,7 +233,6 @@ int StFwdTrackMaker::Finish() {
     gDirectory = prevDir;
 
     if (mGenTree) {
-        mTree->Print();
         mTreeFile->cd();
         mTree->Write();
         mTreeFile->Write();
@@ -482,7 +481,7 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
         float y = git->x[1] + gRandom->Gaus(0, sigXY); // 100 micron blur according to approx sTGC reso
         float z = git->x[2];
 
-        if (mGenTree) {
+        if (mGenTree && mTreeN < MAX_TREE_ELEMENTS) {
             mTreeX[mTreeN] = x;
             mTreeY[mTreeN] = y;
             mTreeZ[mTreeN] = z;
@@ -491,6 +490,8 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
             mTreeHPt[mTreeN] = mcTrackMap[track_id]->mPt;
             mTreeHSV[mTreeN] = mcTrackMap[track_id]->mStartVertex;
             mTreeN++;
+        } else if ( mGenTree ){
+            LOG_WARN << "Truncating hits in TTree output" << endm;
         }
 
         if ( mGenHistograms ){
@@ -731,13 +732,15 @@ void StFwdTrackMaker::loadMcTracks( FwdDataSource::McTrackMap_t &mcTrackMap ){
         if (!mcTrackMap[track_id] ) 
             mcTrackMap[track_id] = shared_ptr<McTrack>(new McTrack(pt, eta, phi, q, track->start_vertex_p));
         
-        if (mGenTree) {
+        if (mGenTree && mTreeNTracks < MAX_TREE_ELEMENTS) {
             mTreePt[mTreeNTracks] = pt;
             mTreeEta[mTreeNTracks] = eta;
             mTreePhi[mTreeNTracks] = phi;
             mTreeQ[mTreeNTracks] = (short)q;
             mTreeVertID[mTreeNTracks] = track->start_vertex_p;
             mTreeNTracks++;
+        } else if ( mGenTree ) {
+            LOG_WARN << "Truncating Mc tracks in TTree output" << endm;
         }
 
     } // loop on track (irow)
@@ -826,6 +829,7 @@ int StFwdTrackMaker::Make() {
     if (mGenTree) {
         
         mTreeNVert = g2t_vertex->GetNRows();
+        if ( mTreeNVert >= MAX_TREE_ELEMENTS ) mTreeNVert = MAX_TREE_ELEMENTS;
         for ( int i = 0; i < mTreeNVert; i++ ){
             g2t_vertex_st *vert = (g2t_vertex_st*)g2t_vertex->At(i);
             mTreeVertX[i] = vert->ge_x[0];
@@ -872,6 +876,10 @@ int StFwdTrackMaker::Make() {
         const auto &fitStatus  = mForwardTracker -> getFitStatus();
 
         for ( size_t i = 0; i < seedTracks.size(); i++ ){
+            if ( i >= MAX_TREE_ELEMENTS ){
+                LOG_WARN << "Truncating Reco tracks in TTree output" << endm;
+                break;
+            }
 
             int idt = 0;
             double qual = 0;
