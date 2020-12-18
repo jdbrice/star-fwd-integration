@@ -5,7 +5,7 @@
     <Source ftt="GEANT" />
 
     <TrackFinder nIterations="1">
-        <Iteration> <!-- Options for first iteration -->
+        <Iteration nPhiSlices="8"> <!-- Options for first iteration -->
             <SegmentBuilder>
                 <Criteria name="Crit2_RZRatio" min="0.0" max="10.0" />
                 <Criteria name="Crit2_DeltaPhi" min="0" max="180" />	
