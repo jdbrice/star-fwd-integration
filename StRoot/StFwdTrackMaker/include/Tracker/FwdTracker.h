@@ -233,6 +233,11 @@ class ForwardTrackMaker {
 
         mHist["FitDuration"] = new TH1I("FitDuration", ";Duration (ms)", 5000, 0, 50000);
         mHist["nSiHitsFound"] = new TH2I( "nSiHitsFound", ";Si Disk; n Hits", 5, 0, 5, 10, 0, 10 );
+
+        mHist["Step1Duration"] = new TH1I("Step1Duration", ";Duration (ms)", 500, 0, 500);
+        mHist["Step2Duration"] = new TH1I("Step2Duration", ";Duration (ms)", 500, 0, 500);
+        mHist["Step3Duration"] = new TH1I("Step3Duration", ";Duration (ms)", 500, 0, 500);
+        mHist["Step4Duration"] = new TH1I("Step4Duration", ";Duration (ms)", 500, 0, 500);
     }
 
     void fillHistograms() {
@@ -338,10 +343,14 @@ class ForwardTrackMaker {
         // Step 1
         // Load and sort the hits
         /*************************************************************/
+        long long itStart = FwdTrackerUtils::nowNanoSecond();
         FwdDataSource::HitMap_t &hitmap = mDataSource->getFttHits();;
         FwdDataSource::McTrackMap_t &mcTrackMap = mDataSource->getMcTracks();
 
         fillHistograms();
+        long long duration = (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6; // milliseconds
+        if (mGenHistograms)
+            mHist["Step1Duration"]->Fill( duration );
 
 
         bool mcTrackFinding = true;
@@ -349,6 +358,8 @@ class ForwardTrackMaker {
         if (mConfig.exists("TrackFinder"))
             mcTrackFinding = false;
 
+        /***********************************************/
+        // MC Track Finding
         if (mcTrackFinding) {
             doMcTrackFinding(mcTrackMap);
 
@@ -366,13 +377,18 @@ class ForwardTrackMaker {
             }
             return;
         }
+        /***********************************************/
 
+        /***********************************************/
+        // Standard Track Finding
+        // plus initial fit
         size_t nIterations = mConfig.get<size_t>("TrackFinder:nIterations", 0);
-
 
         for (size_t iIteration = 0; iIteration < nIterations; iIteration++) {
             doTrackIteration(iIteration, hitmap);
         }
+        /***********************************************/
+
 
         /***********************************************/
         // REFIT with Silicon hits
@@ -508,11 +524,6 @@ class ForwardTrackMaker {
             mNumFstHits.push_back(0);
             
         } // if (mDoTrackFitting && !bailout)
-
-
-        
-
-
     }
 
     void doMcTrackFinding(FwdDataSource::McTrackMap_t &mcTrackMap) {
@@ -598,6 +609,7 @@ class ForwardTrackMaker {
      * @returns a list of track seeds
      */
     vector<Seed_t> doTrackingOnHitmapSubset( size_t iIteration, FwdDataSource::HitMap_t &hitmap  ) {
+        long long itStart = FwdTrackerUtils::nowNanoSecond();
         /*************************************************************/
         // Step 2
         // build 2-hit segments (setup parent child relationships)
@@ -638,6 +650,11 @@ class ForwardTrackMaker {
         // std::vector < std::vector< KiTrack::IHit* > > tracks = automaton.getTracks();
         // we can apply an optional parameter <nHits> to only get tracks with >=nHits in them
 
+        long long duration = (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6; // milliseconds
+        if (mGenHistograms)
+            mHist["Step2Duration"]->Fill( duration );
+        itStart = FwdTrackerUtils::nowNanoSecond();
+
         /*************************************************************/
         // Step 3
         // build 3-hit segments from the 2-hit segments
@@ -667,6 +684,16 @@ class ForwardTrackMaker {
             automaton.cleanBadStates();
         }
 
+        duration = (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6; // milliseconds
+        if (mGenHistograms)
+            mHist["Step3Duration"]->Fill( duration );
+        if (duration > 200){
+            LOG_WARN << "The Three Hit Criteria took more than 200ms to process, duration: " << duration << " ms" << endm;
+            LOG_WARN << "bailing out" << endm;
+            std::vector<Seed_t> acceptedTracks;
+            return acceptedTracks;
+        }
+        itStart = FwdTrackerUtils::nowNanoSecond();
         /*************************************************************/
         // Step 4
         // Get the tracks from the possible tracks that are the best subset
@@ -703,16 +730,23 @@ class ForwardTrackMaker {
             subset.calculateBestSet(comparer, quality);
 
             acceptedTracks = subset.getAccepted();
-            rejectedTracks = subset.getRejected();
 
-            LOG_DEBUG << "We had " << tracks.size() << " tracks. Accepted = " << acceptedTracks.size() << ", Rejected = " << rejectedTracks.size() << endm;
+            // this call takes a long time due to possible huge combinatorics.
+            // rejectedTracks = subset.getRejected();
+            // LOG_DEBUG << "We had " << tracks.size() << " tracks. Accepted = " << acceptedTracks.size() << ", Rejected = " << rejectedTracks.size() << endm;
 
         } else { // the subset and hit removal
-
             size_t minHitsOnTrack = mConfig.get<size_t>(subsetPath + ":min-hits-on-track", FwdSystem::sNFttLayers);
             acceptedTracks = automaton.getTracks(minHitsOnTrack);
         }// subset off
 
+        duration = (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6; // milliseconds
+        if (mGenHistograms)
+            mHist["Step4Duration"]->Fill( duration );
+        if (duration > 500){
+            LOG_WARN << "The took more than 500ms to process, duration: " << duration << " ms" << endm;
+            LOG_WARN << "We got " << acceptedTracks.size() << " tracks this round" << endm;
+        }
         return acceptedTracks;
     } // doTrackingOnHitmapSubset
 
