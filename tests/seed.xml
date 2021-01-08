@@ -5,7 +5,7 @@
     <Source ftt="GEANT" />
 
     <TrackFinder nIterations="1">
-        <Iteration> <!-- Options for first iteration -->
+        <Iteration nPhiSlices="8"> <!-- Options for first iteration -->
             <SegmentBuilder>
                 <Criteria name="Crit2_RZRatio" min="0.0" max="10.0" />
                 <Criteria name="Crit2_DeltaPhi" min="0" max="180" />	
@@ -23,7 +23,7 @@
 
         <Connector distance="1"/>
 
-        <SubsetNN active="true" min-hits-on-track="4" >
+        <SubsetNN active="false" min-hits-on-track="4" >
             <!-- <InitialTemp>2.1</InitialTemp> -->
             <!-- <InfTemp>0.1</InfTemp> -->
             <Omega>0.99</Omega>
