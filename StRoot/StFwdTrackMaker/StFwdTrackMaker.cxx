@@ -712,6 +712,8 @@ void StFwdTrackMaker::loadMcTracks( FwdDataSource::McTrackMap_t &mcTrackMap ){
     if (!g2t_track)
         return;
 
+    size_t nShowers = 0;
+
     mTreeNTracks = 1;
     LOG_INFO << g2t_track->GetNRows() << " mc tracks in geant/g2t_track " << endm;
     if ( mGenHistograms ) this->mHistograms["nMcTracks"]->Fill(g2t_track->GetNRows());
@@ -738,6 +740,9 @@ void StFwdTrackMaker::loadMcTracks( FwdDataSource::McTrackMap_t &mcTrackMap ){
             mTreePhi[mTreeNTracks] = phi;
             mTreeQ[mTreeNTracks] = (short)q;
             mTreeVertID[mTreeNTracks] = track->start_vertex_p;
+
+            if (track->is_shower)
+                nShowers++;
             mTreeNTracks++;
         } else if ( mGenTree ) {
             LOG_WARN << "Truncating Mc tracks in TTree output" << endm;
@@ -749,7 +754,6 @@ void StFwdTrackMaker::loadMcTracks( FwdDataSource::McTrackMap_t &mcTrackMap ){
 
 //________________________________________________________________________
 int StFwdTrackMaker::Make() {
-
     long long itStart = FwdTrackerUtils::nowNanoSecond();
     
     FwdDataSource::McTrackMap_t &mcTrackMap = mForwardData->getMcTracks();
@@ -825,11 +829,11 @@ int StFwdTrackMaker::Make() {
     mForwardTracker->doEvent();
 
 
-
     if (mGenTree) {
         
         mTreeNVert = g2t_vertex->GetNRows();
         if ( mTreeNVert >= MAX_TREE_ELEMENTS ) mTreeNVert = MAX_TREE_ELEMENTS;
+        LOG_INFO << "Saving " << mTreeNVert << " vertices in TTree" << endm;
         for ( int i = 0; i < mTreeNVert; i++ ){
             g2t_vertex_st *vert = (g2t_vertex_st*)g2t_vertex->At(i);
             mTreeVertX[i] = vert->ge_x[0];
@@ -840,6 +844,7 @@ int StFwdTrackMaker::Make() {
         if (mForwardTracker->getSaveCriteriaValues()) {
             for (auto crit : mForwardTracker->getTwoHitCriteria()) {
                 string name = crit->getName();
+                LOG_DEBUG << "Saving Criteria values from " << name << " in TTree" << endm;
                 mTreeCrits[name].clear();
                 mTreeCritTrackIds[name].clear();
                 // copy by value so ROOT doesnt get lost (uses pointer to vector)
@@ -854,6 +859,7 @@ int StFwdTrackMaker::Make() {
             // three hit criteria
             for (auto crit : mForwardTracker->getThreeHitCriteria()) {
                 string name = crit->getName();
+                LOG_DEBUG << "Saving Criteria values from " << name << " in TTree" << endm;
                 mTreeCrits[name].clear();
                 mTreeCritTrackIds[name].clear();
                 // copy by value so ROOT doesnt get lost (uses pointer to vector)
@@ -875,6 +881,7 @@ int StFwdTrackMaker::Make() {
         const auto &numFstHits = mForwardTracker -> getNumFstHits();
         const auto &fitStatus  = mForwardTracker -> getFitStatus();
 
+        LOG_INFO << "Saving " << seedTracks.size() << " seed tracks in TTree" << endm;
         for ( size_t i = 0; i < seedTracks.size(); i++ ){
             if ( i >= MAX_TREE_ELEMENTS ){
                 LOG_WARN << "Truncating Reco tracks in TTree output" << endm;
@@ -889,20 +896,23 @@ int StFwdTrackMaker::Make() {
             mTreeRQual[i] = qual;
             mTreeRTID[i] = idt;
 
-            if ( i < numFstHits.size() ){
+            if ( seedTracks.size() == numFstHits.size() ){
                 mTreeRNumFst[i] = numFstHits[i];
                 mTreeRQ[i] = fitStatus[i].getCharge();
             }
 
-            if ( i < fitMomenta.size() ){
+            if ( seedTracks.size() == fitMomenta.size() ){
                 mTreeRPt[i]  = fitMomenta[i].Pt();
                 mTreeREta[i] = fitMomenta[i].Eta();
                 mTreeRPhi[i] = fitMomenta[i].Phi();
-            } else {
-                LOG_WARN << "Size mismatch between track seeds and track fits" << endm;
             }
 
             mTreeRNTracks ++;
+        }
+
+        // only warn once, instead of on every iteration
+        if ( seedTracks.size() != fitMomenta.size() ){                
+            LOG_WARN << "Size mismatch between track seeds and track fits" << endm;
         }
 
         mTree->Fill();
