@@ -722,6 +722,13 @@ class TrackFitter {
     genfit::FitStatus getStatus() { return mFitStatus; }
     genfit::AbsTrackRep *getTrackRep() { return mTrackRep; }
     genfit::Track *getTrack() { return mFitTrack; }
+    void setGenerateHistograms( bool gen) { mGenHistograms = gen;}
+
+    // Store the planes for FTT and FST
+    vector<genfit::SharedPlanePtr> mFTTPlanes;
+    vector<genfit::SharedPlanePtr> mFSTPlanes;
+    vector<genfit::SharedPlanePtr> mFSTPlanesInner;
+    vector<genfit::SharedPlanePtr> mFSTPlanesOuter;
 
   protected:
     std::unique_ptr<genfit::AbsBField> mBField;
@@ -739,9 +746,6 @@ class TrackFitter {
     const int mPdgPiPlus = 211;
     const int mPdgPiMinus = -211;
 
-    // Store the planes for FTT and FST
-    vector<genfit::SharedPlanePtr> mFTTPlanes;
-    vector<genfit::SharedPlanePtr> mFSTPlanes;
 
     // det z locations loaded from geom or config
     vector<double> mFSTZLocations, mFTTZLocations;
