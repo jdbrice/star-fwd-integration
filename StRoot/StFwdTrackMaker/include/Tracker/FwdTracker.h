@@ -197,6 +197,22 @@ class ForwardTrackMaker {
         return em;
     };
 
+    void clearSavedCriteriaValues() {
+        if (mSaveCriteriaValues != true) {
+            return;
+        }
+
+        for (auto crit : mTwoHitCrit) {
+            auto critKeeper = static_cast<CriteriaKeeper *>(crit);
+            critKeeper->clear();
+        }
+
+        for (auto crit : mThreeHitCrit) {
+            auto critKeeper = static_cast<CriteriaKeeper *>(crit);
+            critKeeper->clear();
+        }
+    }
+
     size_t nHitsInHitMap(FwdDataSource::HitMap_t &hitmap) {
         size_t n = 0;
 

@@ -62,6 +62,11 @@ class CriteriaKeeper : public KiTrack::ICriterion {
         return track_ids;
     }
 
+    void clear() {
+        values.clear();
+        track_ids.clear();
+    }
+
   protected:
     ICriterion *mChild = nullptr;
 

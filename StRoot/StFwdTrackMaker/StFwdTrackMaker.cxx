@@ -172,6 +172,7 @@ class ForwardTracker : public ForwardTrackMaker {
 
         // initialize the track fitter
         mTrackFitter = new TrackFitter(mConfig);
+        mTrackFitter->setGenerateHistograms(genHistograms);
         mTrackFitter->setup();
 
         ForwardTrackMaker::initialize( genHistograms );
@@ -359,6 +360,8 @@ int StFwdTrackMaker::Init() {
         // There are 3 silicon stations
         for (int i = 0; i < 3; i++) {
             mHistograms[TString::Format("fsi%dHitMap", i).Data()] = new TH2F(TString::Format("fsi%dHitMap", i), TString::Format("FSI Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+            mHistograms[TString::Format("fsi%dHitMapZ", i).Data()] = new TH2F(TString::Format("fsi%dHitMapZ", i), TString::Format("FSI Layer %d; x (cm); y(cm)", i), 200, -100, 100, 200, -100, 100);
+
             mHistograms[TString::Format("fsi%dHitMapR", i).Data()] = new TH1F(TString::Format("fsi%dHitMapR", i), TString::Format("FSI Layer %d; r (cm); ", i), 500, 0, 50);
             mHistograms[TString::Format("fsi%dHitMapPhi", i).Data()] = new TH1F(TString::Format("fsi%dHitMapPhi", i), TString::Format("FSI Layer %d; phi; ", i), 320, 0, TMath::Pi() * 2 + 0.1);
         }
@@ -870,6 +873,9 @@ int StFwdTrackMaker::Make() {
                     mTreeCritTrackIds[name].push_back(v);
                 }
             }
+
+            // clear them 
+            // mForwardTracker->clearSavedCriteriaValues();
         }
 
         // SAVE RECO tracks

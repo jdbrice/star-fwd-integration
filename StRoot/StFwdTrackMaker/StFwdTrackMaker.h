@@ -19,6 +19,7 @@ namespace genfit {
 
 class ForwardTracker;
 class FwdDataSource;
+class FwdHit;
 class StarFieldAdaptor;
 
 class StGlobalTrack;
@@ -75,8 +76,8 @@ class StFwdTrackMaker : public StMaker {
     std::string mConfigFile;
 
     // elements used only if the mGenTree = true
-    float mTreeX[MAX_TREE_ELEMENTS], mTreeY[MAX_TREE_ELEMENTS], mTreeZ[MAX_TREE_ELEMENTS];
-    int mTreeN, mTreeTID[MAX_TREE_ELEMENTS], mTreeVID[MAX_TREE_ELEMENTS], mTreeHPt[MAX_TREE_ELEMENTS], mTreeHSV[MAX_TREE_ELEMENTS];
+    float mTreeX[MAX_TREE_ELEMENTS], mTreeY[MAX_TREE_ELEMENTS], mTreeZ[MAX_TREE_ELEMENTS], mTreeHPt[MAX_TREE_ELEMENTS];
+    int mTreeN, mTreeTID[MAX_TREE_ELEMENTS], mTreeVID[MAX_TREE_ELEMENTS], mTreeHSV[MAX_TREE_ELEMENTS];
 
     int mTreeNTracks, mTreeRNTracks, mTreeRTID[MAX_TREE_ELEMENTS], mTreeVertID[MAX_TREE_ELEMENTS];
     unsigned short mTreeRNumFst[MAX_TREE_ELEMENTS];
