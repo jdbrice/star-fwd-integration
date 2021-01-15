@@ -875,7 +875,7 @@ int StFwdTrackMaker::Make() {
             }
 
             // clear them 
-            // mForwardTracker->clearSavedCriteriaValues();
+            mForwardTracker->clearSavedCriteriaValues();
         }
 
         // SAVE RECO tracks
