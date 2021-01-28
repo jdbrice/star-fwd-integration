@@ -975,6 +975,21 @@ int StFwdTrackMaker::Make() {
 void StFwdTrackMaker::Clear(const Option_t *opts) {
     LOG_INFO << "StFwdTrackMaker::CLEAR" << endm;
     mForwardData->clear();
+
+
+    if (mGenTree){
+        for ( size_t i = 0; i < MAX_TREE_ELEMENTS; i++ ){
+            mTreeX[i] = -999;
+            mTreeY[i] = -999;
+            mTreeZ[i] = -999;
+            mTreeTID[i] = -1;
+            mTreeVID[i] = -1;
+            mTreeHPt[i] = -999;
+            mTreeHSV[i] = -1;
+        }
+    }
+
+
 }
 //________________________________________________________________________
 
