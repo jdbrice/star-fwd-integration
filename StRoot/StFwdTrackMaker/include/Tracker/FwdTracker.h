@@ -29,7 +29,6 @@
 #include "KiTrack/SubsetHopfieldNN.h"
 
 #include "StFwdTrackMaker/include/Tracker/CriteriaKeeper.h"
-#include "StFwdTrackMaker/include/Tracker/Crit2_Noop.h"
 
 #include "GenFit/FitStatus.h"
 
