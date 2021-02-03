@@ -28,7 +28,8 @@
 #include "KiTrack/SegmentBuilder.h"
 #include "KiTrack/SubsetHopfieldNN.h"
 
-#include "CriteriaKeeper.h"
+#include "StFwdTrackMaker/include/Tracker/CriteriaKeeper.h"
+#include "StFwdTrackMaker/include/Tracker/Crit2_Noop.h"
 
 #include "GenFit/FitStatus.h"
 
@@ -168,6 +169,29 @@ class ForwardTrackMaker {
             if (crit_name == crit->getName()) {
                 auto critKeeper = static_cast<CriteriaKeeper *>(crit);
                 return critKeeper->getValues();
+            }
+        }
+
+        return em;
+    };
+
+    std::vector<std::map < std::string , float >> getCriteriaAllValues(std::string crit_name) {
+        std::vector<std::map < std::string , float >> em;
+        if (mSaveCriteriaValues != true) {
+            return em;
+        }
+
+        for (auto crit : mTwoHitCrit) {
+            if (crit_name == crit->getName()) {
+                auto critKeeper = static_cast<CriteriaKeeper *>(crit);
+                return critKeeper->getAllValues();
+            }
+        }
+
+        for (auto crit : mThreeHitCrit) {
+            if (crit_name == crit->getName()) {
+                auto critKeeper = static_cast<CriteriaKeeper *>(crit);
+                return critKeeper->getAllValues();
             }
         }
 

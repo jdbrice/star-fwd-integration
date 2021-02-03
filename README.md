@@ -161,3 +161,10 @@ mTree->Branch("eta", &mTreeEta, "eta[nt]/F"); // eta
 mTree->Branch("phi", &mTreePhi, "phi[nt]/F"); // phi
 mTree->Branch("tid", &mTreeTID, "tid/I"); // track id
 ```
+
+### Pythia files on rCF
+Youqi produced Pythia 8 output here:
+```bash
+ /gpfs01/star/pwg/youqi/runPythia/out
+ ```
+ 

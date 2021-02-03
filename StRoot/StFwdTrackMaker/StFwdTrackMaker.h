@@ -105,8 +105,8 @@ class StFwdTrackMaker : public StMaker {
         void loadFstHitsFromGEANT( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count = 0 );
         void loadFstHitsFromStEvent( std::map<int, std::shared_ptr<McTrack>> &mcTrackMap, std::map<int, std::vector<KiTrack::IHit *>> &hitMap, int count = 0 );
     #endif
-    
 
+    void FillTTree(); // if debugging ttree is turned on (mGenTree)
     // Fill StEvent
     void FillEvent();
     void FillDetectorInfo(StTrackDetectorInfo *info, const genfit::Track *track, bool increment);
