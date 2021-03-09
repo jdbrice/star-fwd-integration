@@ -33,6 +33,7 @@
 #include "StFwdTrackMaker/Common.h"
 
 #include "StFwdTrackMaker/include/Tracker/FwdHit.h"
+#include "StFwdTrackMaker/include/Tracker/TrackFitter.h"
 #include "StFwdTrackMaker/include/Tracker/STARField.h"
 #include "StFwdTrackMaker/include/Tracker/FwdGeomUtils.h"
 
@@ -106,6 +107,9 @@ class TrackFitter {
             LOG_WARN << "Using FST z-locations from config or defautl, may not match hits" << endm;
         }
 
+        const double dzInnerFst = 1.715 + 0.04; // cm relative to "center" of disk + residual...
+        const double dzOuterFst = 0.240 + 0.04; // cm relative to "center" of disk
+
         // Now add the Si detector planes at the desired location
         std::stringstream sstr;
         sstr << "Adding FST Planes at: ";
@@ -117,7 +121,35 @@ class TrackFitter {
                     new genfit::DetPlane(TVector3(0, 0, z), TVector3(1, 0, 0), TVector3(0, 1, 0) )
                 )
             );
-            sstr << delim << z;
+
+            // Inner Module FST planes
+            mFSTPlanesInner.push_back(
+                genfit::SharedPlanePtr(
+                    // these normals make the planes face along z-axis
+                    new genfit::DetPlane(TVector3(0, 0, z - dzInnerFst), TVector3(1, 0, 0), TVector3(0, 1, 0) )
+                )
+            );
+            mFSTPlanesInner.push_back(
+                genfit::SharedPlanePtr(
+                    // these normals make the planes face along z-axis
+                    new genfit::DetPlane(TVector3(0, 0, z + dzInnerFst), TVector3(1, 0, 0), TVector3(0, 1, 0) )
+                )
+            );
+            // Outer Module FST planes
+            mFSTPlanesOuter.push_back(
+                genfit::SharedPlanePtr(
+                    // these normals make the planes face along z-axis
+                    new genfit::DetPlane(TVector3(0, 0, z - dzOuterFst), TVector3(1, 0, 0), TVector3(0, 1, 0) )
+                )
+            );
+            mFSTPlanesOuter.push_back(
+                genfit::SharedPlanePtr(
+                    // these normals make the planes face along z-axis
+                    new genfit::DetPlane(TVector3(0, 0, z + dzOuterFst), TVector3(1, 0, 0), TVector3(0, 1, 0) )
+                )
+            );
+
+            sstr << delim << z << " (-dzInner=" << z - dzInnerFst << ", +dzInner=" << z+dzInnerFst << ", -dzOuter=" << z - dzOuterFst << ", +dzOuter=" << z + dzOuterFst << ")";
             delim = ", ";
         }
         LOG_INFO  << sstr.str() << endm;
@@ -181,6 +213,16 @@ class TrackFitter {
         mHist["SiWrongProjSigmaXY"] = new TH2F("SiWrongProjSigmaXY", ";#sigma_{X};#sigma_{Y}", 50, 0, 0.5, 50, 0, 0.5);
 
         mHist["SiDeltaProjPosXY"] = new TH2F("SiDeltaProjPosXY", ";X;Y", 1000, 0, 20, 1000, 0, 20);
+
+        mHist["FstDiffZVsR"] = new TH2F( "FstDiffZVsR", ";R;dz", 400, 0, 40, 500, -5, 5 );
+        mHist["FstDiffZVsPhiSliceInner"] = new TH2F( "FstDiffZVsPhiSliceInner", ";slice;dz", 15, 0, 15, 500, -5, 5 );
+        mHist["FstDiffZVsPhiSliceOuter"] = new TH2F( "FstDiffZVsPhiSliceOuter", ";slice;dz", 15, 0, 15, 500, -5, 5 );
+
+        mHist["FstDiffZVsPhiOuter"] = new TH2F( "FstDiffZVsPhiOuter", ";slice;dz", 628, 0, TMath::Pi()*2, 500, -5, 5 );
+
+        mHist["CorrFstDiffZVsPhiSliceInner"] = new TH2F( "CorrFstDiffZVsPhiSliceInner", ";slice;dz", 15, 0, 15, 500, -5, 5 );
+        mHist["CorrFstDiffZVsPhiSliceOuter"] = new TH2F( "CorrFstDiffZVsPhiSliceOuter", ";slice;dz", 15, 0, 15, 500, -5, 5 );
+
 
         n = "seed_curv";
         mHist[n] = new TH1F(n.c_str(), ";curv", 1000, 0, 10000);
@@ -367,6 +409,32 @@ class TrackFitter {
         return tst;
     }
 
+    genfit::SharedPlanePtr getFstPlane( FwdHit * h ){
+
+        size_t planeId = h->getSector();
+
+        TVector3 hitXYZ( h->getX(), h->getY(), h->getZ() );
+
+        double phi = hitXYZ.Phi();
+        if ( phi < 0 ) phi = TMath::Pi() * 2 + phi;
+        const double phi_slice = phi / (TMath::Pi() / 6.0); // 2pi/12
+        const int phi_index = ((int)phi_slice);
+        const double r  =sqrt( pow(hitXYZ.x(), 2) + pow(hitXYZ.y(), 2) );
+
+        const size_t idx = phi_index % 2;
+        auto planeCorr = mFSTPlanesInner[planeId*2 + idx];
+        if ( r > 16 ){
+            planeCorr = mFSTPlanesOuter[planeId*2 + idx];
+        }
+        double cdz = (h->getZ() - planeCorr->getO().Z());
+
+        if ( cdz > 0.010 ) {
+            LOG_WARN << "FST Z =" << h->getZ() << " vs CORR Plane Z = " << planeCorr->getO().Z() << " DIFF: " << cdz << " phi_slice = " << phi_slice << ", phi_index = " << phi_index << " R=" << hitXYZ.Pt() << " idx=" << idx << endm;
+        }
+
+        return planeCorr;
+
+    }
 
     /* RefitTracksWithSiHits
      * Takes a previously fit track re-fits it with the newly added silicon hits 
@@ -439,9 +507,44 @@ class TrackFitter {
                 return pOrig;
             }
 
-            auto plane = mFSTPlanes[planeId];
+            // auto plane = mFSTPlanes[planeId];
+            auto plane = getFstPlane( static_cast<FwdHit*>(h) );
+
             measurement->setPlane(plane, planeId);
             fitTrack.insertPoint(new genfit::TrackPoint(measurement, &fitTrack));
+
+
+            TVector3 hitXYZ( h->getX(), h->getY(), h->getZ() );
+            float phi = hitXYZ.Phi();
+            if ( phi < 0 ) phi = TMath::Pi() * 2 + phi;
+            double phi_slice = phi / (TMath::Pi() / 6.0); // 2pi/12
+            int phi_index = ((int)phi_slice);
+            double dz = (h->getZ() - plane->getO().Z());
+
+            double r  =sqrt( pow(hitXYZ.x(), 2) + pow(hitXYZ.y(), 2) );
+
+            size_t idx = phi_index % 2;
+            auto planeCorr = mFSTPlanesInner[planeId + idx];
+            if ( r > 16 ){
+                planeCorr = mFSTPlanesOuter[planeId + idx];
+            }
+            double cdz = (h->getZ() - planeCorr->getO().Z());
+
+            if (mGenHistograms){
+                
+                ((TH2*)mHist[ "FstDiffZVsR" ])->Fill( r, dz );
+
+                if ( r < 16 ) {// inner
+                    mHist["FstDiffZVsPhiSliceInner"]->Fill( phi_slice, dz );
+                    mHist["CorrFstDiffZVsPhiSliceInner"]->Fill( phi_slice, cdz );
+                } else {
+                    mHist["FstDiffZVsPhiSliceOuter"]->Fill( phi_slice, dz );
+                    mHist["CorrFstDiffZVsPhiSliceOuter"]->Fill( phi_slice, cdz );
+                    mHist["FstDiffZVsPhiOuter"]->Fill( phi, dz );
+                }
+            }
+            // mHist[ "FstDiffZVsPhiSliceInner" ]->Fill( sqrt( pow(hitXYZ.x(), 2), pow(hitXYZ.y(), 2) ), dz );
+
         }
         // start at 0 if PV not included, 1 otherwise 
         for (size_t i = firstFTTIndex; i < trackPoints.size(); i++) {
@@ -574,7 +677,6 @@ class TrackFitter {
         // If we use the PV, use that as the start pos for the track
         if (mIncludeVertexInFit) {
             seedPos.SetXYZ(pv[0], pv[1], pv[2]);
-            LOG_INFO << "Fitting with PV: (" << pv[0] << ", " << pv[1] << ", " << pv[2] << ") " << endm;
         }
 
         if (mFitTrack){
@@ -588,7 +690,7 @@ class TrackFitter {
         mFitTrack = new genfit::Track(trackRepPos, seedPos, seedMom);
         mFitTrack->addTrackRep(trackRepNeg);
 
-        LOG_INFO
+        LOG_DEBUG
             << "seedPos : (" << seedPos.X() << ", " << seedPos.Y() << ", " << seedPos.Z() << " )"
             << ", seedMom : (" << seedMom.X() << ", " << seedMom.Y() << ", " << seedMom.Z() << " )"
             << ", seedMom : (" << seedMom.Pt() << ", " << seedMom.Eta() << ", " << seedMom.Phi() << " )"
