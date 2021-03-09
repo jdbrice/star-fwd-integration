@@ -48,7 +48,7 @@ int StFttFastSimMaker::Init() {
 }
 
 Int_t StFttFastSimMaker::Make() {
-    LOG_INFO << "StFttFastSimMaker::Make" << endm;
+    LOG_DEBUG << "StFttFastSimMaker::Make" << endm;
 
     // Get the existing StEvent, or add one if it doesn't exist.
     StEvent *event = static_cast<StEvent *>(GetDataSet("StEvent"));
