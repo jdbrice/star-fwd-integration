@@ -6,6 +6,7 @@
 
 #include "KiTrack/IHit.h"
 #include "GenFit/Track.h"
+#include "GenFit/GFRaveVertexFactory.h"
 
 #include "TMath.h"
 
@@ -315,6 +316,13 @@ int StFwdTrackMaker::Init() {
 
                 n = name + "_z2";
                 mTreeCrits[(n)]; mTree->Branch(n.c_str(), &mTreeCrits[n]);
+
+                n = name + "_h1";
+                mTreeCritTrackIds[(n)]; mTree->Branch(n.c_str(), &mTreeCritTrackIds[n]);
+                n = name + "_h2";
+                mTreeCritTrackIds[(n)]; mTree->Branch(n.c_str(), &mTreeCritTrackIds[n]);
+                n = name + "_h3";
+                mTreeCritTrackIds[(n)]; mTree->Branch(n.c_str(), &mTreeCritTrackIds[n]);
             }
         }
 
@@ -938,12 +946,19 @@ void StFwdTrackMaker::FillTTree(){
 
                 // special, save all hit info for this one
                 if ( name == "Crit2_RZRatio" ){
+                    LOG_INFO << "allValues.size() = " << mForwardTracker->getCriteriaAllValues(name).size() << " == " << mForwardTracker->getCriteriaTrackIds(name).size() << endm;
+                    assert( mForwardTracker->getCriteriaAllValues(name).size() == mForwardTracker->getCriteriaTrackIds(name).size() && " Crit lengths must be equal" );
                     mTreeCrits["Crit2_RZRatio_x1"].clear();
                     mTreeCrits["Crit2_RZRatio_y1"].clear();
                     mTreeCrits["Crit2_RZRatio_z1"].clear();
-                    mTreeCrits["Crit2_RZRatio_x1"].clear();
+                    mTreeCrits["Crit2_RZRatio_x2"].clear();
                     mTreeCrits["Crit2_RZRatio_y2"].clear();
                     mTreeCrits["Crit2_RZRatio_z2"].clear();
+
+                    mTreeCritTrackIds["Crit2_RZRatio_h1"].clear();
+                    mTreeCritTrackIds["Crit2_RZRatio_h2"].clear();
+                    mTreeCritTrackIds["Crit2_RZRatio_h3"].clear();
+                    
 
                     for (auto kv : mForwardTracker->getCriteriaAllValues(name)) {
                         mTreeCrits["Crit2_RZRatio_x1"].push_back( kv["Crit2_RZRatio_x1"] );
@@ -953,6 +968,10 @@ void StFwdTrackMaker::FillTTree(){
                         mTreeCrits["Crit2_RZRatio_x2"].push_back( kv["Crit2_RZRatio_x2"] );
                         mTreeCrits["Crit2_RZRatio_y2"].push_back( kv["Crit2_RZRatio_y2"] );
                         mTreeCrits["Crit2_RZRatio_z2"].push_back( kv["Crit2_RZRatio_z2"] );
+
+                        mTreeCritTrackIds["Crit2_RZRatio_h1"].push_back( kv["Crit2_RZRatio_h1"] );
+                        mTreeCritTrackIds["Crit2_RZRatio_h2"].push_back( kv["Crit2_RZRatio_h2"] );
+                        mTreeCritTrackIds["Crit2_RZRatio_h3"].push_back( -1 );
                     }
                 }
 
@@ -972,6 +991,24 @@ void StFwdTrackMaker::FillTTree(){
             // three hit criteria
             for (auto crit : mForwardTracker->getThreeHitCriteria()) {
                 string name = crit->getName();
+
+                // special, save all hit info for this one
+                if ( name == "Crit2_RZRatio" ){
+                    LOG_INFO << "allValues.size() = " << mForwardTracker->getCriteriaAllValues(name).size() << " == " << mForwardTracker->getCriteriaTrackIds(name).size() << endm;
+                    assert( mForwardTracker->getCriteriaAllValues(name).size() == mForwardTracker->getCriteriaTrackIds(name).size() && " Crit lengths must be equal" );
+
+                    mTreeCritTrackIds["Crit2_RZRatio_h1"].clear();
+                    mTreeCritTrackIds["Crit2_RZRatio_h2"].clear();
+                    mTreeCritTrackIds["Crit2_RZRatio_h3"].clear();
+
+                    for (auto kv : mForwardTracker->getCriteriaAllValues(name)) {
+                        mTreeCritTrackIds["Crit2_RZRatio_h1"].push_back( kv["Crit2_RZRatio_h1"] );
+                        mTreeCritTrackIds["Crit2_RZRatio_h2"].push_back( kv["Crit2_RZRatio_h2"] );
+                        mTreeCritTrackIds["Crit2_RZRatio_h3"].push_back( kv["Crit2_RZRatio_h3"] );
+                    }
+                }
+
+
                 LOG_DEBUG << "Saving Criteria values from " << name << " in TTree" << endm;
                 mTreeCrits[name].clear();
                 mTreeCritTrackIds[name].clear();

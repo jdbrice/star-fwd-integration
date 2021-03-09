@@ -30,25 +30,38 @@ class CriteriaKeeper : public KiTrack::ICriterion {
         bool same_track = false;
         int track_id = -1;
 
+        
+
         // two hit criteria
         if ((parent->getHits().size() == 1) && (child->getHits().size() == 1)) {
             KiTrack::IHit *a = parent->getHits()[0];
             KiTrack::IHit *b = child->getHits()[0];
 
-            same_track = (static_cast<FwdHit *>(a)->_tid == static_cast<FwdHit *>(b)->_tid && static_cast<FwdHit *>(a)->_tid != 0);
+            auto fwdA = static_cast<FwdHit *>(a);
+            auto fwdB = static_cast<FwdHit *>(b);
+
+            
+
+            same_track = (fwdA->_tid == fwdB->_tid && fwdA->_tid != 0);
             if (same_track)
-                track_id = static_cast<FwdHit *>(a)->_tid;
+                track_id = fwdA->_tid;
+            else
+                track_id = -1;
 
             if ( _name == "Crit2_RZRatio" ){
-                std::map < std::string , float > _map_name_value = mChild->getMapOfValues();
-                _map_name_value["Crit2_RZRatio_x1"] = a->getX();
-                _map_name_value["Crit2_RZRatio_y1"] = a->getY();
-                _map_name_value["Crit2_RZRatio_z1"] = a->getZ();
-                _map_name_value["Crit2_RZRatio_x2"] = b->getX();
-                _map_name_value["Crit2_RZRatio_y2"] = b->getY();
-                _map_name_value["Crit2_RZRatio_z2"] = b->getZ();
+                // LOG_INFO << "Hit a_id = " << fwdA->_id << "Hit b_id = " << fwdB->_id << endm;
+                std::map < std::string , float > my_map_name_value = mChild->getMapOfValues();
+                my_map_name_value["Crit2_RZRatio_x1"] = a->getX();
+                my_map_name_value["Crit2_RZRatio_y1"] = a->getY();
+                my_map_name_value["Crit2_RZRatio_z1"] = a->getZ();
+                my_map_name_value["Crit2_RZRatio_x2"] = b->getX();
+                my_map_name_value["Crit2_RZRatio_y2"] = b->getY();
+                my_map_name_value["Crit2_RZRatio_z2"] = b->getZ();
+
+                my_map_name_value["Crit2_RZRatio_h1"] = fwdA->_id;
+                my_map_name_value["Crit2_RZRatio_h2"] = fwdB->_id;
                         
-                allValues.push_back( _map_name_value );
+                allValues.push_back( my_map_name_value );
             }
         }
 
@@ -58,9 +71,25 @@ class CriteriaKeeper : public KiTrack::ICriterion {
             KiTrack::IHit *b = child->getHits()[1];
             KiTrack::IHit *c = parent->getHits()[1];
 
-            same_track = (static_cast<FwdHit *>(a)->_tid == static_cast<FwdHit *>(b)->_tid && static_cast<FwdHit *>(b)->_tid == static_cast<FwdHit *>(c)->_tid && static_cast<FwdHit *>(a)->_tid != 0);
+
+
+            auto fwdA = static_cast<FwdHit *>(a);
+            auto fwdB = static_cast<FwdHit *>(b);
+            auto fwdC = static_cast<FwdHit *>(c);
+
+            std::map < std::string , float > my_map_name_value = mChild->getMapOfValues();
+
+            my_map_name_value["Crit2_RZRatio_h1"] = fwdA->_id;
+            my_map_name_value["Crit2_RZRatio_h2"] = fwdB->_id;
+            my_map_name_value["Crit2_RZRatio_h3"] = fwdC->_id;
+
+            allValues.push_back( my_map_name_value );
+
+            same_track = (fwdA->_tid == fwdB->_tid && fwdB->_tid == fwdC->_tid && fwdA->_tid != 0);
             if (same_track)
-                track_id = static_cast<FwdHit *>(a)->_tid;
+                track_id = fwdA->_tid;
+            else
+                track_id = -1;
         }
 
         values.push_back(value);
@@ -82,6 +111,7 @@ class CriteriaKeeper : public KiTrack::ICriterion {
     void clear() {
         values.clear();
         track_ids.clear();
+        allValues.clear();
     }
 
   protected:
