@@ -3,9 +3,10 @@
 
 TFile *output = 0;
 
-void fast_track(    int n = 50,
-                    const char *inFile =  "tests/pythia8_pp_DrellYan_1234_1000evts.fzd",
-                    std::string configFile = "tests/full_track.xml",
+void fast_track(    int n = 100,
+                    // const char *inFile =  "tests/single_track.fzd",
+                    const char *inFile = "/gpfs01/star/pwg/youqi/runPythia/out/0.fzd",
+                    std::string configFile = "tests/seed.xml",
                     const char *geom = "dev2021") {
     TString _geom = geom;
 

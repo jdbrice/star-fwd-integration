@@ -2,10 +2,10 @@
 <config>
     <Output url="full.root" />
 	<Geometry>tests/fGeom.root</Geometry>
-    <Source ftt="GEANT" fttFilter="true" />
+    <Source ftt="GEANT" />
 
     <TrackFinder nIterations="1">
-        <Iteration nPhiSlices="8"> <!-- Options for first iteration -->
+        <Iteration nPhiSlices="8">
             <SegmentBuilder>
                 <Criteria name="Crit2_RZRatio" min="0.999" max="1.131" />
                 <Criteria name="Crit2_DeltaRho" min="-6.1" max="9.9"/>
@@ -24,8 +24,6 @@
         <Connector distance="1"/>
 
         <SubsetNN active="true" min-hits-on-track="4" >
-            <!-- <InitialTemp>2.1</InitialTemp> -->
-            <!-- <InfTemp>0.1</InfTemp> -->
             <Omega>0.99</Omega>
             <StableThreshold>0.001</StableThreshold>
         </SubsetNN> 
@@ -34,7 +32,7 @@
     </TrackFinder>
 
     <TrackFitter  refitSi="true" mcSeed="false" >
-    <KalmanFitterRefTrack MaxFailedHits="1" MaxIterations="20" />
+    <KalmanFitterRefTrack MaxFailedHits="1" MaxIterations="4" />
         <Vertex sigmaXY="0.05" sigmaZ="5.0" includeInFit="true" />
     </TrackFitter>
 </config>
