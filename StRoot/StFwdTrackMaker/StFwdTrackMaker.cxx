@@ -6,7 +6,7 @@
 
 #include "KiTrack/IHit.h"
 #include "GenFit/Track.h"
-#include "GenFit/GFRaveVertexFactory.h"
+// #include "GenFit/GFRaveVertexFactory.h"
 
 #include "TMath.h"
 
