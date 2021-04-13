@@ -9,7 +9,7 @@
  *
  * Separation here is not great, but the track/hit loading 
  * is tightly bound to the StMaker through the ttree and histogram
- * creation, as well as through the Datasets (StEvent, geant/* )
+ * creation, as well as through the Datasets (StEvent, geant )
  * 
  * So while the filling is done elsewhere, this holds that 
  * data and releases the pointers when needed.

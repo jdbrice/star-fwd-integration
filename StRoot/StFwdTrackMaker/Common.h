@@ -12,7 +12,7 @@ class FwdTrackerUtils {
     {
        if ( !axis ) return;
 
-       for ( int i = 0; i <= axis->GetNbins(); i++ ) {
+       for ( unsigned int i = 0; i <= (unsigned int)axis->GetNbins(); i++ ) {
           if ( i < labels.size() )
              axis->SetBinLabel( i + 1, labels[i].c_str() );
        }
