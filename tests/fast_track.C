@@ -3,10 +3,10 @@
 
 TFile *output = 0;
 
-void fast_track(    int n = 100,
+void fast_track(    int n = 1000,
                     // const char *inFile =  "tests/single_track.fzd",
-                    const char *inFile = "/gpfs01/star/pwg/youqi/runPythia/out/0.fzd",
-                    std::string configFile = "tests/seed.xml",
+                    const char *inFile = "/gpfs01/star/pwg/youqi/runPythia/out/5.fzd",
+                    std::string configFile = "tests/bdt.xml",
                     const char *geom = "dev2021") {
     TString _geom = geom;
 
@@ -23,6 +23,7 @@ void fast_track(    int n = 100,
     // StarMagField::setConstBz(true);
 
     gSystem->Load("libMathMore.so");
+    gSystem->Load("libTMVA.so");
     gSystem->Load("libXMLIO.so"); // needed by FwdTrackerConfig
     gSystem->Load("libStarGeneratorUtil.so"); // needed for StarRandom
     gSystem->Load("libStFstSimMaker.so");

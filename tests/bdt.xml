@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <Output url="bdt_seed.root" />
+	<Geometry>tests/fGeom.root</Geometry>
+    <Source ftt="GEANT" />
+
+    <TrackFinder nIterations="1">
+        <Iteration nPhiSlices="1"> <!-- Options for first iteration -->
+            <SegmentBuilder>
+                <Criteria name="Crit2_BDT" min="0.0" max="10.0" weights="bdt2.xml" />
+                <!-- <Criteria name="Crit2_RZRatio" min="0.999" max="1.131" />
+                <Criteria name="Crit2_DeltaRho" min="-6.1" max="9.9"/>
+                <Criteria name="Crit2_DeltaPhi" min="0" max="13.4" />
+                <Criteria name="Crit2_StraightTrackRatio" min="0.81" max="1.35"/> -->
+            </SegmentBuilder>
+
+            <ThreeHitSegments>
+                <Criteria name="Crit3_BDT" min="0.0" max="10.0" weights="bdt3.xml"/>
+                <!-- <Criteria name="Crit3_3DAngle" min="0" max="20" />
+                <Criteria name="Crit3_PT" min="0" max="100" />
+                <Criteria name="Crit3_ChangeRZRatio" min="0" max="1.11" />
+                <Criteria name="Crit3_2DAngle" min="0" max="15" /> -->
+            </ThreeHitSegments>
+        </Iteration>
+
+        <Connector distance="1"/>
+
+        <SubsetNN active="true" min-hits-on-track="4" >
+            <!-- <InitialTemp>2.1</InitialTemp> -->
+            <!-- <InfTemp>0.1</InfTemp> -->
+            <Omega>0.99</Omega>
+            <StableThreshold>0.001</StableThreshold>
+        </SubsetNN> 
+
+        <HitRemover active="true" />
+    </TrackFinder>
+    
+</config>

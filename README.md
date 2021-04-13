@@ -168,3 +168,23 @@ Youqi produced Pythia 8 output here:
  /gpfs01/star/pwg/youqi/runPythia/out
  ```
  
+
+### BDT track criteria
+use the `bdt.xml` config which has lines like 
+```xml
+<Iteration nPhiSlices="1"> <!-- Options for first iteration -->
+    <SegmentBuilder>
+        <Criteria name="Crit2_BDT" min="0.0" max="10.0" weights="bdt2-Copy1.xml" />
+    </SegmentBuilder>
+
+    <ThreeHitSegments>
+        <Criteria name="Crit3_BDT" min="0.0" max="10.0" weights="bdt3.xml"/>
+    </ThreeHitSegments>
+</Iteration>
+```
+
+That specifiy the use of the BDT (crit2 and crit3).
+The min/max and name of the weights file can be specified for each.
+If the weight file is wrong or it contains the variables in the wrong order it will crash (TODO)
+
+I have not checked the BDT3 output carefully yet. We should verify that it is identical to Youqi's expectation.

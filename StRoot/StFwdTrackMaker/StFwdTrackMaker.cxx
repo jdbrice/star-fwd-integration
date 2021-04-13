@@ -49,6 +49,16 @@
 #include "TLorentzVector.h"
 
 FwdSystem* FwdSystem::sInstance = nullptr;
+TMVA::Reader * BDTCrit2::reader = nullptr;
+TMVA::Reader * BDTCrit3::reader = nullptr;
+float BDTCrit2::Crit2_RZRatio = -999;
+float BDTCrit2::Crit2_DeltaRho = -999;
+float BDTCrit2::Crit2_DeltaPhi = -999;
+float BDTCrit2::Crit2_StraightTrackRatio = -999;
+
+float BDTCrit3::Crit3_ChangeRZRatio = -999;
+float BDTCrit3::Crit3_2DAngle = -999;
+float BDTCrit3::Crit3_3DAngle = -999;
 
 //_______________________________________________________________________________________
 class GenfitUtils{
@@ -204,7 +214,7 @@ class ForwardTracker : public ForwardTrackMaker {
 
 
 //________________________________________________________________________
-StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mForwardTracker(nullptr), mForwardData(nullptr), mGenHistograms(false), mGenTree(false){
+StFwdTrackMaker::StFwdTrackMaker() : StMaker("fwdTrack"), mGenHistograms(false), mGenTree(false), mForwardTracker(nullptr), mForwardData(nullptr){
     SetAttr("useFtt",1);                 // Default Ftt on 
     SetAttr("useFst",1);                 // Default Fst on
     SetAttr("config", "config.xml");     // Default configuration file (user may override before Init())
@@ -323,6 +333,17 @@ int StFwdTrackMaker::Init() {
                 mTreeCritTrackIds[(n)]; mTree->Branch(n.c_str(), &mTreeCritTrackIds[n]);
                 n = name + "_h3";
                 mTreeCritTrackIds[(n)]; mTree->Branch(n.c_str(), &mTreeCritTrackIds[n]);
+            }
+
+            if ( name == "Crit2_BDT" ){
+                string n = name + "_DeltaPhi";
+                mTreeCrits[(n)]; mTree->Branch(n.c_str(), &mTreeCrits[n]);
+                n = name + "_DeltaRho";
+                mTreeCrits[(n)]; mTree->Branch(n.c_str(), &mTreeCrits[n]);
+                n = name + "_RZRatio";
+                mTreeCrits[(n)]; mTree->Branch(n.c_str(), &mTreeCrits[n]);
+                n = name + "_StraightTrackRatio";
+                mTreeCrits[(n)]; mTree->Branch(n.c_str(), &mTreeCrits[n]);
             }
         }
 
@@ -497,7 +518,7 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
 
     int nstg = g2t_stg_hits->GetNRows();
 
-    LOG_INFO << "This event has " << nstg << " stg hits in geant/g2t_stg_hit " << endm;
+    LOG_DEBUG << "This event has " << nstg << " stg hits in geant/g2t_stg_hit " << endm;
     if ( mGenHistograms ) {
         this->mHistograms["nHitsSTGC"]->Fill(nstg);
     }
@@ -515,10 +536,6 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
         float x = git->x[0] + gRandom->Gaus(0, sigXY); // 100 micron blur according to approx sTGC reso
         float y = git->x[1] + gRandom->Gaus(0, sigXY); // 100 micron blur according to approx sTGC reso
         float z = git->x[2];
-
-        double tpt = 0;
-        if (mcTrackMap[track_id])
-            tpt = mcTrackMap[track_id]->mPt;
 
         if (mGenTree && mTreeN < MAX_TREE_ELEMENTS) {
             mTreeX[mTreeN] = x;
@@ -568,7 +585,7 @@ void StFwdTrackMaker::loadStgcHitsFromGEANT( FwdDataSource::McTrackMap_t &mcTrac
     } // loop on hits
 
     if (mGenTree){
-        LOG_INFO << "Saving " << mTreeN << "Hits in Tree" << endm;
+        LOG_INFO << "Saving " << mTreeN << " hits in Tree" << endm;
     }
 } // loadStgcHits
 
@@ -632,10 +649,10 @@ void StFwdTrackMaker::loadFstHits( FwdDataSource::McTrackMap_t &mcTrackMap, FwdD
     }
     bool siRasterizer = mFwdConfig.get<bool>( "SiRasterizer:active", false );
     if ( siRasterizer || rndCollection == nullptr ){
-        LOG_INFO << "Loading Fst hits from GEANT with SiRasterizer" << endm;
+        LOG_DEBUG << "Loading Fst hits from GEANT with SiRasterizer" << endm;
         loadFstHitsFromGEANT( mcTrackMap, hitMap, count );
     } else {
-        LOG_INFO << "Loading Fst hits from StEvent" << endm;
+        LOG_DEBUG << "Loading Fst hits from StEvent" << endm;
         loadFstHitsFromStEvent( mcTrackMap, hitMap, count );
     }
 } // loadFstHits
@@ -764,7 +781,7 @@ void StFwdTrackMaker::loadMcTracks( FwdDataSource::McTrackMap_t &mcTrackMap ){
     size_t nShowers = 0;
 
     mTreeNTracks = 1;
-    LOG_INFO << g2t_track->GetNRows() << " mc tracks in geant/g2t_track " << endm;
+    LOG_DEBUG << g2t_track->GetNRows() << " mc tracks in geant/g2t_track " << endm;
     if ( mGenHistograms ) this->mHistograms["nMcTracks"]->Fill(g2t_track->GetNRows());
 
     for (int irow = 0; irow < g2t_track->GetNRows(); irow++) {
@@ -847,7 +864,7 @@ int StFwdTrackMaker::Make() {
 
     size_t maxForwardTracks = mFwdConfig.get<size_t>( "McEvent.Mult:max", 10000 );
     if ( nForwardTracks > maxForwardTracks ){
-        LOG_INFO << "Skipping event with more than " << maxForwardTracks << " forward tracks" << endm;
+        LOG_DEBUG << "Skipping event with more than " << maxForwardTracks << " forward tracks" << endm;
         return kStOk;
     }
 
@@ -877,7 +894,7 @@ int StFwdTrackMaker::Make() {
     // fill the ttree if we have it turned on (mGenTree)
     FillTTree();
 
-    LOG_INFO << "Forward tracking on this event took " << (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6 << " ms" << endm;
+    LOG_DEBUG << "Forward tracking on this event took " << (FwdTrackerUtils::nowNanoSecond() - itStart) * 1e-6 << " ms" << endm;
 
 
     StEvent *stEvent = static_cast<StEvent *>(GetInputDS("StEvent"));
@@ -945,6 +962,23 @@ void StFwdTrackMaker::FillTTree(){
                 string name = crit->getName();
 
                 // special, save all hit info for this one
+                
+
+                if ( name == "Crit2_BDT" ){
+                    mTreeCrits["Crit2_BDT_DeltaPhi"].clear(); 
+                    mTreeCrits["Crit2_BDT_DeltaRho"].clear(); 
+                    mTreeCrits["Crit2_BDT_RZRatio"].clear(); 
+                    mTreeCrits["Crit2_BDT_StraightTrackRatio"].clear(); 
+
+                    for (auto kv : mForwardTracker->getCriteriaAllValues(name)) {
+                        mTreeCrits["Crit2_BDT_DeltaPhi"].push_back( kv["Crit2_BDT_DeltaPhi"] );
+                        mTreeCrits["Crit2_BDT_DeltaRho"].push_back( kv["Crit2_BDT_DeltaRho"] );
+                        mTreeCrits["Crit2_BDT_RZRatio"].push_back( kv["Crit2_BDT_RZRatio"] );
+                        mTreeCrits["Crit2_BDT_StraightTrackRatio"].push_back( kv["Crit2_BDT_StraightTrackRatio"] );
+                    }
+
+                }
+
                 if ( name == "Crit2_RZRatio" ){
                     LOG_INFO << "allValues.size() = " << mForwardTracker->getCriteriaAllValues(name).size() << " == " << mForwardTracker->getCriteriaTrackIds(name).size() << endm;
                     assert( mForwardTracker->getCriteriaAllValues(name).size() == mForwardTracker->getCriteriaTrackIds(name).size() && " Crit lengths must be equal" );

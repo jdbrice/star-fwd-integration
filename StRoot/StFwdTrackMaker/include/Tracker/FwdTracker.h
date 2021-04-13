@@ -21,6 +21,7 @@
 #include "StFwdTrackMaker/include/Tracker/FwdDataSource.h"
 #include "StFwdTrackMaker/include/Tracker/QualityPlotter.h"
 #include "StFwdTrackMaker/include/Tracker/TrackFitter.h"
+#include "StFwdTrackMaker/include/Tracker/BDTCriteria.h"
 
 #include "Criteria/Criteria.h"
 #include "Criteria/ICriterion.h"
@@ -126,6 +127,7 @@ class ForwardTrackMaker {
    * @return vector of ICriterion pointers
    */
     std::vector<KiTrack::ICriterion *> loadCriteria(string path) {
+
         std::vector<KiTrack::ICriterion *> crits;
         auto paths = mConfig.childrenOf(path);
 
@@ -140,12 +142,23 @@ class ForwardTrackMaker {
             float vmin = mConfig.get<float>(p + ":min", 0);
             float vmax = mConfig.get<float>(p + ":max", 1);
             
-            auto crit = KiTrack::Criteria::createCriterion(name, vmin, vmax);
+            KiTrack::ICriterion * crit = nullptr;
+            if ( name == "Crit2_BDT" ){
+                crit = new BDTCrit2( vmin, vmax, mConfig.get<std::string>( p + ":weights", "bdt2.xml" ) );
+            } else if ( name == "Crit3_BDT" ){
+                crit = new BDTCrit3( vmin, vmax, mConfig.get<std::string>( p + ":weights", "bdt3.xml" ) );
+            }
+            else {
+                crit = KiTrack::Criteria::createCriterion(name, vmin, vmax);
+            }
+
             crit->setSaveValues(mSaveCriteriaValues);
+
             if (mSaveCriteriaValues)
                 crits.push_back(new CriteriaKeeper(crit)); // CriteriaKeeper intercepts values and saves them
             else
                 crits.push_back(crit);
+            
         }
 
         return crits;
@@ -762,6 +775,7 @@ class ForwardTrackMaker {
             subset.setOmega(omega);
             subset.setLimitForStable(stableThreshold);
             subset.setTStart(Ti);
+            subset.setTInf(Tf);
 
             SeedCompare comparer;
             SeedQual quality;

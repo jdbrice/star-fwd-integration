@@ -62,6 +62,9 @@ class CriteriaKeeper : public KiTrack::ICriterion {
                 my_map_name_value["Crit2_RZRatio_h2"] = fwdB->_id;
                         
                 allValues.push_back( my_map_name_value );
+            } else {
+                std::map < std::string , float > my_map_name_value = mChild->getMapOfValues();
+                allValues.push_back( my_map_name_value);
             }
         }
 
